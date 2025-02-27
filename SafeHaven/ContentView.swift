@@ -1,6 +1,9 @@
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
+    @State private var showingEmergencyCallAlert = false
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -45,6 +48,14 @@ struct ContentView: View {
                     
                     Spacer()
                     
+                    // Emergency slider
+                    EmergencySlider(onEmergencyCall: {
+                        // In a real app, this would initiate a call to emergency services
+                        showingEmergencyCallAlert = true
+                    })
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+
                     // Navigation buttons
                     VStack(spacing: 18) {
                         NavigationLink(destination: ResourcesView()) {
@@ -108,6 +119,13 @@ struct ContentView: View {
                 .padding()
             }
             .navigationBarHidden(true)
+            .alert(isPresented: $showingEmergencyCallAlert) {
+                Alert(
+                    title: Text("Emergency Call"),
+                    message: Text("In a real app, this would call 911 and send your emergency messages"),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }

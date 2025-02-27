@@ -58,6 +58,31 @@ struct ContentView: View {
 
                     // Navigation buttons
                     VStack(spacing: 18) {
+                        // Daily Motivation Button
+                        NavigationLink(destination: MotivationView()) {
+                            HStack {
+                                Image(systemName: "quote.bubble.fill")
+                                    .font(.system(size: 22))
+                                    .foregroundColor(.white)
+                                    .frame(width: 30)
+                                
+                                Text("Daily Motivation")
+                                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            .padding(.vertical, 20)
+                            .padding(.horizontal, 25)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color(hex: "41B3A3").opacity(0.9))
+                            )
+                            .foregroundColor(.white)
+                        }
+
                         NavigationLink(destination: ResourcesView()) {
                             HStack {
                                 Image(systemName: "mappin.and.ellipse")

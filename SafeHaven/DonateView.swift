@@ -1,28 +1,84 @@
 import SwiftUI
+import StoreKit
+
+// Simple product model to represent in-app purchases
+struct SupportProduct: Identifiable {
+    let id: String // This matches the product ID in App Store Connect
+    let amount: Int
+    let displayName: String
+}
+
+// Making StoreManager conform to @unchecked Sendable
+@MainActor
+class StoreManager: ObservableObject {
+    @Published var products: [Product] = []
+    @Published var purchasedProductIDs = Set<String>()
+    @Published var isLoading = false
+    
+    // Add product IDs here that match your App Store Connect configuration
+    // Format typically: com.yourcompany.yourapp.support.amount
+    private let supportProductIDs = [
+        "com.rodriguez.travis.safehaven.support.tier1",
+        "com.rodriguez.travis.safehaven.support.tier2",
+        "com.rodriguez.travis.safehaven.support.tier3",
+        "com.rodriguez.travis.safehaven.support.tier4",
+        "com.rodriguez.travis.safehaven.support.tier5"
+    ]
+    
+    func requestProducts() {
+        isLoading = true
+        Task {
+            do {
+                // Request the products from the App Store
+                let storeProducts = try await Product.products(for: supportProductIDs)
+                self.products = storeProducts
+                self.isLoading = false
+            } catch {
+                print("Failed to load products: \(error)")
+                self.isLoading = false
+            }
+        }
+    }
+    
+    func purchase(_ product: Product) {
+        Task {
+            do {
+                let result = try await product.purchase()
+                
+                switch result {
+                case .success(let verification):
+                    // Check whether the transaction is verified
+                    switch verification {
+                    case .verified(let transaction):
+                        // Successful purchase
+                        await transaction.finish()
+                        self.purchasedProductIDs.insert(product.id)
+                    case .unverified:
+                        // Transaction can't be verified
+                        break
+                    }
+                case .userCancelled:
+                    break
+                case .pending:
+                    break
+                @unknown default:
+                    break
+                }
+            } catch {
+                print("Purchase failed: \(error)")
+            }
+        }
+    }
+}
 
 struct DonateView: View {
-    @State private var selectedAmount: Int? = nil
-    @State private var customAmount: String = ""
-    @State private var isMonthlyDonation: Bool = false
+    @StateObject private var storeManager = StoreManager()
     @State private var showingThankYouAlert = false
-    @State private var donorName: String = ""
-    @State private var donorEmail: String = ""
-    @State private var showingPaymentSheet = false
+    @State private var selectedProduct: Product?
+    @State private var showingMonthlyOptions = false
     
-    let donationAmounts = [5, 10, 20, 50, 100]
-    
-    var donationAmount: Double {
-        if let selected = selectedAmount {
-            return Double(selected)
-        } else if let custom = Double(customAmount), custom > 0 {
-            return custom
-        }
-        return 0
-    }
-    
-    var isValidDonation: Bool {
-        donationAmount > 0
-    }
+    // Fixed support tiers that will match your StoreKit products
+    let supportTiers = [5, 10, 20, 50, 100]
     
     var body: some View {
         ScrollView {
@@ -32,7 +88,7 @@ struct DonateView: View {
                     ZStack {
                         Circle()
                             .fill(LinearGradient(
-                                gradient: Gradient(colors: [Color(hex: "E8505B"), Color(hex: "F47C7C")]),
+                                gradient: Gradient(colors: [Color(hex: "6A89CC"), Color(hex: "41B3A3")]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ))
@@ -44,11 +100,11 @@ struct DonateView: View {
                     }
                     .padding(.top, 20)
                     
-                    Text("Make a Difference")
+                    Text("Support SafeHaven")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(Color(hex: "2D3748"))
                     
-                    Text("Your support helps us improve Safe Haven and reach more people in need")
+                    Text("Your support helps us improve SafeHaven and develop new features to assist more people in need")
                         .font(.system(size: 16))
                         .foregroundColor(Color(hex: "718096"))
                         .multilineTextAlignment(.center)
@@ -63,112 +119,57 @@ struct DonateView: View {
                 )
                 .padding(.horizontal)
                 
-                // Donation Type Selection
+                // Support Type Selection
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Select Donation Type")
+                    Text("How Your Support Helps")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(Color(hex: "2D3748"))
                     
-                    HStack(spacing: 12) {
-                        // One-time button
-                        Button(action: {
-                            isMonthlyDonation = false
-                        }) {
-                            VStack(spacing: 8) {
-                                ZStack {
-                                    Circle()
-                                        .stroke(isMonthlyDonation ? Color.gray.opacity(0.3) : Color(hex: "6A89CC"), lineWidth: 2)
-                                        .frame(width: 24, height: 24)
-                                    
-                                    if !isMonthlyDonation {
-                                        Circle()
-                                            .fill(Color(hex: "6A89CC"))
-                                            .frame(width: 16, height: 16)
-                                    }
-                                }
-                                
-                                Text("One-time")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(isMonthlyDonation ? Color(hex: "718096") : Color(hex: "2D3748"))
-                                
-                                Image(systemName: "creditcard.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(isMonthlyDonation ? Color.gray.opacity(0.5) : Color(hex: "6A89CC"))
-                                    .padding(.top, 4)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(isMonthlyDonation ? Color.white : Color(hex: "6A89CC").opacity(0.1))
-                                    .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
-                            )
-                        }
-                        
-                        // Monthly button
-                        Button(action: {
-                            isMonthlyDonation = true
-                        }) {
-                            VStack(spacing: 8) {
-                                ZStack {
-                                    Circle()
-                                        .stroke(isMonthlyDonation ? Color(hex: "E8505B") : Color.gray.opacity(0.3), lineWidth: 2)
-                                        .frame(width: 24, height: 24)
-                                    
-                                    if isMonthlyDonation {
-                                        Circle()
-                                            .fill(Color(hex: "E8505B"))
-                                            .frame(width: 16, height: 16)
-                                    }
-                                }
-                                
-                                Text("Monthly")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(isMonthlyDonation ? Color(hex: "2D3748") : Color(hex: "718096"))
-                                
-                                Image(systemName: "calendar.badge.clock")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(isMonthlyDonation ? Color(hex: "E8505B") : Color.gray.opacity(0.5))
-                                    .padding(.top, 4)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(isMonthlyDonation ? Color(hex: "E8505B").opacity(0.1) : Color.white)
-                                    .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
-                            )
-                        }
-                    }
-                    
                     // Impact info
                     VStack(spacing: 16) {
-                        Text("Your Impact")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(Color(hex: "2D3748"))
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        
                         HStack(spacing: 20) {
                             ImpactItem(
-                                icon: "house.fill",
-                                title: "Shelters",
-                                description: "Support emergency housing"
+                                icon: "hammer.fill",
+                                title: "Development",
+                                description: "Fund new features and improvements"
                             )
                             
                             ImpactItem(
-                                icon: "cross.case.fill",
-                                title: "Healthcare",
-                                description: "Fund medical services"
+                                icon: "map.fill",
+                                title: "Resources",
+                                description: "Expand our resource database"
                             )
                             
                             ImpactItem(
-                                icon: "book.fill",
-                                title: "Education",
-                                description: "Enable learning resources"
+                                icon: "server.rack",
+                                title: "Infrastructure",
+                                description: "Support app hosting and services"
                             )
+                        }
+                        
+                        if showingMonthlyOptions {
+                            Text("Monthly support helps us plan long-term features and sustainability")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color(hex: "718096"))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        } else {
+                            Text("One-time support helps us address immediate development needs")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color(hex: "718096"))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
                         }
                     }
                     .padding(.vertical, 12)
+                    
+                    // Toggle between one-time and monthly
+                    Picker("Support Type", selection: $showingMonthlyOptions) {
+                        Text("One-time").tag(false)
+                        Text("Monthly").tag(true)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .padding(.vertical, 8)
                 }
                 .padding()
                 .background(
@@ -178,62 +179,80 @@ struct DonateView: View {
                 )
                 .padding(.horizontal)
                 
-                // Amount Selection
+                // Support Options
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Choose Amount")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(Color(hex: "2D3748"))
                     
-                    // Amount Display
-                    Text(donationAmount > 0 ? "$\(String(format: "%.2f", donationAmount))" : "Select an amount")
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundColor(donationAmount > 0 ? Color(hex: "6A89CC") : Color.gray)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 8)
-                    
-                    // Preset amounts
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach(donationAmounts, id: \.self) { amount in
+                    if storeManager.isLoading {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                                .padding()
+                            Spacer()
+                        }
+                    } else if storeManager.products.isEmpty {
+                        VStack {
+                            Text("Support options are currently unavailable")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color(hex: "718096"))
+                                .multilineTextAlignment(.center)
+                                .padding()
+                            
                             Button(action: {
-                                selectedAmount = amount
-                                customAmount = ""
+                                storeManager.requestProducts()
                             }) {
-                                Text("$\(amount)")
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundColor(selectedAmount == amount ? .white : Color(hex: "6A89CC"))
-                                    .frame(height: 50)
-                                    .frame(maxWidth: .infinity)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(selectedAmount == amount ? Color(hex: "6A89CC") : Color(hex: "6A89CC").opacity(0.1))
-                                    )
+                                Text("Refresh")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 24)
+                                    .background(Color(hex: "6A89CC"))
+                                    .cornerRadius(8)
                             }
                         }
-                    }
-                    
-                    // Custom amount
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Custom Amount")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Color(hex: "718096"))
-                        
-                        HStack {
-                            Text("$")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(Color(hex: "2D3748"))
-                            
-                            TextField("Enter amount", text: $customAmount)
-                                .keyboardType(.decimalPad)
-                                .font(.system(size: 18))
-                                .onChange(of: customAmount) { oldValue, newValue in
-                                    selectedAmount = nil
-                                }
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        // Support amount options
+                        let filteredProducts = storeManager.products.filter { product in
+                            // Filter based on whether it's a subscription or one-time purchase
+                            let isSubscription = product.type == .autoRenewable
+                            return isSubscription == showingMonthlyOptions
                         }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(customAmount.isEmpty ? Color.gray.opacity(0.3) : Color(hex: "6A89CC"), lineWidth: 1)
-                        )
+                        
+                        if !filteredProducts.isEmpty {
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                                ForEach(filteredProducts, id: \.id) { product in
+                                    Button(action: {
+                                        selectedProduct = product
+                                    }) {
+                                        VStack(spacing: 8) {
+                                            Text(product.displayName)
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundColor(selectedProduct?.id == product.id ? .white : Color(hex: "2D3748"))
+                                            
+                                            Text(product.displayPrice)
+                                                .font(.system(size: 16, weight: .bold))
+                                                .foregroundColor(selectedProduct?.id == product.id ? .white : Color(hex: "6A89CC"))
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 16)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(selectedProduct?.id == product.id ? Color(hex: "6A89CC") : Color(hex: "F5F7FA"))
+                                                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("No \(showingMonthlyOptions ? "monthly" : "one-time") support options are currently available")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color(hex: "718096"))
+                                .multilineTextAlignment(.center)
+                                .padding()
+                        }
                     }
                 }
                 .padding()
@@ -244,44 +263,56 @@ struct DonateView: View {
                 )
                 .padding(.horizontal)
                 
-                // Donation Button
+                // Support Button
                 Button(action: {
-                    showingPaymentSheet = true
+                    if let product = selectedProduct {
+                        storeManager.purchase(product)
+                        showingThankYouAlert = true
+                    }
                 }) {
                     HStack {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 18))
                         
-                        Text(isMonthlyDonation ? "Donate Monthly" : "Donate Now")
+                        Text(showingMonthlyOptions ? "Support Monthly" : "Support Now")
                             .font(.system(size: 18, weight: .bold))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(isValidDonation ?
-                                  (isMonthlyDonation ? Color(hex: "E8505B") : Color(hex: "41B3A3")) :
+                            .fill(selectedProduct != nil ?
+                                  (showingMonthlyOptions ? Color(hex: "6A89CC") : Color(hex: "41B3A3")) :
                                     Color.gray.opacity(0.3))
                     )
                     .foregroundColor(.white)
                     .padding(.horizontal)
                 }
-                .disabled(!isValidDonation)
+                .disabled(selectedProduct == nil)
                 .padding(.vertical, 10)
                 
-                // Security and trust badges
+                // Future vision
                 VStack(spacing: 16) {
-                    HStack(spacing: 24) {
-                        SecurityBadge(icon: "lock.fill", text: "Secure")
-                        SecurityBadge(icon: "checkmark.shield.fill", text: "Encrypted")
-                        SecurityBadge(icon: "creditcard.fill", text: "PCI Compliant")
-                    }
+                    Text("Our Vision")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(Color(hex: "2D3748"))
                     
-                    Text("100% of your donation goes directly to our mission")
+                    Text("With enough support, we aim to expand SafeHaven beyond an informational tool to provide direct assistance to those in need. Your contribution today helps us build this future.")
                         .font(.system(size: 14))
                         .foregroundColor(Color(hex: "718096"))
                         .multilineTextAlignment(.center)
-                        .padding(.bottom, 30)
+                        .padding(.horizontal)
+                    
+                    NavigationLink(destination: DeveloperStoryView()) {
+                        HStack {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 14))
+                            Text("Meet the Developer")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                        .foregroundColor(Color(hex: "6A89CC"))
+                        .padding(.vertical, 8)
+                    }
                 }
                 .padding()
                 .background(
@@ -290,45 +321,20 @@ struct DonateView: View {
                         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
                 )
                 .padding(.horizontal)
-                
-                // Donor Information
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("Your Information")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(Color(hex: "2D3748"))
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Name (Optional)")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Color(hex: "718096"))
-                        
-                        TextField("Your name", text: $donorName)
-                            .font(.system(size: 16))
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Email (Optional)")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Color(hex: "718096"))
-                        
-                        TextField("Your email", text: $donorEmail)
-                            .font(.system(size: 16))
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                    }
-                    
-                }
+                .padding(.bottom, 30)
             }
+        }
+        .onAppear {
+            storeManager.requestProducts()
+        }
+        .navigationTitle("Support Our Mission")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert(isPresented: $showingThankYouAlert) {
+            Alert(
+                title: Text("Thank You!"),
+                message: Text("Your support helps us continue to develop SafeHaven and work toward our mission of helping those in need."),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 }
@@ -358,22 +364,5 @@ struct ImpactItem: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
-    }
-}
-
-struct SecurityBadge: View {
-    let icon: String
-    let text: String
-    
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundColor(Color(hex: "41B3A3"))
-            
-            Text(text)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(Color(hex: "2D3748"))
-        }
     }
 }

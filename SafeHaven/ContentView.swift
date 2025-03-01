@@ -6,11 +6,12 @@ struct ContentView: View {
     @State private var showingTodoView = false
     @State private var showingJournalView = false
     @State private var showingPaywallView = false
+    @State private var showingMotivationView = false
     @StateObject private var todoManager = TodoManager()
     @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             GeometryReader { geometry in
                 ZStack(alignment: .top) {
                     // Background gradient
@@ -35,7 +36,7 @@ struct ContentView: View {
                                     .foregroundColor(Color(hex: "6A89CC"))
                             )
                             .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
-                            .padding(.top, 30)
+                            .padding(.top, 20)
                         
                         // App name
                         Text("Safe Haven")
@@ -50,7 +51,7 @@ struct ContentView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                             .padding(.bottom, 10)
-                        
+
                         // Emergency slider (Premium feature)
                         if subscriptionManager.isSubscribed {
                             EmergencySlider(onEmergencyCall: {
@@ -79,7 +80,6 @@ struct ContentView: View {
                                             .font(.system(size: 18, weight: .medium, design: .rounded))
                                             .foregroundColor(.white)
                                         
-                                        Spacer()
                                     }
                                 }
                             }
@@ -92,8 +92,7 @@ struct ContentView: View {
                             // Daily Motivation Button (Now Premium)
                             Button(action: {
                                 if subscriptionManager.isSubscribed {
-                                    // Navigate to Motivation View
-                                    // Replace with proper NavigationLink in the full implementation
+                                    showingMotivationView = true
                                 } else {
                                     showingPaywallView = true
                                 }
@@ -133,7 +132,7 @@ struct ContentView: View {
                             }
 
                             // Find Resources Button (Free)
-                            NavigationLink(destination: ResourcesView()) {
+                            NavigationLink(value: "resources") {
                                 HStack {
                                     Image(systemName: "mappin.and.ellipse")
                                         .font(.system(size: 22))
@@ -158,7 +157,7 @@ struct ContentView: View {
                             }
                             
                             // Support Our Mission Button (Free)
-                            NavigationLink(destination: DonateView()) {
+                            NavigationLink(value: "donate") {
                                 HStack {
                                     Image(systemName: "heart.fill")
                                         .font(.system(size: 22))
@@ -213,6 +212,7 @@ struct ContentView: View {
                         }
                         .padding(.horizontal, 20)
                         
+                        Spacer()
                         
                         // Version info
                         Text("Version 1.0")
@@ -310,6 +310,19 @@ struct ContentView: View {
                 }
                 .navigationBarHidden(true)
             }
+            .navigationDestination(for: String.self) { destination in
+                switch destination {
+                case "resources":
+                    ResourcesView()
+                case "donate":
+                    DonateView()
+                default:
+                    EmptyView()
+                }
+            }
+            .navigationDestination(isPresented: $showingMotivationView) {
+                MotivationView()
+            }
             .alert(isPresented: $showingEmergencyCallAlert) {
                 Alert(
                     title: Text("Emergency Call"),
@@ -329,7 +342,6 @@ struct ContentView: View {
                 PaywallView()
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
         // Debug toolbar to toggle subscription status - REMOVE THIS FOR PRODUCTION
         .toolbar {
             ToolbarItemGroup(placement: .bottomBar) {

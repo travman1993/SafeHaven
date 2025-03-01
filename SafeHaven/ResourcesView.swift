@@ -5,7 +5,7 @@ import Firebase
 import FirebaseFirestore
 
 // MARK: - Resource Model
-struct ResourceLocation: Identifiable {
+struct ResourceLocation: Identifiable, Hashable, Equatable {
     let id: String
     let name: String
     let category: ResourceCategory
@@ -41,6 +41,24 @@ struct ResourceLocation: Identifiable {
         self.hours = data["hours"] as? String
         self.services = data["services"] as? [String] ?? []
     }
+
+    // Hashable implementation
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(name)
+        hasher.combine(category)
+        hasher.combine(address)
+        hasher.combine(phoneNumber)
+    }
+
+    // Equatable implementation
+    static func == (lhs: ResourceLocation, rhs: ResourceLocation) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.name == rhs.name &&
+               lhs.category == rhs.category &&
+               lhs.address == rhs.address &&
+               lhs.phoneNumber == rhs.phoneNumber
+    }
 }
 
 // MARK: - Resource Category Enum
@@ -68,26 +86,39 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
         case .education: return "book.fill"
         }
     }
+
+    var color: Color {
+        switch self {
+        case .all: return .gray
+        case .shelter: return Color(hex: "6A89CC")
+        case .food: return .green
+        case .healthcare: return .red
+        case .support: return .blue
+        case .legal: return .purple
+        case .financial: return .orange
+        case .education: return .teal
+        }
+    }
 }
 
 // MARK: - Firestore Service
 class ResourceService: ObservableObject {
     private let db = Firestore.firestore()
     @Published var resources: [ResourceLocation] = []
-    @Published var isLoading: Bool = false
+    @Published var isLoading = false
     @Published var errorMessage: String?
 
     func fetchResources() {
         isLoading = true
-        db.collection("resources").getDocuments { snapshot, error in
+        db.collection("resources").getDocuments { [weak self] snapshot, error in
             DispatchQueue.main.async {
-                self.isLoading = false
+                self?.isLoading = false
                 if let error = error {
-                    self.errorMessage = "Error loading resources: \(error.localizedDescription)"
+                    self?.errorMessage = "Error loading resources: \(error.localizedDescription)"
                     return
                 }
                 
-                self.resources = snapshot?.documents.compactMap { doc in
+                self?.resources = snapshot?.documents.compactMap { doc in
                     ResourceLocation(documentID: doc.documentID, data: doc.data())
                 } ?? []
             }
@@ -125,9 +156,13 @@ struct ResourcesView: View {
     @StateObject private var resourceService = ResourceService()
     
     @State private var selectedCategory: ResourceCategory = .all
-    @State private var searchText: String = ""
-    @State private var viewMode: String = "map"
+    @State private var searchText = ""
+    @State private var viewMode: ViewMode = .list
     @State private var selectedResource: ResourceLocation?
+    
+    enum ViewMode {
+        case map, list
+    }
     
     var filteredResources: [ResourceLocation] {
         resourceService.resources.filter { resource in
@@ -139,90 +174,188 @@ struct ResourcesView: View {
     }
 
     var body: some View {
-        VStack {
-            // Search Bar
-            TextField("Search resources...", text: $searchText)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-
-            // Category Selection
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack {
-                    ForEach(ResourceCategory.allCases) { category in
-                        Button(action: { selectedCategory = category }) {
-                            VStack {
-                                Image(systemName: category.icon)
-                                Text(category.rawValue)
-                            }
-                            .padding()
-                            .background(selectedCategory == category ? Color.blue : Color.gray.opacity(0.3))
-                            .cornerRadius(8)
-                        }
-                    }
-                }
-                .padding(.horizontal)
-            }
-
-            // Toggle Map / List View
-            Picker("View Mode", selection: $viewMode) {
-                Text("Map").tag("map")
-                Text("List").tag("list")
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding(.horizontal)
-
-            // Map or List View
-            if viewMode == "map" {
-                VStack {
-                    Map(initialPosition: MapCameraPosition.region(MKCoordinateRegion(
-                        center: locationManager.userLocation ?? CLLocationCoordinate2D(latitude: 33.749, longitude: -84.388),
-                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                    ))) {
-                        ForEach(filteredResources) { resource in
-                            Annotation(resource.name, coordinate: resource.coordinate) {
-                                VStack {
-                                    Image(systemName: resource.icon)
-                                        .foregroundColor(.blue)
-                                        .padding()
-                                        .background(Color.white)
-                                        .clipShape(Circle())
-                                }
-                                .onTapGesture {
-                                    selectedResource = resource
+        NavigationView {
+            VStack(spacing: 0) {
+                // Search and Filter Section
+                VStack(spacing: 12) {
+                    // Search Bar
+                    SearchBar(text: $searchText, placeholder: "Search resources...")
+                        .padding(.horizontal)
+                    
+                    // Category Scroll View
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(ResourceCategory.allCases) { category in
+                                CategoryChip(
+                                    title: category.rawValue,
+                                    icon: category.icon,
+                                    isSelected: selectedCategory == category,
+                                    color: category.color
+                                ) {
+                                    selectedCategory = category
                                 }
                             }
                         }
+                        .padding(.horizontal)
                     }
-                    .frame(height: 400)
-
-                    // Map Controls
-                    HStack {
-                        MapUserLocationButton()
-                        MapCompass()
-                        MapScaleView()
+                    
+                    // View Mode Toggle
+                    Picker("View Mode", selection: $viewMode) {
+                        Image(systemName: "list.bullet").tag(ViewMode.list)
+                        Image(systemName: "map").tag(ViewMode.map)
                     }
-                    .padding()
+                    .pickerStyle(SegmentedPickerStyle())
+                    .padding(.horizontal)
                 }
-            } else {
-                List(filteredResources) { resource in
-                    HStack {
-                        Image(systemName: resource.icon).foregroundColor(.blue)
-                        VStack(alignment: .leading) {
-                            Text(resource.name).font(.headline)
-                            Text(resource.category.rawValue).font(.subheadline).foregroundColor(.gray)
-                        }
-                    }
-                    .onTapGesture {
-                        selectedResource = resource
-                    }
+                .padding(.vertical)
+                .background(Color(hex: "F5F7FA"))
+                
+                // Content View
+                switch viewMode {
+                case .map:
+                    MapContentView(
+                        resources: filteredResources,
+                        userLocation: locationManager.userLocation,
+                        selectedResource: $selectedResource
+                    )
+                case .list:
+                    ListContentView(
+                        resources: filteredResources,
+                        selectedResource: $selectedResource
+                    )
                 }
             }
+            .navigationTitle("Resources")
+            .navigationBarTitleDisplayMode(.inline)
         }
         .sheet(item: $selectedResource) { resource in
             ResourceDetailView(resource: resource)
         }
         .onAppear {
             resourceService.fetchResources()
+        }
+    }
+}
+
+// MARK: - Map Content View
+struct MapContentView: View {
+    let resources: [ResourceLocation]
+    let userLocation: CLLocationCoordinate2D?
+    @Binding var selectedResource: ResourceLocation?
+    
+    var body: some View {
+        Map(initialPosition: .region(
+            MKCoordinateRegion(
+                center: userLocation ?? CLLocationCoordinate2D(latitude: 33.749, longitude: -84.388),
+                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+            )
+        )) {
+            ForEach(resources) { resource in
+                Annotation(resource.name, coordinate: resource.coordinate) {
+                    ResourceMapPin(resource: resource, onTap: {
+                        selectedResource = resource
+                    })
+                }
+            }
+        }
+        .edgesIgnoringSafeArea(.bottom)
+    }
+}
+
+// MARK: - List Content View
+struct ListContentView: View {
+    let resources: [ResourceLocation]
+    @Binding var selectedResource: ResourceLocation?
+    
+    var body: some View {
+        List(resources) { resource in
+            ResourceListItem(resource: resource)
+                .onTapGesture {
+                    selectedResource = resource
+                }
+        }
+        .listStyle(PlainListStyle())
+    }
+}
+
+// MARK: - Resource Map Pin
+struct ResourceMapPin: View {
+    let resource: ResourceLocation
+    let onTap: () -> Void
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(resource.category.color)
+                .frame(width: 40, height: 40)
+            
+            Image(systemName: resource.icon)
+                .foregroundColor(.white)
+                .font(.system(size: 18))
+        }
+        .onTapGesture(perform: onTap)
+    }
+}
+
+// MARK: - Resource List Item
+struct ResourceListItem: View {
+    let resource: ResourceLocation
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(resource.category.color.opacity(0.2))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: resource.icon)
+                    .foregroundColor(resource.category.color)
+                    .font(.system(size: 22))
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(resource.name)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text(resource.category.rawValue)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Category Chip
+struct CategoryChip: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(isSelected ? color : color.opacity(0.1))
+            )
+            .foregroundColor(isSelected ? .white : color)
         }
     }
 }

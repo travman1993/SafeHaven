@@ -5,7 +5,9 @@ struct ContentView: View {
     @State private var showingEmergencyCallAlert = false
     @State private var showingTodoView = false
     @State private var showingJournalView = false
+    @State private var showingPaywallView = false
     @StateObject private var todoManager = TodoManager()
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     var body: some View {
         NavigationView {
@@ -20,7 +22,7 @@ struct ContentView: View {
                     .ignoresSafeArea()
                     
                     // Main content
-                    VStack(spacing: 30) {
+                    VStack(spacing: 20) {
                         // App logo/icon
                         Circle()
                             .fill(Color.white.opacity(0.9))
@@ -33,7 +35,7 @@ struct ContentView: View {
                                     .foregroundColor(Color(hex: "6A89CC"))
                             )
                             .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
-                            .padding(.top, 40)
+                            .padding(.top, 30)
                         
                         // App name
                         Text("Safe Haven")
@@ -47,22 +49,55 @@ struct ContentView: View {
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
-                            .padding(.bottom, 20)
+                            .padding(.bottom, 10)
                         
-                        Spacer()
-                        
-                        // Emergency slider
-                        EmergencySlider(onEmergencyCall: {
-                            // In a real app, this would initiate a call to emergency services
-                            showingEmergencyCallAlert = true
-                        })
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 10)
+                        // Emergency slider (Premium feature)
+                        if subscriptionManager.isSubscribed {
+                            EmergencySlider(onEmergencyCall: {
+                                // In a real app, this would initiate a call to emergency services
+                                showingEmergencyCallAlert = true
+                            })
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 10)
+                        } else {
+                            // Locked emergency slider
+                            Button(action: {
+                                showingPaywallView = true
+                            }) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 30)
+                                        .fill(Color.black.opacity(0.15))
+                                        .frame(height: 60)
+                                    
+                                    HStack {
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.white)
+                                            .padding(.leading, 20)
+                                        
+                                        Text("Unlock Emergency Call Feature")
+                                            .font(.system(size: 18, weight: .medium, design: .rounded))
+                                            .foregroundColor(.white)
+                                        
+                                        Spacer()
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 10)
+                        }
 
                         // Navigation buttons
                         VStack(spacing: 18) {
-                            // Daily Motivation Button
-                            NavigationLink(destination: MotivationView()) {
+                            // Daily Motivation Button (Now Premium)
+                            Button(action: {
+                                if subscriptionManager.isSubscribed {
+                                    // Navigate to Motivation View
+                                    // Replace with proper NavigationLink in the full implementation
+                                } else {
+                                    showingPaywallView = true
+                                }
+                            }) {
                                 HStack {
                                     Image(systemName: "quote.bubble.fill")
                                         .font(.system(size: 22))
@@ -73,6 +108,17 @@ struct ContentView: View {
                                         .font(.system(size: 20, weight: .semibold, design: .rounded))
                                     
                                     Spacer()
+                                    
+                                    // Lock icon if not subscribed
+                                    if !subscriptionManager.isSubscribed {
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.white)
+                                            .frame(width: 24, height: 24)
+                                            .background(Color(hex: "E8505B"))
+                                            .clipShape(Circle())
+                                            .padding(.trailing, 5)
+                                    }
                                     
                                     Image(systemName: "chevron.right")
                                         .foregroundColor(.white.opacity(0.7))
@@ -86,7 +132,7 @@ struct ContentView: View {
                                 .foregroundColor(.white)
                             }
 
-                            // Find Resources Button
+                            // Find Resources Button (Free)
                             NavigationLink(destination: ResourcesView()) {
                                 HStack {
                                     Image(systemName: "mappin.and.ellipse")
@@ -111,7 +157,7 @@ struct ContentView: View {
                                 .foregroundColor(.white)
                             }
                             
-                            // Support Our Mission Button
+                            // Support Our Mission Button (Free)
                             NavigationLink(destination: DonateView()) {
                                 HStack {
                                     Image(systemName: "heart.fill")
@@ -135,10 +181,38 @@ struct ContentView: View {
                                 )
                                 .foregroundColor(.white)
                             }
+                            
+                            // Upgrade to Premium Button (only shows if not subscribed)
+                            if !subscriptionManager.isSubscribed {
+                                Button(action: {
+                                    showingPaywallView = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "star.fill")
+                                            .font(.system(size: 22))
+                                            .foregroundColor(.white)
+                                            .frame(width: 30)
+                                        
+                                        Text("Upgrade to Premium")
+                                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(.white.opacity(0.7))
+                                    }
+                                    .padding(.vertical, 20)
+                                    .padding(.horizontal, 25)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color(hex: "F6AD55").opacity(0.9))
+                                    )
+                                    .foregroundColor(.white)
+                                }
+                            }
                         }
                         .padding(.horizontal, 20)
                         
-                        Spacer()
                         
                         // Version info
                         Text("Version 1.0")
@@ -151,10 +225,14 @@ struct ContentView: View {
                     // Top action buttons - positioned on top in ZStack
                     VStack {
                         HStack {
-                            // JOURNAL BUTTON - Left side
+                            // JOURNAL BUTTON - Left side (Premium feature)
                             Button(action: {
-                                withAnimation {
-                                    showingJournalView.toggle()
+                                if subscriptionManager.isSubscribed {
+                                    withAnimation {
+                                        showingJournalView.toggle()
+                                    }
+                                } else {
+                                    showingPaywallView = true
                                 }
                             }) {
                                 ZStack(alignment: .topTrailing) {
@@ -166,6 +244,17 @@ struct ContentView: View {
                                         .padding(12)
                                         .background(Color.white.opacity(0.2))
                                         .clipShape(Circle())
+                                    
+                                    // Lock icon if not subscribed
+                                    if !subscriptionManager.isSubscribed {
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .frame(width: 16, height: 16)
+                                            .background(Color(hex: "E8505B"))
+                                            .clipShape(Circle())
+                                            .offset(x: 3, y: -3)
+                                    }
                                 }
                             }
                             .padding(.top, geometry.safeAreaInsets.top + 15)
@@ -173,10 +262,14 @@ struct ContentView: View {
                             
                             Spacer()
                             
-                            // Todo Button - Right side
+                            // Todo Button - Right side (Premium feature)
                             Button(action: {
-                                withAnimation {
-                                    showingTodoView.toggle()
+                                if subscriptionManager.isSubscribed {
+                                    withAnimation {
+                                        showingTodoView.toggle()
+                                    }
+                                } else {
+                                    showingPaywallView = true
                                 }
                             }) {
                                 ZStack(alignment: .topTrailing) {
@@ -189,8 +282,18 @@ struct ContentView: View {
                                         .background(Color.white.opacity(0.2))
                                         .clipShape(Circle())
                                     
+                                    // Lock icon if not subscribed
+                                    if !subscriptionManager.isSubscribed {
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .frame(width: 16, height: 16)
+                                            .background(Color(hex: "E8505B"))
+                                            .clipShape(Circle())
+                                            .offset(x: 3, y: -3)
+                                    }
                                     // Notification dot for incomplete todos
-                                    if !todoManager.items.filter({ !$0.isCompleted }).isEmpty {
+                                    else if !todoManager.items.filter({ !$0.isCompleted }).isEmpty {
                                         Circle()
                                             .fill(Color.red)
                                             .frame(width: 10, height: 10)
@@ -222,105 +325,23 @@ struct ContentView: View {
                 JournalView()
                     .presentationDetents([.medium, .large])
             }
+            .sheet(isPresented: $showingPaywallView) {
+                PaywallView()
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
-    }
-}
-
-// EmergencySlider component
-struct EmergencySlider: View {
-    var onEmergencyCall: () -> Void
-    @State private var sliderValue: CGFloat = 0
-    
-    var body: some View {
-        ZStack(alignment: .leading) {
-            // Background track
-            RoundedRectangle(cornerRadius: 30)
-                .fill(Color.black.opacity(0.15))
-                .frame(height: 60)
-            
-            // Slide to call text
-            HStack {
-                Image(systemName: "phone.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.white)
-                    .padding(.leading, 20)
-                
-                Text("Slide to Call for Help")
-                    .font(.system(size: 18, weight: .medium, design: .rounded))
-                    .foregroundColor(.white)
+        // Debug toolbar to toggle subscription status - REMOVE THIS FOR PRODUCTION
+        .toolbar {
+            ToolbarItemGroup(placement: .bottomBar) {
+                #if DEBUG
+                Button("Toggle Premium") {
+                    subscriptionManager.debugSetSubscribed(!subscriptionManager.isSubscribed)
+                }
+                #endif
                 
                 Spacer()
             }
-            .padding(.leading, sliderValue > 0 ? sliderValue : 0)
-            
-            // Slider thumb
-            Circle()
-                .fill(Color(hex: "FF5A5F"))
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Image(systemName: "phone.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.white)
-                )
-                .offset(x: sliderValue)
-                .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            // Calculate slider position
-                            let maxSlide = UIScreen.main.bounds.width - 100
-                            let newValue = min(max(0, value.translation.width), maxSlide)
-                            sliderValue = newValue
-                            
-                            // Trigger call if slid to the end
-                            if newValue >= maxSlide {
-                                onEmergencyCall()
-                                // Reset after delay
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                    withAnimation {
-                                        sliderValue = 0
-                                    }
-                                }
-                            }
-                        }
-                        .onEnded { _ in
-                            // Reset if not slid to the end
-                            withAnimation {
-                                sliderValue = 0
-                            }
-                        }
-                )
-                .padding(.leading, 5)
         }
-    }
-}
-
-// Extension for hex colors
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (1, 1, 1, 0)
-        }
-        
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue:  Double(b) / 255,
-            opacity: Double(a) / 255
-        )
     }
 }
 
@@ -328,50 +349,4 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
     }
-}
-
-// These are placeholders for the views that would be in separate files
-struct MotivationView: View {
-    var body: some View {
-        Text("Motivation View")
-    }
-}
-
-struct ResourcesView: View {
-    var body: some View {
-        Text("Resources View")
-    }
-}
-
-struct DonateView: View {
-    var body: some View {
-        Text("Donate View")
-    }
-}
-
-// Todo Manager class needed for TodoView
-class TodoManager: ObservableObject {
-    @Published var items: [TodoItem] = []
-    
-    func addTodo(_ title: String) {
-        let newItem = TodoItem(title: title)
-        items.append(newItem)
-    }
-    
-    func toggleTodo(_ item: TodoItem) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].isCompleted.toggle()
-        }
-    }
-    
-    func removeTodo(_ item: TodoItem) {
-        items.removeAll { $0.id == item.id }
-    }
-}
-
-// Todo Item model needed for TodoView
-struct TodoItem: Identifiable {
-    var id = UUID()
-    var title: String
-    var isCompleted = false
 }

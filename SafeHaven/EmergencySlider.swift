@@ -8,6 +8,7 @@ struct EmergencySlider: View {
     @State private var showingEmergencyAlert = false
     @State private var emergencyContacts: [EmergencyContact] = []
     @State private var customMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     let sliderWidth: CGFloat = UIScreen.main.bounds.width - 80
     let sliderHeight: CGFloat = 64
@@ -105,6 +106,13 @@ struct EmergencySlider: View {
     }
     
     private func triggerEmergency() {
+        // Only allow emergency calls if subscribed
+        if !subscriptionManager.isSubscribed {
+            // This is a safeguard that shouldn't be needed since the UI shouldn't allow
+            // non-subscribers to interact with this component
+            return
+        }
+        
         // Show confirmation alert
         showingEmergencyAlert = true
         

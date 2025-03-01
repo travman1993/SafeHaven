@@ -60,14 +60,14 @@
 		265795202D7109B100C74097 /* Exceptions for "SafeHaven" folder in "SafeHavenTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				GoogleService_plist.plist,
+				"GoogleService-Info.plist",
 			);
 			target = 26A83BFF2D6C08B4009D50B4 /* SafeHavenTests */;
 		};
 		265795212D7109B100C74097 /* Exceptions for "SafeHaven" folder in "SafeHavenUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				GoogleService_plist.plist,
+				"GoogleService-Info.plist",
 			);
 			target = 26A83C092D6C08B4009D50B4 /* SafeHavenUITests */;
 		};

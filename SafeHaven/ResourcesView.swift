@@ -1,8 +1,10 @@
 import SwiftUI
 import MapKit
 import CoreLocation
+import Firebase
+import FirebaseFirestore
 
-// Simplified Resource Category
+// Resource Category Enum
 enum ResourceCategory: String, CaseIterable, Identifiable {
     case all = "All"
     case shelter = "Shelter"
@@ -31,7 +33,7 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
 
 // Resource model
 struct ResourceLocation: Identifiable {
-    let id = UUID()
+    let id: String
     let name: String
     let category: ResourceCategory
     let address: String
@@ -45,19 +47,56 @@ struct ResourceLocation: Identifiable {
     let hours: String?
     let services: [String]
     
-    init(name: String, category: ResourceCategory, address: String, phoneNumber: String,
-         description: String, coordinate: CLLocationCoordinate2D,
-         website: String? = nil, hours: String? = nil, services: [String] = []) {
+    init(id: String = UUID().uuidString,
+         name: String,
+         category: ResourceCategory,
+         address: String,
+         phoneNumber: String,
+         description: String,
+         latitude: Double,
+         longitude: Double,
+         website: String? = nil,
+         hours: String? = nil,
+         services: [String] = []) {
+        
+        self.id = id
         self.name = name
         self.category = category
         self.address = address
         self.phoneNumber = phoneNumber
         self.description = description
-        self.coordinate = coordinate
+        self.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         self.icon = category.icon
         self.website = website
         self.hours = hours
         self.services = services
+    }
+    
+    // Initialize from Firestore data
+    init?(documentID: String, data: [String: Any]) {
+        guard let name = data["name"] as? String,
+              let categoryString = data["category"] as? String,
+              let address = data["address"] as? String,
+              let phoneNumber = data["phoneNumber"] as? String,
+              let description = data["description"] as? String,
+              let latitude = data["latitude"] as? Double,
+              let longitude = data["longitude"] as? Double else {
+            return nil
+        }
+        
+        let category = ResourceCategory(rawValue: categoryString) ?? .all
+        
+        self.id = documentID
+        self.name = name
+        self.category = category
+        self.address = address
+        self.phoneNumber = phoneNumber
+        self.description = description
+        self.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        self.icon = category.icon
+        self.website = data["website"] as? String
+        self.hours = data["hours"] as? String
+        self.services = data["services"] as? [String] ?? []
     }
 }
 
@@ -83,72 +122,168 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
+        
+        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
+            startUpdatingLocation()
+        }
+        
+        print("Location authorization status: \(authorizationStatus.rawValue)")
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+        print("Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
         userLocation = location.coordinate
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("Location error: \(error.localizedDescription)")
+    }
+}
+
+// Firestore Service
+class ResourceService: ObservableObject {
+    private let db = Firestore.firestore()
+    @Published var resources: [ResourceLocation] = []
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    
+    func fetchResources(near coordinate: CLLocationCoordinate2D, radius: Double = 50.0) {
+        isLoading = true
+        errorMessage = nil
+        
+        // For simulator testing - add these print statements
+        print("Fetching resources near: \(coordinate.latitude), \(coordinate.longitude)")
+        
+        // Convert to miles (approximate)
+        let radiusInMiles = radius * 0.621371
+        
+        // Firestore doesn't support geospatial queries directly in this way
+        // This is a simplified version - in a real app you might use Firebase GeoFirestore
+        // or implement server-side filtering
+        
+        db.collection("resources")
+            .getDocuments { [weak self] snapshot, error in
+                guard let self = self else { return }
+                
+                self.isLoading = false
+                
+                if let error = error {
+                    self.errorMessage = "Error fetching resources: \(error.localizedDescription)"
+                    print(self.errorMessage ?? "")
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else {
+                    self.errorMessage = "No resources found"
+                    return
+                }
+                
+                // Process results
+                var fetchedResources: [ResourceLocation] = []
+                
+                for document in documents {
+                    if let resource = ResourceLocation(documentID: document.documentID, data: document.data()) {
+                        // Here we calculate distance to filter resources
+                        // In a proper implementation this would be done server-side
+                        let resourceLocation = CLLocation(latitude: resource.coordinate.latitude,
+                                                         longitude: resource.coordinate.longitude)
+                        let userLocation = CLLocation(latitude: coordinate.latitude,
+                                                     longitude: coordinate.longitude)
+                        
+                        let distanceInMiles = resourceLocation.distance(from: userLocation) / 1609.344 // convert meters to miles
+                        
+                        if distanceInMiles <= radiusInMiles {
+                            fetchedResources.append(resource)
+                        }
+                    }
+                }
+                
+                self.resources = fetchedResources
+                print("Fetched \(fetchedResources.count) resources within \(radiusInMiles) miles")
+                
+                // For testing in simulator when no resources are available near test location
+                if fetchedResources.isEmpty {
+                    self.addLocalTestResources(near: coordinate)
+                }
+            }
+    }
+    
+    // Add local test resources for simulator testing when no Firebase data is available
+    private func addLocalTestResources(near coordinate: CLLocationCoordinate2D) {
+        print("Adding local test resources near \(coordinate.latitude), \(coordinate.longitude)")
+        
+        // Create resources near the given coordinate
+        let resources = [
+            ResourceLocation(
+                name: "Local Food Bank",
+                category: .food,
+                address: "123 Main St",
+                phoneNumber: "(555) 123-4567",
+                description: "Community food bank providing assistance to those in need.",
+                latitude: coordinate.latitude + 0.01,
+                longitude: coordinate.longitude - 0.01,
+                hours: "Mon-Fri 9am-5pm",
+                services: ["Food pantry", "Meal service", "Grocery assistance"]
+            ),
+            ResourceLocation(
+                name: "Emergency Shelter",
+                category: .shelter,
+                address: "456 Oak Avenue",
+                phoneNumber: "(555) 987-6543",
+                description: "Emergency shelter providing temporary housing for individuals and families.",
+                latitude: coordinate.latitude - 0.005,
+                longitude: coordinate.longitude + 0.008,
+                hours: "24/7",
+                services: ["Emergency shelter", "Case management", "Referrals"]
+            ),
+            ResourceLocation(
+                name: "Community Health Clinic",
+                category: .healthcare,
+                address: "789 Elm Street",
+                phoneNumber: "(555) 456-7890",
+                description: "Nonprofit clinic providing healthcare services to underserved populations.",
+                latitude: coordinate.latitude + 0.003,
+                longitude: coordinate.longitude + 0.005,
+                hours: "Mon-Sat 8am-8pm",
+                services: ["Primary care", "Mental health", "Dental services"]
+            ),
+            ResourceLocation(
+                name: "Youth Support Center",
+                category: .support,
+                address: "101 Pine Road",
+                phoneNumber: "(555) 234-5678",
+                description: "Support services for youth including counseling, education, and job training.",
+                latitude: coordinate.latitude - 0.008,
+                longitude: coordinate.longitude - 0.003,
+                hours: "Mon-Fri 10am-6pm",
+                services: ["Counseling", "Education support", "Job readiness"]
+            )
+        ]
+        
+        self.resources = resources
     }
 }
 
 struct ResourcesView: View {
     @StateObject private var locationManager = LocationManager()
+    @StateObject private var resourceService = ResourceService()
+    
     @State private var selectedCategory: ResourceCategory = .all
     @State private var searchText: String = ""
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-    )
+    @State private var viewMode: String = "map" // "map" or "list"
     @State private var selectedResource: ResourceLocation?
     @State private var showingResourceDetails = false
-    @State private var viewMode: String = "map" // "map" or "list"
     
-    // Sample data - in a real app, this would come from an API or database
-    let resourceLocations = [
-        ResourceLocation(
-            name: "Community Shelter",
-            category: .shelter,
-            address: "123 Main St, San Francisco, CA",
-            phoneNumber: "(555) 123-4567",
-            description: "Emergency shelter providing temporary housing for individuals and families in need.",
-            coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-            hours: "24/7",
-            services: ["Emergency shelter", "Meals", "Case management"]
-        ),
-        ResourceLocation(
-            name: "Hope Food Bank",
-            category: .food,
-            address: "456 Market St, San Francisco, CA",
-            phoneNumber: "(555) 987-6543",
-            description: "Food bank providing groceries and meals to those experiencing food insecurity.",
-            coordinate: CLLocationCoordinate2D(latitude: 37.7829, longitude: -122.4190),
-            hours: "Mon-Fri 9am-5pm",
-            services: ["Food pantry", "Hot meals", "Grocery delivery"]
-        ),
-        ResourceLocation(
-            name: "Wellness Clinic",
-            category: .healthcare,
-            address: "789 Powell St, San Francisco, CA",
-            phoneNumber: "(555) 456-7890",
-            description: "Free and low-cost healthcare services for uninsured and underinsured individuals.",
-            coordinate: CLLocationCoordinate2D(latitude: 37.7699, longitude: -122.4120),
-            hours: "Mon-Sat 8am-6pm",
-            services: ["Medical care", "Mental health", "Prescriptions"]
-        ),
-        ResourceLocation(
-            name: "Youth Support Center",
-            category: .support,
-            address: "321 Mission St, San Francisco, CA",
-            phoneNumber: "(555) 234-5678",
-            description: "Support services specifically for youth including counseling, education assistance, and job training.",
-            coordinate: CLLocationCoordinate2D(latitude: 37.7859, longitude: -122.4250),
-            hours: "Mon-Fri 10am-8pm",
-            services: ["Counseling", "Education support", "Job training"]
-        )
-    ]
+    // Default to a reasonable location until we get user's location
+    @State private var region = MKCoordinateRegion(
+        // Default to Atlanta for testing
+        center: CLLocationCoordinate2D(latitude: 33.749, longitude: -84.388),
+        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+    )
     
     var filteredResources: [ResourceLocation] {
-        resourceLocations.filter { resource in
+        resourceService.resources.filter { resource in
             (selectedCategory == .all || resource.category == selectedCategory) &&
             (searchText.isEmpty ||
              resource.name.lowercased().contains(searchText.lowercased()) ||
@@ -220,8 +355,109 @@ struct ResourcesView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 
-                if viewMode == "map" {
-                    // Map view
+                if resourceService.isLoading {
+                    Spacer()
+                    ProgressView("Loading resources...")
+                        .progressViewStyle(CircularProgressViewStyle())
+                    Spacer()
+                } else if let errorMessage = resourceService.errorMessage {
+                    Spacer()
+                    VStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 50))
+                            .foregroundColor(.orange)
+                            .padding()
+                        
+                        Text(errorMessage)
+                            .font(.headline)
+                            .multilineTextAlignment(.center)
+                            .padding()
+                        
+                        Button("Retry") {
+                            if let userLocation = locationManager.userLocation {
+                                resourceService.fetchResources(near: userLocation)
+                            } else {
+                                // Use default location if user location is not available
+                                resourceService.fetchResources(near: region.center)
+                            }
+                        }
+                        .padding()
+                        .background(Color(hex: "6A89CC"))
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                    }
+                    .padding()
+                    Spacer()
+                } else                 if viewMode == "map" {
+                    // Map view with iOS 17 compatible API
+                    #if swift(>=5.9) && canImport(MapKit)
+                    if #available(iOS 17.0, *) {
+                        Map(initialPosition: MapCameraPosition.region(region)) {
+                            UserLocation()
+                            ForEach(filteredResources) { resource in
+                                Annotation(resource.name, coordinate: resource.coordinate) {
+                                    VStack {
+                                        ZStack {
+                                            Circle()
+                                                .fill(Color(hex: "6A89CC"))
+                                                .frame(width: 44, height: 44)
+                                                .shadow(radius: 3)
+                                            
+                                            Image(systemName: resource.icon)
+                                                .font(.system(size: 20))
+                                                .foregroundColor(.white)
+                                        }
+                                        
+                                        Text(resource.name)
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.black)
+                                            .padding(6)
+                                            .background(Color.white.opacity(0.9))
+                                            .cornerRadius(4)
+                                            .shadow(radius: 1)
+                                    }
+                                    .onTapGesture {
+                                        selectedResource = resource
+                                        showingResourceDetails = true
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Fallback for iOS 16 and earlier
+                        Map(coordinateRegion: $region, showsUserLocation: true, annotationItems: filteredResources) { resource in
+                            MapAnnotation(coordinate: resource.coordinate) {
+                                VStack {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color(hex: "6A89CC"))
+                                            .frame(width: 44, height: 44)
+                                            .shadow(radius: 3)
+                                        
+                                        Image(systemName: resource.icon)
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.white)
+                                    }
+                                    
+                                    Text(resource.name)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.black)
+                                        .padding(6)
+                                        .background(Color.white.opacity(0.9))
+                                        .cornerRadius(4)
+                                        .shadow(radius: 1)
+                                }
+                                .onTapGesture {
+                                    selectedResource = resource
+                                    showingResourceDetails = true
+                                }
+                            }
+                        }
+                    }
+                    #else
+                    // Fallback for older Swift versions
                     Map(coordinateRegion: $region, showsUserLocation: true, annotationItems: filteredResources) { resource in
                         MapAnnotation(coordinate: resource.coordinate) {
                             VStack {
@@ -251,19 +487,39 @@ struct ResourcesView: View {
                             }
                         }
                     }
+                    #endif
                 } else {
                     // List view
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            ForEach(filteredResources) { resource in
-                                ResourceCard(resource: resource)
-                                    .onTapGesture {
-                                        selectedResource = resource
-                                        showingResourceDetails = true
-                                    }
-                            }
+                    if filteredResources.isEmpty {
+                        Spacer()
+                        VStack {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 50))
+                                .foregroundColor(Color(hex: "6A89CC"))
+                                .padding()
+                            
+                            Text("No resources found")
+                                .font(.headline)
+                                .padding(.bottom, 4)
+                            
+                            Text("Try adjusting your filters or search terms")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
                         }
-                        .padding()
+                        Spacer()
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 16) {
+                                ForEach(filteredResources) { resource in
+                                    ResourceCard(resource: resource)
+                                        .onTapGesture {
+                                            selectedResource = resource
+                                            showingResourceDetails = true
+                                        }
+                                }
+                            }
+                            .padding()
+                        }
                     }
                 }
             }
@@ -314,30 +570,44 @@ struct ResourcesView: View {
             }
         }
         .onAppear {
+            print("ResourcesView appeared")
+            
             // Request location if not already authorized
             if locationManager.authorizationStatus == .notDetermined {
                 locationManager.requestLocationPermission()
+            } else if locationManager.authorizationStatus == .authorizedWhenInUse ||
+                      locationManager.authorizationStatus == .authorizedAlways {
+                locationManager.startUpdatingLocation()
             }
             
-            locationManager.startUpdatingLocation()
+            // For simulator testing, force location to Atlanta
+            #if targetEnvironment(simulator)
+            print("Running in simulator - setting default location to Atlanta")
+            let atlantaLocation = CLLocationCoordinate2D(latitude: 33.749, longitude: -84.388)
+            region = MKCoordinateRegion(
+                center: atlantaLocation,
+                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+            )
             
-            // Center map on user's location when available
-            if let userLocation = locationManager.userLocation {
-                region = MKCoordinateRegion(
-                    center: userLocation,
-                    span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                )
-            }
+            // Also fetch resources near this location
+            resourceService.fetchResources(near: atlantaLocation)
+            #endif
         }
+        // Using onReceive instead of onChange because CLLocationCoordinate2D is not Equatable
         .onReceive(locationManager.$userLocation.compactMap { $0 }) { location in
+            print("User location updated to: \(location.latitude), \(location.longitude)")
             region = MKCoordinateRegion(
                 center: location,
                 span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
             )
+            
+            // Fetch resources near this location
+            resourceService.fetchResources(near: location)
         }
     }
 }
 
+// Helper components remain mostly the same
 struct ResourceCard: View {
     let resource: ResourceLocation
     
@@ -571,12 +841,34 @@ struct ResourceDetailView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(Color(hex: "2D3748"))
                         
+                        // Detail map view with iOS 17 compatibility
+                        #if swift(>=5.9) && canImport(MapKit)
+                        if #available(iOS 17.0, *) {
+                            Map(initialPosition: MapCameraPosition.region(MKCoordinateRegion(
+                                center: resource.coordinate,
+                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            ))) {
+                                Marker(resource.name, coordinate: resource.coordinate)
+                                    .tint(Color(hex: "6A89CC"))
+                            }
+                        } else {
+                            // Fallback for iOS 16 and earlier
+                            Map(coordinateRegion: .constant(MKCoordinateRegion(
+                                center: resource.coordinate,
+                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            )), annotationItems: [resource]) { location in
+                                MapMarker(coordinate: location.coordinate, tint: Color(hex: "6A89CC"))
+                            }
+                        }
+                        #else
+                        // Fallback for older Swift versions
                         Map(coordinateRegion: .constant(MKCoordinateRegion(
                             center: resource.coordinate,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                         )), annotationItems: [resource]) { location in
                             MapMarker(coordinate: location.coordinate, tint: Color(hex: "6A89CC"))
                         }
+                        #endif
                         .frame(height: 200)
                         .cornerRadius(8)
                     }
@@ -598,3 +890,35 @@ struct ResourceDetailView: View {
         }
     }
 }
+
+// Helper extension for hex colors (only add if not already defined elsewhere in your app)
+#if !canImport(ColorHexExtension)
+extension Color {
+    static func hex(_ hex: String) -> Self {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        return Color(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+
+// Maintain backward compatibility with existing code
+
+#endif

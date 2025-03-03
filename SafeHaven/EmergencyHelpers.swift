@@ -18,9 +18,9 @@ class EmergencyServices {
     }
     
     static func getCurrentLocationString() -> String {
-        // In a real app, you would implement proper location services
-        // This is a placeholder
-        return "Location services not available"
+        // We'll return a general location description for safety
+        // A real implementation would use the CLLocationManager data
+        return "my current location"
     }
     
     static func sendEmergencyTexts(to contacts: [EmergencyContact], withMessage message: String) {
@@ -32,7 +32,19 @@ class EmergencyServices {
         
         // This is for demonstration purposes only
         for contact in contacts {
-            print("Would send '\(personalizedMessage)' to \(contact.name) at \(contact.phoneNumber)")
+            sendTextMessage(to: contact.phoneNumber, message: personalizedMessage)
+        }
+    }
+    
+    static func sendTextMessage(to phoneNumber: String, message: String) {
+        // Format the phone number to remove any spaces or special characters
+        let formattedNumber = phoneNumber.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+        
+        // Create the SMS URL
+        if let url = URL(string: "sms:\(formattedNumber)&body=\(message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
+            DispatchQueue.main.async {
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            }
         }
     }
 }

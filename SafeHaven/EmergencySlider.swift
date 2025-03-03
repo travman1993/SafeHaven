@@ -116,11 +116,10 @@ struct EmergencySlider: View {
         // Show confirmation alert
         showingEmergencyAlert = true
         
-        // In a real app, we would:
-        // 1. Call the emergency number
+        // This will initiate a call to emergency services
         onEmergencyCall()
         
-        // 2. Send text messages to emergency contacts
+        // Send text messages to emergency contacts
         sendEmergencyTexts()
         
         // Provide haptic feedback
@@ -136,22 +135,15 @@ struct EmergencySlider: View {
     }
     
     private func sendEmergencyTexts() {
-        // In a real app, this would use MessageUI or other APIs to send texts
-        // with the user's current location
-        print("Sending emergency texts to \(emergencyContacts.count) contacts")
+        // Get current location
+        let locationString = EmergencyServices.getCurrentLocationString()
         
-        // This is where you'd implement actual SMS functionality
-        // Example of what the real implementation might look like:
+        // Replace placeholder in message
+        let personalizedMessage = customMessage.replacingOccurrences(of: "[Location]", with: locationString)
         
-        // 1. Get current location
-        // let locationString = getCurrentLocationString()
-        
-        // 2. Replace placeholder in message
-        // let personalizedMessage = customMessage.replacingOccurrences(of: "[Location]", with: locationString)
-        
-        // 3. Send to each contact
-        // for contact in emergencyContacts {
-        //     sendSMS(to: contact.phoneNumber, message: personalizedMessage)
-        // }
+        // Send to each contact
+        for contact in emergencyContacts {
+            EmergencyServices.sendTextMessage(to: contact.phoneNumber, message: personalizedMessage)
+        }
     }
 }

@@ -343,17 +343,6 @@ struct ContentView: View {
             }
         }
         // Debug toolbar to toggle subscription status - REMOVE THIS FOR PRODUCTION
-        .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
-                #if DEBUG
-                Button("Toggle Premium") {
-                    subscriptionManager.debugSetSubscribed(!subscriptionManager.isSubscribed)
-                }
-                #endif
-                
-                Spacer()
-            }
-        }
     }
 }
 

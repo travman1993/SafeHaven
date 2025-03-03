@@ -63,11 +63,6 @@ class SubscriptionManager: ObservableObject {
             return false
         }
     }
-    
-    // Debug helpers
-    func debugSetSubscribed(_ value: Bool) {
-        isSubscribed = value
-    }
 }
 
 // Extension for product price formatting

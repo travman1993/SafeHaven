@@ -1,9 +1,6 @@
-import Foundation
 import SwiftUI
-import CloudKit
-import WeatherKit
 import CoreLocation
-import AuthenticationServices
+import MapKit
 
 // MARK: - Resource Model
 struct ResourceLocation: Identifiable, Hashable, Equatable {

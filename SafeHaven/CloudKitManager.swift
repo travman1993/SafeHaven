@@ -6,7 +6,6 @@
 //
 import Foundation
 import CloudKit
-import SwiftUI
 
 class CloudKitManager: ObservableObject {
     // Singleton instance

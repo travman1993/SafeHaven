@@ -6,11 +6,8 @@
 //
 
 import Foundation
-import SwiftUI
 import CloudKit
-import WeatherKit
 import CoreLocation
-import AuthenticationServices
 
 class LocationService: NSObject, ObservableObject {
     private let locationManager = CLLocationManager()

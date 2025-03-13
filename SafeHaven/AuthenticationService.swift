@@ -6,11 +6,8 @@
 //
 
 import Foundation
-import SwiftUI
-import CloudKit
-import WeatherKit
-import CoreLocation
 import AuthenticationServices
+import SwiftUI
 
 class AuthenticationService: ObservableObject {
     @Published var isSignedIn = false

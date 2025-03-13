@@ -29,12 +29,21 @@ enum WeatherCondition: Codable {
     case windy
     case hot
     case cold
-    case sunFlurries
-    case sunShowers
-    case sleet
-    case blowingSnow
-    case blizzard
-    case unknown
+    // existing cases...
+
+    // Static methods to resolve 'no member' errors
+    static func fog(_ condition: WeatherCondition) -> Bool {
+        return condition == .fog
+    }
+
+    static func wind(_ condition: WeatherCondition) -> Bool {
+        return condition == .windy
+    }
+
+    static func cold(_ condition: WeatherCondition) -> Bool {
+        return condition == .cold
+    }
+}
     
     // Conversion initializer from WeatherKit's condition
     init(from weatherKitCondition: WeatherKit.WeatherCondition) {

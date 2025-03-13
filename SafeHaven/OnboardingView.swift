@@ -4,12 +4,8 @@
 //
 //  Created by Travis Rodriguez on 2/26/25.
 //
-import Foundation
 import SwiftUI
-import CloudKit
-import WeatherKit
 import CoreLocation
-import AuthenticationServices
 
 struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool

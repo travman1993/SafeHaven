@@ -41,11 +41,26 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
     case shelter = "Shelter"
     case food = "Food"
     case healthcare = "Healthcare"
+    case mentalHealth = "Mental Health"
     case support = "Support"
     case legal = "Legal Aid"
     case financial = "Financial"
     case education = "Education"
-
+    case childcare = "Childcare"
+    case employment = "Employment"
+    case transportation = "Transportation"
+    case clothing = "Clothing"
+    case veterans = "Veterans"
+    case lgbtq = "LGBTQ+"
+    case seniors = "Seniors"
+    case disabilities = "Disabilities"
+    case addiction = "Addiction"
+    case domesticViolence = "Domestic Violence"
+    case immigrants = "Immigrants"
+    case youth = "Youth"
+    case women = "Women"
+    case men = "Men"
+    
     var id: String { rawValue }
 
     var icon: String {
@@ -54,10 +69,25 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
         case .shelter: return "house.fill"
         case .food: return "fork.knife"
         case .healthcare: return "cross.fill"
+        case .mentalHealth: return "brain.head.profile"
         case .support: return "person.2.fill"
         case .legal: return "building.columns.fill"
         case .financial: return "dollarsign.circle.fill"
         case .education: return "book.fill"
+        case .childcare: return "figure.and.child.holdinghands"
+        case .employment: return "briefcase.fill"
+        case .transportation: return "car.fill"
+        case .clothing: return "tshirt.fill"
+        case .veterans: return "shield.fill"
+        case .lgbtq: return "person.fill.questionmark"
+        case .seniors: return "figure.roll"
+        case .disabilities: return "figure.roll.runningpace"
+        case .addiction: return "pills.fill"
+        case .domesticViolence: return "house.and.flag.fill"
+        case .immigrants: return "globe.americas.fill"
+        case .youth: return "figure.child"
+        case .women: return "figure.dress"
+        case .men: return "figure"
         }
     }
 
@@ -67,10 +97,25 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
         case .shelter: return Color(hex: "6A89CC")
         case .food: return .green
         case .healthcare: return .red
+        case .mentalHealth: return Color(hex: "9370DB") // Medium purple
         case .support: return .blue
         case .legal: return .purple
         case .financial: return .orange
         case .education: return .teal
+        case .childcare: return Color(hex: "FF6B6B") // Coral
+        case .employment: return Color(hex: "4A90E2") // Blue
+        case .transportation: return Color(hex: "50C878") // Emerald
+        case .clothing: return Color(hex: "FF7F50") // Coral
+        case .veterans: return Color(hex: "4682B4") // Steel blue
+        case .lgbtq: return Color(hex: "FF1493") // Deep pink
+        case .seniors: return Color(hex: "DEB887") // Burlywood
+        case .disabilities: return Color(hex: "20B2AA") // Light sea green
+        case .addiction: return Color(hex: "9932CC") // Dark orchid
+        case .domesticViolence: return Color(hex: "DC143C") // Crimson
+        case .immigrants: return Color(hex: "32CD32") // Lime green
+        case .youth: return Color(hex: "FFD700") // Gold
+        case .women: return Color(hex: "FF69B4") // Hot pink
+        case .men: return Color(hex: "1E90FF") // Dodger blue
         }
     }
 }
@@ -180,6 +225,46 @@ class ResourceService: ObservableObject {
                     website: "www.adulteducation.org",
                     hours: "Mon-Thu: 8am-8pm, Fri: 8am-5pm",
                     services: ["GED Classes", "ESL Classes", "Computer Skills", "Job Training"]
+                ),
+                // Add sample data for additional categories
+                ResourceLocation(
+                    id: "8",
+                    name: "Mental Health Clinic",
+                    category: .mentalHealth,
+                    address: "555 Pine Street, Anytown, USA",
+                    phoneNumber: "555-111-2222",
+                    description: "Offers counseling, therapy, and psychiatric services at low or no cost for individuals in need.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.752, longitude: -84.380),
+                    icon: "brain.head.profile",
+                    website: "www.mentalhealthclinic.org",
+                    hours: "Mon-Fri: 9am-5pm",
+                    services: ["Individual Therapy", "Group Therapy", "Crisis Intervention", "Medication Management"]
+                ),
+                ResourceLocation(
+                    id: "9",
+                    name: "Women's Resource Center",
+                    category: .women,
+                    address: "666 Oak Avenue, Anytown, USA",
+                    phoneNumber: "555-333-4444",
+                    description: "Provides support, advocacy, and resources specifically for women facing challenges or crisis situations.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.748, longitude: -84.385),
+                    icon: "figure.dress",
+                    website: "www.womensresourcecenter.org",
+                    hours: "Mon-Sat: 8am-8pm",
+                    services: ["Crisis Support", "Housing Assistance", "Employment Resources", "Health Services"]
+                ),
+                ResourceLocation(
+                    id: "10",
+                    name: "Youth Outreach Center",
+                    category: .youth,
+                    address: "777 Maple Street, Anytown, USA",
+                    phoneNumber: "555-555-6666",
+                    description: "Dedicated to supporting youth with education, career development, and social services.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.751, longitude: -84.391),
+                    icon: "figure.child",
+                    website: "www.youthoutreach.org",
+                    hours: "Mon-Fri: 10am-7pm, Sat: 10am-4pm",
+                    services: ["Tutoring", "Mentorship", "Recreation", "Career Guidance"]
                 )
             ]
         }

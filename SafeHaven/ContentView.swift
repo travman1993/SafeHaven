@@ -507,12 +507,21 @@ struct ContentView: View {
     private func getTimeBasedGreeting() -> String {
         let hour = Calendar.current.component(.hour, from: Date())
         
+        let greeting: String
         if hour < 12 {
-            return "Good Morning"
+            greeting = "Good Morning"
         } else if hour < 17 {
-            return "Good Afternoon"
+            greeting = "Good Afternoon"
         } else {
-            return "Good Evening"
+            greeting = "Good Evening"
+        }
+        
+        // Add the user's first name if available
+        if let fullName = authService.fullName {
+            let firstName = fullName.givenName ?? ""
+            return "\(greeting), \(firstName)"
+        } else {
+            return greeting
         }
     }
     

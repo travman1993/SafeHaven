@@ -4,6 +4,7 @@
 //
 //  Created by Travis Rodriguez on 2/26/25.
 //
+
 import SwiftUI
 import CoreLocation
 
@@ -11,137 +12,208 @@ struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
     @StateObject private var locationPermission = LocationPermissionManager()
     @State private var currentPage = 0
+    var onComplete: () -> Void
     
+    // Add initializer to make onComplete required
+    init(hasCompletedOnboarding: Binding<Bool>, onComplete: @escaping () -> Void) {
+        self._hasCompletedOnboarding = hasCompletedOnboarding
+        self.onComplete = onComplete
+    }
+    // Enhanced pages with more detailed content
     let pages = [
         OnboardingPage(
-            title: "Welcome to Safe Haven",
-            subtitle: "Find safety and support when you need it most",
-            image: "house.fill",
-            description: "Safe Haven is designed to help you quickly find resources and emergency assistance when you need them."
+            title: "Welcome to SafeHaven",
+            subtitle: "Your lifeline in times of need",
+            image: "hand.raised.fill",
+            description: "SafeHaven helps you quickly find resources, emergency assistance, and support services when you need them most."
         ),
         OnboardingPage(
             title: "Emergency SOS",
-            subtitle: "Quick access to emergency services",
+            subtitle: "Help is just a slide away",
             image: "exclamationmark.shield.fill",
-            description: "Our emergency slider lets you quickly call 911 and send pre-configured emergency texts to your trusted contacts with your location."
+            description: "Our emergency slider lets you quickly call 911 and automatically sends your location to your trusted emergency contacts."
+        ),
+        OnboardingPage(
+            title: "Find Resources",
+            subtitle: "Connect with local support services",
+            image: "mappin.and.ellipse",
+            description: "Locate nearby shelters, food banks, healthcare providers, mental health services, and many other essential resources."
         ),
         OnboardingPage(
             title: "Location Services",
-            subtitle: "Share your location only when needed",
+            subtitle: "Privacy & safety under your control",
             image: "location.fill",
-            description: "We'll only access your location when you use the emergency feature or when looking for nearby resources."
+            description: "We'll only access your location when you use the emergency feature or when looking for nearby resources. Your location data is never stored or shared without your permission."
+        ),
+        OnboardingPage(
+            title: "Daily Motivation & Journal",
+            subtitle: "Track your progress and stay inspired",
+            image: "heart.text.square.fill",
+            description: "Build resilience with daily motivation quotes and track your journey with our private journal feature."
         ),
         OnboardingPage(
             title: "Ready to Get Started?",
-            subtitle: "Let's set up your emergency contacts",
-            image: "checkmark.circle.fill",
-            description: "Add up to 5 emergency contacts who will receive your custom message with your location during an emergency."
+            subtitle: "Set up your safety network",
+            image: "checkmark.shield.fill",
+            description: "Add emergency contacts, customize your preferences, and create your personal safety plan in just a few steps."
         )
     ]
     
     var body: some View {
-        VStack {
-            TabView(selection: $currentPage) {
-                ForEach(0..<pages.count, id: \.self) { index in
-                    VStack(spacing: 30) {
-                        Spacer()
-                        
-                        Image(systemName: pages[index].image)
-                            .font(.system(size: 80))
-                            .foregroundColor(Color(hex: "6A89CC"))
-                        
-                        Text(pages[index].title)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(hex: "2D3748"))
-                        
-                        Text(pages[index].subtitle)
-                            .font(.system(size: 18, weight: .medium, design: .rounded))
-                            .foregroundColor(Color(hex: "6A89CC"))
-                        
-                        Text(pages[index].description)
-                            .font(.system(size: 16))
-                            .foregroundColor(Color(hex: "718096"))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 30)
-                        
-                        Spacer()
-                        
-                        // Location permission request button on the location page
-                        if index == 2 && !locationPermission.isAuthorized {
-                            Button(action: {
-                                locationPermission.requestPermission()
-                            }) {
-                                Text("Allow Location Access")
-                                    .font(.system(size: 18, weight: .semibold))
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [Color(hex: "F8F9FA"), Color(hex: "E9ECEF")]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Progress bar
+                HStack(spacing: 4) {
+                    ForEach(0..<pages.count, id: \.self) { index in
+                        Capsule()
+                            .fill(currentPage >= index ? AppTheme.primary : Color.gray.opacity(0.3))
+                            .frame(height: 4)
+                            .animation(.spring(), value: currentPage)
+                    }
+                }
+                .padding(.horizontal, 40)
+                .padding(.top, 20)
+                
+                // Page content
+                TabView(selection: $currentPage) {
+                    ForEach(0..<pages.count, id: \.self) { index in
+                        VStack(spacing: 30) {
+                            Spacer()
+                            
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        gradient: Gradient(colors: [AppTheme.primary.opacity(0.8), AppTheme.secondary]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                                    .frame(width: 120, height: 120)
+                                
+                                Image(systemName: pages[index].image)
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.white)
+                            }
+                            .shadow(color: AppTheme.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                            
+                            VStack(spacing: 12) {
+                                Text(pages[index].title)
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                                    .foregroundColor(AppTheme.textPrimary)
+                                    .multilineTextAlignment(.center)
+                                
+                                Text(pages[index].subtitle)
+                                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                                    .foregroundColor(AppTheme.primary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            
+                            Text(pages[index].description)
+                                .font(.system(size: 16))
+                                .foregroundColor(AppTheme.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 40)
+                                .padding(.top, 8)
+                            
+                            Spacer()
+                            
+                            // Location permission request button on the location page
+                            if index == 3 && !locationPermission.isAuthorized {
+                                Button(action: {
+                                    locationPermission.requestPermission()
+                                }) {
+                                    HStack {
+                                        Image(systemName: "location.fill")
+                                        Text("Allow Location Access")
+                                    }
+                                    .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(.white)
                                     .padding(.vertical, 16)
                                     .padding(.horizontal, 24)
-                                    .background(Color(hex: "6A89CC"))
+                                    .background(AppTheme.primary)
                                     .cornerRadius(12)
+                                    .shadow(color: AppTheme.primary.opacity(0.3), radius: 5, x: 0, y: 3)
+                                }
+                                .padding(.bottom, 40)
                             }
-                            .padding(.bottom, 20)
                         }
+                        .tag(index)
+                        .padding(.bottom, 80)
                     }
-                    .tag(index)
                 }
-            }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
-            
-            // Navigation buttons
-            HStack {
-                if currentPage > 0 {
-                    Button(action: {
-                        withAnimation {
-                            currentPage -= 1
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                
+                // Navigation buttons
+                HStack {
+                    // Back button
+                    if currentPage > 0 {
+                        Button(action: {
+                            withAnimation {
+                                currentPage -= 1
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left")
+                                Text("Back")
+                            }
+                            .foregroundColor(AppTheme.primary)
+                            .padding()
                         }
-                    }) {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                        .foregroundColor(Color(hex: "6A89CC"))
-                        .padding()
+                    } else {
+                        Spacer()
+                            .frame(width: 80)
                     }
-                } else {
+                    
                     Spacer()
-                }
-                
-                Spacer()
-                
-                if currentPage < pages.count - 1 {
-                    Button(action: {
-                        withAnimation {
-                            currentPage += 1
+                    
+                    // Next/Get Started button
+                    // In OnboardingView.swift, update the Get Started button:
+
+                    // Next/Get Started button
+                    if currentPage < pages.count - 1 {
+                        Button(action: {
+                            withAnimation {
+                                currentPage += 1
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                Text("Next")
+                                Image(systemName: "chevron.right")
+                            }
+                            .foregroundColor(AppTheme.primary)
+                            .padding()
                         }
-                    }) {
-                        HStack {
-                            Text("Next")
-                            Image(systemName: "chevron.right")
-                        }
-                        .foregroundColor(Color(hex: "6A89CC"))
-                        .padding()
-                    }
-                } else {
-                    Button(action: {
-                        // Complete onboarding
-                        withAnimation {
-                            hasCompletedOnboarding = true
-                        }
-                    }) {
-                        Text("Get Started")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.vertical, 16)
-                            .padding(.horizontal, 32)
-                            .background(Color(hex: "41B3A3"))
-                            .cornerRadius(12)
-                    }
-                    .padding()
-                }
+                    } else {
+                        Button(action: {
+                            // Complete onboarding
+                            withAnimation {
+                                            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+                                            hasCompletedOnboarding = false
+                                            onComplete()  // Call the completion handler
+                                        }
+                                    }) {
+                                        Text("Get Started")
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .padding(.vertical, 16)
+                                            .padding(.horizontal, 32)
+                                            .background(AppTheme.secondary)
+                                            .cornerRadius(12)
+                                            .shadow(color: AppTheme.secondary.opacity(0.3), radius: 5, x: 0, y: 3)
+                                    }
+                                }
+                            }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
-            .padding(.bottom, 20)
         }
-        .background(Color(hex: "F5F7FA").ignoresSafeArea())
     }
 }
 

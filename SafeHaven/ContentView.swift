@@ -50,8 +50,20 @@ struct ContentView: View {
                 .tag(Tab.profile)
         }
         .accentColor(Color(hex: "6A89CC"))
-        .sheet(isPresented: $showingEmergencyContacts) { // Add here, before the .onAppear
-            EmergencyContactView()
+        .sheet(isPresented: $showingEmergencyContacts) {
+            VStack {
+                Text("Emergency Contacts")
+                    .font(.title)
+                    .padding()
+                
+                Text("Coming soon")
+                    .foregroundColor(.secondary)
+                
+                Button("Close") {
+                    showingEmergencyContacts = false
+                }
+                .padding()
+            }
         }
         .onAppear {
             loadEmergencyContacts()
@@ -311,16 +323,14 @@ struct ContentView: View {
                 }
                 
                 // Emergency Contacts
-                NavigationLink(destination: EmergencyContactView()) {
-                    quickAccessButton(
-                        title: "Emergency Contacts",
-                        icon: "person.crop.circle.badge.plus",
-                        color: Color(hex: "E8505B"),
-                        action: {
-                            showingEmergencyContacts = true
-                        }
-                    )
-                }
+                quickAccessButton(
+                    title: "Emergency Contacts",
+                    icon: "person.crop.circle.badge.plus",
+                    color: Color(hex: "E8505B"),
+                    action: {
+                        showingEmergencyContacts = true
+                    }
+                )
                 
                 // Profile/Settings
                 quickAccessButton(

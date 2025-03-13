@@ -4,20 +4,27 @@
 //
 //  Created by Travis Rodriguez on 3/12/25.
 //
+//
+//  WeatherService.swift
+//  SafeHaven
+//
+//  Created by Travis Rodriguez on 3/12/25.
+//
+
 import Foundation
 import WeatherKit
 import CoreLocation
 
-class WeatherService: ObservableObject {
+class WeatherService: ObservableObject { // ✅ Make it ObservableObject
     static let shared = WeatherService()
-    
+
     @Published var currentWeather: WeatherData?
     @Published var error: Error?
     
     private let weatherKitService = WeatherKit.WeatherService.shared
     
-    private init() {} // Private initializer
-    
+    private init() {} // Private initializer to enforce singleton
+
     func fetchWeather(for location: CLLocation) {
         Task {
             do {

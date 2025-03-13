@@ -1,263 +1,174 @@
-import Foundation
+//
+//  EmergencyContactView.swift
+//  SafeHaven
+//
+//  Created by Travis Rodriguez on 3/12/25.
+//
+
 import SwiftUI
 import CloudKit
-import WeatherKit
-import CoreLocation
-import AuthenticationServices
 
-struct EmergencyContact: Identifiable {
+struct EmergencyContact: Identifiable, Codable {
     let id: UUID
     var name: String
     var phoneNumber: String
-    var relationship: String
-    
-    // Optional CloudKit record ID for syncing
-    var recordID: CKRecord.ID?
+    var recordID: CKRecord.ID? // ✅ Must be Optional
 }
 
+
+    // ✅ Add `toCKRecord` function for CloudKit
+func toCKRecord() -> CKRecord {
+    let record = CKRecord(recordType: "EmergencyContact", recordID: self.recordID ?? CKRecord.ID(recordName: id.uuidString))
+    record["id"] = id.uuidString
+    record["name"] = name
+    record["phoneNumber"] = phoneNumber
+    return record
+}
+
+
+    // ✅ Add `init(from:)` for CloudKit
+    init?(from record: CKRecord) {
+        guard let name = record["name"] as? String,
+              let phoneNumber = record["phoneNumber"] as? String,
+              let idString = record["id"] as? String,
+              let id = UUID(uuidString: idString) else {
+            return nil
+        }
+        self.id = id
+        self.name = name
+        self.phoneNumber = phoneNumber
+    }
+}
+
+// MARK: - Emergency Contact View
 struct EmergencyContactView: View {
     @State private var contacts: [EmergencyContact] = []
     @State private var showingAddContact = false
-    @State private var selectedContact: EmergencyContact?
-    @State private var isEditing = false
-    
-    @EnvironmentObject var cloudKitManager: CloudKitManager
-    
+    @State private var newContactName = ""
+    @State private var newContactPhone = ""
+
     var body: some View {
         NavigationView {
-            List {
-                ForEach(contacts) { contact in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(contact.name)
-                                .font(.headline)
-                            Text(contact.phoneNumber)
-                                .foregroundColor(.secondary)
-                            Text(contact.relationship)
-                                .font(.caption)
-                        }
-                        
-                        Spacer()
-                        
-                        if isEditing {
+            VStack {
+                List {
+                    ForEach(contacts) { contact in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(contact.name)
+                                    .font(.headline)
+                                Text(contact.phoneNumber)
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
                             Button(action: {
-                                deleteContact(contact)
+                                callEmergencyContact(contact.phoneNumber)
                             }) {
-                                Image(systemName: "minus.circle.fill")
-                                    .foregroundColor(.red)
+                                Image(systemName: "phone.fill")
+                                    .foregroundColor(.green)
                             }
                         }
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if !isEditing {
-                            selectedContact = contact
-                        }
+                    .onDelete(perform: deleteContact)
+                }
+                .listStyle(InsetGroupedListStyle())
+
+                Button(action: { showingAddContact = true }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                        Text("Add Contact")
+                            .font(.headline)
                     }
+                    .foregroundColor(.blue)
+                    .padding()
                 }
             }
             .navigationTitle("Emergency Contacts")
-            .toolbar {
-                ToolbarItemGroup(placement: .navigationBarTrailing) {
-                    Button(isEditing ? "Done" : "Edit") {
-                        withAnimation {
-                            isEditing.toggle()
-                        }
-                    }
-                    
-                    Button(action: {
-                        showingAddContact = true
-                    }) {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
             .sheet(isPresented: $showingAddContact) {
-                AddEmergencyContactView(contacts: $contacts, cloudKitManager: cloudKitManager)
-            }
-            .sheet(item: $selectedContact) { contact in
-                EditEmergencyContactView(contact: contact, contacts: $contacts, cloudKitManager: cloudKitManager)
-            }
-            .onAppear {
-                fetchContacts()
+                addContactSheet
             }
         }
     }
-    
-    private func fetchContacts() {
-        cloudKitManager.fetchEmergencyContacts { fetchedContacts in
-            self.contacts = fetchedContacts.map { contact in
-                EmergencyContact(
-                    id: UUID(),
-                    name: contact.name,
-                    phoneNumber: contact.phoneNumber,
-                    relationship: contact.relationship,
-                    recordID: contact.recordID
-                )
-            }
-        }
-    }
-    
-    private func deleteContact(_ contact: EmergencyContact) {
-        // Implement CloudKit delete
-        if let recordID = contact.recordID {
-            cloudKitManager.deleteRecord(recordID: recordID) { result in
-                switch result {
-                case .success:
-                    contacts.removeAll { $0.id == contact.id }
-                case .failure(let error):
-                    print("Error deleting contact: \(error.localizedDescription)")
-                }
-            }
-        }
-    }
-}
 
-struct AddEmergencyContactView: View {
-    @Binding var contacts: [EmergencyContact]
-    @Environment(\.presentationMode) var presentationMode
-    var cloudKitManager: CloudKitManager
-    
-    @State private var name = ""
-    @State private var phoneNumber = ""
-    @State private var relationship = ""
-    
-    var body: some View {
+    // MARK: - Add Contact Sheet
+    private var addContactSheet: some View {
         NavigationView {
             Form {
-                TextField("Name", text: $name)
-                TextField("Phone Number", text: $phoneNumber)
-                    .keyboardType(.phonePad)
-                TextField("Relationship", text: $relationship)
+                Section(header: Text("Contact Details")) {
+                    TextField("Name", text: $newContactName)
+                    TextField("Phone Number", text: $newContactPhone)
+                        .keyboardType(.phonePad)
+                }
+                Section {
+                    Button("Save Contact") {
+                        addNewContact()
+                    }
+                    .disabled(newContactName.isEmpty || newContactPhone.isEmpty)
+                }
             }
             .navigationTitle("Add Contact")
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
-                },
-                trailing: Button("Save") {
-                    saveContact()
-                }
-                .disabled(name.isEmpty || phoneNumber.isEmpty)
-            )
+            .navigationBarItems(leading: Button("Cancel") {
+                showingAddContact = false
+            })
         }
     }
-    
-    private func saveContact() {
-        let newContact = EmergencyContact(
-            id: UUID(),
-            name: name,
-            phoneNumber: phoneNumber,
-            relationship: relationship
-        )
-        
-        // Save to CloudKit
-        let record = CKRecord(recordType: "EmergencyContact")
-        record["name"] = newContact.name
-        record["phoneNumber"] = newContact.phoneNumber
-        record["relationship"] = newContact.relationship
-        
-        cloudKitManager.saveRecord(record) { result in
-            switch result {
-            case .success(let savedRecord):
-                DispatchQueue.main.async {
-                    var savedContact = newContact
-                    savedContact.recordID = savedRecord.recordID
-                    contacts.append(savedContact)
-                    presentationMode.wrappedValue.dismiss()
+
+    // MARK: - Contact Actions
+    private func addNewContact() {
+        let newContact = EmergencyContact(id: UUID(), name: newContactName, phoneNumber: newContactPhone)
+        contacts.append(newContact)
+        saveContacts()
+        newContactName = ""
+        newContactPhone = ""
+        showingAddContact = false
+    }
+
+    private func deleteContact(at offsets: IndexSet) {
+        contacts.remove(atOffsets: offsets)
+        saveContacts()
+    }
+
+    private func callEmergencyContact(_ phoneNumber: String) {
+        if let url = URL(string: "tel://\(phoneNumber)"), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    // MARK: - CloudKit Integration
+    private func saveContacts() {
+        let database = CKContainer.default().privateCloudDatabase
+        for contact in contacts {
+            let record = contact.toRecord()
+            database.save(record) { _, error in
+                if let error = error {
+                    print("Error saving contact: \(error.localizedDescription)")
                 }
-            case .failure(let error):
-                print("Error saving contact: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func loadContacts() {
+        let database = CKContainer.default().privateCloudDatabase
+        let query = CKQuery(recordType: "EmergencyContact", predicate: NSPredicate(value: true))
+
+        database.perform(query, inZoneWith: nil) { records, error in
+            if let error = error {
+                print("Error fetching contacts: \(error.localizedDescription)")
+                return
+            }
+            if let records = records {
+                DispatchQueue.main.async {
+                    contacts = records.compactMap { EmergencyContact(from: $0) }
+                }
             }
         }
     }
 }
 
-struct EditEmergencyContactView: View {
-    var contact: EmergencyContact
-    @Binding var contacts: [EmergencyContact]
-    var cloudKitManager: CloudKitManager
-    @Environment(\.presentationMode) var presentationMode
-    
-    @State private var name: String
-    @State private var phoneNumber: String
-    @State private var relationship: String
-    
-    init(contact: EmergencyContact, contacts: Binding<[EmergencyContact]>, cloudKitManager: CloudKitManager) {
-            self.contact = contact
-            self._contacts = contacts
-            self.cloudKitManager = cloudKitManager
-            
-            // Initialize state with existing contact details
-            _name = State(initialValue: contact.name)
-            _phoneNumber = State(initialValue: contact.phoneNumber)
-            _relationship = State(initialValue: contact.relationship)
-        }
-        
-        var body: some View {
-            NavigationView {
-                Form {
-                    TextField("Name", text: $name)
-                    TextField("Phone Number", text: $phoneNumber)
-                        .keyboardType(.phonePad)
-                    TextField("Relationship", text: $relationship)
-                }
-                .navigationTitle("Edit Contact")
-                .navigationBarItems(
-                    leading: Button("Cancel") {
-                        presentationMode.wrappedValue.dismiss()
-                    },
-                    trailing: Button("Save") {
-                        updateContact()
-                    }
-                    .disabled(name.isEmpty || phoneNumber.isEmpty)
-                )
-            }
-        }
-        
-        private func updateContact() {
-            // Ensure we have a valid CloudKit record ID
-            guard let recordID = contact.recordID else {
-                print("No record ID found for contact")
-                return
-            }
-            
-            // Fetch the existing record to update
-            cloudKitManager.fetchRecord(recordID: recordID) { result in
-                switch result {
-                case .success(let existingRecord):
-                    // Update the record
-                    existingRecord["name"] = name
-                    existingRecord["phoneNumber"] = phoneNumber
-                    existingRecord["relationship"] = relationship
-                    
-                    // Save the updated record
-                    cloudKitManager.saveRecord(existingRecord) { saveResult in
-                        switch saveResult {
-                        case .success(let updatedRecord):
-                            DispatchQueue.main.async {
-                                // Update local contacts array
-                                if let index = contacts.firstIndex(where: { $0.id == contact.id }) {
-                                    contacts[index] = EmergencyContact(
-                                        id: contact.id,
-                                        name: name,
-                                        phoneNumber: phoneNumber,
-                                        relationship: relationship,
-                                        recordID: updatedRecord.recordID
-                                    )
-                                }
-                                presentationMode.wrappedValue.dismiss()
-                            }
-                        case .failure(let error):
-                            print("Error updating contact: \(error.localizedDescription)")
-                        }
-                    }
-                case .failure(let error):
-                    print("Error fetching contact record: \(error.localizedDescription)")
-                }
-            }
-        }
+// MARK: - Preview
+struct EmergencyContactView_Previews: PreviewProvider {
+    static var previews: some View {
+        EmergencyContactView()
     }
-
-    // Extension to make EmergencyContact Identifiable for sheet presentation
-    extension EmergencyContact: Identifiable {}
+}

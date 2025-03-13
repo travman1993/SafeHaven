@@ -11,6 +11,13 @@
 //
 //  Created by Travis Rodriguez on 2/23/25.
 //
+//
+//  SafeHavenApp.swift
+//  SafeHaven
+//
+//  Created by Travis Rodriguez on 2/23/25.
+//
+
 import SwiftUI
 import CloudKit
 import WeatherKit
@@ -22,8 +29,8 @@ struct SafeHavenApp: App {
     @StateObject private var cloudKitManager = CloudKitManager.shared
     @StateObject private var authService = AuthenticationService()
     @StateObject private var locationService = LocationService()
-    @StateObject private var weatherService = WeatherService()
-    
+    @StateObject private var weatherService = WeatherService.shared // ✅ Use the fixed WeatherService
+
     var body: some Scene {
         WindowGroup {
             if authService.isSignedIn {
@@ -31,19 +38,21 @@ struct SafeHavenApp: App {
                     .environmentObject(cloudKitManager)
                     .environmentObject(authService)
                     .environmentObject(locationService)
-                    .environmentObject(weatherService)
+                    .environmentObject(weatherService) // ✅ Inject into SwiftUI
             } else {
                 LoginView()
                     .environmentObject(authService)
             }
         }
-        .onChange(of: locationService.currentLocation) { newLocation in
-            if let location = newLocation {
-                weatherService.fetchWeather(for: location)
+        .onChange(of: locationService.currentLocation) { oldValue, newValue in
+            if let newLocation = newValue {
+                weatherService.fetchWeather(for: newLocation)
             }
         }
+
     }
 }
+
 
 struct LoginView: View {
     @EnvironmentObject var authService: AuthenticationService

@@ -52,7 +52,7 @@ class CloudKitManager: ObservableObject {
             }
             
             guard let savedRecord = savedRecord,
-                  let savedContact = EmergencyContact(record: savedRecord) else {
+                  let savedContact = EmergencyContact(from: savedRecord) else {
                 completion(.failure(NSError(domain: "CloudKitError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to save contact"])))
                 return
             }
@@ -71,7 +71,7 @@ class CloudKitManager: ObservableObject {
                 return
             }
             
-            let contacts = records?.compactMap { EmergencyContact(record: $0) } ?? []
+            let contacts = records?.compactMap { EmergencyContact(from: $0) } ?? []
             completion(.success(contacts))
         }
     }

@@ -16,30 +16,6 @@ struct ResourceLocation: Identifiable, Hashable, Equatable {
     let hours: String?
     let services: [String]
 
-    init?(documentID: String, data: [String: Any]) {
-        guard let name = data["name"] as? String,
-              let categoryString = data["category"] as? String,
-              let address = data["address"] as? String,
-              let phoneNumber = data["phoneNumber"] as? String,
-              let description = data["description"] as? String,
-              let latitude = data["latitude"] as? Double,
-              let longitude = data["longitude"] as? Double else { return nil }
-        
-        let category = ResourceCategory(rawValue: categoryString) ?? .all
-        
-        self.id = documentID
-        self.name = name
-        self.category = category
-        self.address = address
-        self.phoneNumber = phoneNumber
-        self.description = description
-        self.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        self.icon = category.icon
-        self.website = data["website"] as? String
-        self.hours = data["hours"] as? String
-        self.services = data["services"] as? [String] ?? []
-    }
-
     // Hashable implementation
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -99,27 +75,113 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Firestore Service
+// MARK: - Resource Service (Mock Implementation)
 class ResourceService: ObservableObject {
-    private let db = Firestore.firestore()
     @Published var resources: [ResourceLocation] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
 
     func fetchResources() {
         isLoading = true
-        db.collection("resources").getDocuments { [weak self] snapshot, error in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                if let error = error {
-                    self?.errorMessage = "Error loading resources: \(error.localizedDescription)"
-                    return
-                }
-                
-                self?.resources = snapshot?.documents.compactMap { doc in
-                    ResourceLocation(documentID: doc.documentID, data: doc.data())
-                } ?? []
-            }
+        
+        // Simulate network delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.isLoading = false
+            
+            // Sample data instead of Firestore
+            self?.resources = [
+                ResourceLocation(
+                    id: "1",
+                    name: "Downtown Shelter",
+                    category: .shelter,
+                    address: "123 Main St, Anytown, USA",
+                    phoneNumber: "555-123-4567",
+                    description: "Emergency shelter providing temporary housing, meals, and basic necessities for individuals and families in crisis.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.749, longitude: -84.388),
+                    icon: "house.fill",
+                    website: "www.downtownshelter.org",
+                    hours: "Open 24/7",
+                    services: ["Emergency Housing", "Meals", "Clothing", "Counseling"]
+                ),
+                ResourceLocation(
+                    id: "2",
+                    name: "Community Food Bank",
+                    category: .food,
+                    address: "456 Oak Ave, Anytown, USA",
+                    phoneNumber: "555-987-6543",
+                    description: "Provides free groceries, prepared meals, and nutrition education to those experiencing food insecurity.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.753, longitude: -84.393),
+                    icon: "fork.knife",
+                    website: "www.communityfoodbank.org",
+                    hours: "Mon-Fri: 9am-5pm, Sat: 10am-2pm",
+                    services: ["Food Packages", "Hot Meals", "Nutrition Education"]
+                ),
+                ResourceLocation(
+                    id: "3",
+                    name: "Free Health Clinic",
+                    category: .healthcare,
+                    address: "789 Elm St, Anytown, USA",
+                    phoneNumber: "555-789-0123",
+                    description: "Provides free or reduced-cost medical care, medications, and mental health services to uninsured individuals.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.755, longitude: -84.383),
+                    icon: "cross.fill",
+                    website: "www.freehealthclinic.org",
+                    hours: "Mon-Sat: 8am-8pm",
+                    services: ["Medical Exams", "Prescriptions", "Mental Health", "Dental Care"]
+                ),
+                ResourceLocation(
+                    id: "4",
+                    name: "Crisis Support Center",
+                    category: .support,
+                    address: "101 Pine St, Anytown, USA",
+                    phoneNumber: "555-321-6789",
+                    description: "Provides crisis intervention, counseling, and support services for individuals experiencing trauma or emotional distress.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.748, longitude: -84.376),
+                    icon: "person.2.fill",
+                    website: "www.crisissupport.org",
+                    hours: "Open 24/7 - Crisis Hotline Available",
+                    services: ["Crisis Counseling", "Support Groups", "Referral Services"]
+                ),
+                ResourceLocation(
+                    id: "5",
+                    name: "Legal Aid Society",
+                    category: .legal,
+                    address: "222 Maple Ave, Anytown, USA",
+                    phoneNumber: "555-456-7890",
+                    description: "Provides free legal assistance to low-income individuals for civil matters including housing, family law, and public benefits.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.760, longitude: -84.390),
+                    icon: "building.columns.fill",
+                    website: "www.legalaid.org",
+                    hours: "Mon-Fri: 9am-5pm",
+                    services: ["Legal Consultation", "Document Preparation", "Court Representation"]
+                ),
+                ResourceLocation(
+                    id: "6",
+                    name: "Financial Assistance Center",
+                    category: .financial,
+                    address: "333 Birch Blvd, Anytown, USA",
+                    phoneNumber: "555-234-5678",
+                    description: "Provides emergency financial assistance for rent, utilities, and other basic needs, as well as financial education and counseling.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.745, longitude: -84.395),
+                    icon: "dollarsign.circle.fill",
+                    website: "www.financialhelp.org",
+                    hours: "Mon-Fri: 9am-4pm",
+                    services: ["Emergency Assistance", "Financial Counseling", "Budgeting Classes"]
+                ),
+                ResourceLocation(
+                    id: "7",
+                    name: "Adult Education Center",
+                    category: .education,
+                    address: "444 Cedar St, Anytown, USA",
+                    phoneNumber: "555-876-5432",
+                    description: "Offers free adult education classes including GED preparation, English language learning, and job skills training.",
+                    coordinate: CLLocationCoordinate2D(latitude: 33.757, longitude: -84.378),
+                    icon: "book.fill",
+                    website: "www.adulteducation.org",
+                    hours: "Mon-Thu: 8am-8pm, Fri: 8am-5pm",
+                    services: ["GED Classes", "ESL Classes", "Computer Skills", "Job Training"]
+                )
+            ]
         }
     }
 }
@@ -144,6 +206,33 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         authorizationStatus = manager.authorizationStatus
         if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
             locationManager.startUpdatingLocation()
+        }
+    }
+}
+
+struct CategoryChip: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(isSelected ? color : color.opacity(0.1))
+            )
+            .foregroundColor(isSelected ? .white : color)
         }
     }
 }
@@ -320,40 +409,6 @@ struct ResourceListItem: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .foregroundColor(.secondary)
-        }
-        .padding(.vertical, 8)
-    }
-}
-
-// MARK: - Category Chip
-struct CategoryChip: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 12))
-                
-                Text(title)
-                    .font(.system(size: 14, weight: .medium))
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(isSelected ? color : color.opacity(0.1))
-            )
-            .foregroundColor(isSelected ? .white : color)
         }
     }
 }

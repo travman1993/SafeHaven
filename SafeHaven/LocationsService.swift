@@ -8,6 +8,7 @@
 import Foundation
 import CloudKit
 import CoreLocation
+import MapKit
 
 class LocationService: NSObject, ObservableObject {
     private let locationManager = CLLocationManager()

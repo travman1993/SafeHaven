@@ -31,7 +31,7 @@ class CloudKitManager: ObservableObject {
                 switch status {
                 case .available:
                     self?.isAvailable = true
-                case .noAccount, .restricted, .couldNotDetermine:
+                case .noAccount, .restricted, .couldNotDetermine, .temporarilyUnavailable:
                     self?.isAvailable = false
                     self?.error = error
                 @unknown default:
@@ -65,14 +65,25 @@ class CloudKitManager: ObservableObject {
     func fetchEmergencyContacts(completion: @escaping (Result<[EmergencyContact], Error>) -> Void) {
         let query = CKQuery(recordType: "EmergencyContact", predicate: NSPredicate(value: true))
         
-        privateDatabase.perform(query, inZoneWith: nil) { records, error in
-            if let error = error {
+        // Alternative approach
+        privateDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: CKQueryOperation.maximumResults) { result in
+            // Handle the result manually to avoid type inference issues
+            if case .success(let (matchResults, _)) = result {
+                var successRecords: [CKRecord] = []
+                
+                // Process each record result
+                for (_, recordResult) in matchResults {
+                    if case .success(let record) = recordResult {
+                        successRecords.append(record)
+                    }
+                }
+                
+                // Convert to EmergencyContact objects
+                let contacts = successRecords.compactMap { EmergencyContact(from: $0) }
+                completion(.success(contacts))
+            } else if case .failure(let error) = result {
                 completion(.failure(error))
-                return
             }
-            
-            let contacts = records?.compactMap { EmergencyContact(from: $0) } ?? []
-            completion(.success(contacts))
         }
     }
     

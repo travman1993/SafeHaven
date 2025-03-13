@@ -1,5 +1,5 @@
 //
-//  EmergencyContactView.swift
+//  EmergencyContactsView.swift
 //  SafeHaven
 //
 //  Created by Travis Rodriguez on 3/12/25.
@@ -8,167 +8,131 @@
 import SwiftUI
 import CloudKit
 
-struct EmergencyContact: Identifiable, Codable {
-    let id: UUID
-    var name: String
-    var phoneNumber: String
-    var recordID: CKRecord.ID? // ✅ Must be Optional
-}
-
-
-    // ✅ Add `toCKRecord` function for CloudKit
-func toCKRecord() -> CKRecord {
-    let record = CKRecord(recordType: "EmergencyContact", recordID: self.recordID ?? CKRecord.ID(recordName: id.uuidString))
-    record["id"] = id.uuidString
-    record["name"] = name
-    record["phoneNumber"] = phoneNumber
-    return record
-}
-
-
-    // ✅ Add `init(from:)` for CloudKit
-    init?(from record: CKRecord) {
-        guard let name = record["name"] as? String,
-              let phoneNumber = record["phoneNumber"] as? String,
-              let idString = record["id"] as? String,
-              let id = UUID(uuidString: idString) else {
-            return nil
-        }
-        self.id = id
-        self.name = name
-        self.phoneNumber = phoneNumber
-    }
-}
-
-// MARK: - Emergency Contact View
-struct EmergencyContactView: View {
-    @State private var contacts: [EmergencyContact] = []
-    @State private var showingAddContact = false
-    @State private var newContactName = ""
-    @State private var newContactPhone = ""
-
+struct EmergencyContactsView: View {
+    @Binding var contacts: [EmergencyContact]
+    @Binding var customMessage: String
+    @State private var newName = ""
+    @State private var newPhone = ""
+    @State private var newRelationship = ""
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         NavigationView {
-            VStack {
-                List {
-                    ForEach(contacts) { contact in
-                        HStack {
-                            VStack(alignment: .leading) {
+            Form {
+                Section(header: Text("Emergency Message")) {
+                    TextEditor(text: $customMessage)
+                        .frame(minHeight: 100)
+                        .foregroundColor(.primary)
+                        .background(Color(hex: "F5F7FA"))
+                        .cornerRadius(8)
+                }
+                
+                Section(header: Text("Your Emergency Contacts")) {
+                    if contacts.isEmpty {
+                        Text("No contacts added yet")
+                            .foregroundColor(.secondary)
+                            .italic()
+                    } else {
+                        ForEach(contacts) { contact in
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text(contact.name)
                                     .font(.headline)
                                 Text(contact.phoneNumber)
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
+                                if !contact.relationship.isEmpty {
+                                    Text(contact.relationship)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
                             }
-                            Spacer()
-                            Button(action: {
-                                callEmergencyContact(contact.phoneNumber)
-                            }) {
-                                Image(systemName: "phone.fill")
-                                    .foregroundColor(.green)
-                            }
+                            .padding(.vertical, 4)
                         }
+                        .onDelete(perform: deleteContact)
                     }
-                    .onDelete(perform: deleteContact)
                 }
-                .listStyle(InsetGroupedListStyle())
-
-                Button(action: { showingAddContact = true }) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                        Text("Add Contact")
-                            .font(.headline)
+                
+                Section(header: Text("Add New Contact")) {
+                    TextField("Name", text: $newName)
+                    TextField("Phone Number", text: $newPhone)
+                        .keyboardType(.phonePad)
+                    TextField("Relationship (optional)", text: $newRelationship)
+                    
+                    Button(action: addContact) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add Contact")
+                                .fontWeight(.medium)
+                        }
+                        .foregroundColor(Color(hex: "6A89CC"))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 8)
                     }
-                    .foregroundColor(.blue)
-                    .padding()
+                    .disabled(newName.isEmpty || newPhone.isEmpty)
+                }
+                
+                Section(footer: Text("These contacts will receive your emergency text message with your location when you use the Emergency SOS feature.")) {
+                    // Information about how emergency contacts work
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(Color(hex: "6A89CC"))
+                        Text("Emergency contacts will receive a message with your location")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
                 }
             }
             .navigationTitle("Emergency Contacts")
-            .sheet(isPresented: $showingAddContact) {
-                addContactSheet
-            }
-        }
-    }
-
-    // MARK: - Add Contact Sheet
-    private var addContactSheet: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Contact Details")) {
-                    TextField("Name", text: $newContactName)
-                    TextField("Phone Number", text: $newContactPhone)
-                        .keyboardType(.phonePad)
-                }
-                Section {
-                    Button("Save Contact") {
-                        addNewContact()
-                    }
-                    .disabled(newContactName.isEmpty || newContactPhone.isEmpty)
-                }
-            }
-            .navigationTitle("Add Contact")
-            .navigationBarItems(leading: Button("Cancel") {
-                showingAddContact = false
+            .navigationBarItems(trailing: Button("Done") {
+                dismiss()
             })
         }
     }
-
-    // MARK: - Contact Actions
-    private func addNewContact() {
-        let newContact = EmergencyContact(id: UUID(), name: newContactName, phoneNumber: newContactPhone)
-        contacts.append(newContact)
+    
+    private func addContact() {
+        let contact = EmergencyContact(
+            name: newName,
+            phoneNumber: newPhone,
+            relationship: newRelationship.isEmpty ? "Contact" : newRelationship
+        )
+        contacts.append(contact)
+        newName = ""
+        newPhone = ""
+        newRelationship = ""
+        
+        // Optional: save to CloudKit or local storage
         saveContacts()
-        newContactName = ""
-        newContactPhone = ""
-        showingAddContact = false
     }
-
+    
     private func deleteContact(at offsets: IndexSet) {
         contacts.remove(atOffsets: offsets)
+        
+        // Optional: update CloudKit or local storage
         saveContacts()
     }
-
-    private func callEmergencyContact(_ phoneNumber: String) {
-        if let url = URL(string: "tel://\(phoneNumber)"), UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
-        }
-    }
-
-    // MARK: - CloudKit Integration
+    
+    // Optional: Save contacts to CloudKit or local storage
     private func saveContacts() {
-        let database = CKContainer.default().privateCloudDatabase
-        for contact in contacts {
-            let record = contact.toRecord()
-            database.save(record) { _, error in
-                if let error = error {
-                    print("Error saving contact: \(error.localizedDescription)")
-                }
-            }
-        }
-    }
-
-    private func loadContacts() {
-        let database = CKContainer.default().privateCloudDatabase
-        let query = CKQuery(recordType: "EmergencyContact", predicate: NSPredicate(value: true))
-
-        database.perform(query, inZoneWith: nil) { records, error in
-            if let error = error {
-                print("Error fetching contacts: \(error.localizedDescription)")
-                return
-            }
-            if let records = records {
-                DispatchQueue.main.async {
-                    contacts = records.compactMap { EmergencyContact(from: $0) }
-                }
-            }
-        }
+        // If you want to persist these contacts, you could implement
+        // similar CloudKit logic as in your EmergencyContactView
+        // or use another storage mechanism that works with your app's architecture
     }
 }
 
-// MARK: - Preview
-struct EmergencyContactView_Previews: PreviewProvider {
+// Preview
+struct EmergencyContactsView_Previews: PreviewProvider {
+    @State static var previewContacts: [EmergencyContact] = [
+        EmergencyContact(name: "John Doe", phoneNumber: "555-123-4567", relationship: "Family"),
+        EmergencyContact(name: "Jane Smith", phoneNumber: "555-987-6543", relationship: "Friend")
+    ]
+    
+    @State static var previewMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
+    
     static var previews: some View {
-        EmergencyContactView()
+        EmergencyContactsView(
+            contacts: $previewContacts,
+            customMessage: $previewMessage
+        )
     }
 }

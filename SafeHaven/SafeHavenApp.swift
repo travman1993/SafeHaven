@@ -34,22 +34,16 @@ struct SafeHavenApp: App {
     var body: some Scene {
         WindowGroup {
             if authService.isSignedIn {
-                ContentView()
+                ContentView()  // Make sure this is ContentView, not EmergencyContactView
                     .environmentObject(cloudKitManager)
                     .environmentObject(authService)
                     .environmentObject(locationService)
-                    .environmentObject(weatherService) // ✅ Inject into SwiftUI
+                    .environmentObject(weatherService)
             } else {
                 LoginView()
                     .environmentObject(authService)
             }
         }
-        .onChange(of: locationService.currentLocation) { oldValue, newValue in
-            if let newLocation = newValue {
-                weatherService.fetchWeather(for: newLocation)
-            }
-        }
-
     }
 }
 

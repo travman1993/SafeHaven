@@ -13,29 +13,26 @@
 import Foundation
 import WeatherKit
 
-enum WeatherCondition: String, Codable {
-    case clear, cloudy, fog, haze, rain, snow, thunderstorms, windy, hot, cold
+enum WeatherCondition: String {
+    case clear, cloudy, fog, mist, haze, rain, snow, thunderstorms, wind, breezy, hot, heat, cold, chilly
     case sunFlurries, sunShowers, sleet, blowingSnow, blizzard, unknown
 
     init(from weatherKitCondition: WeatherKit.WeatherCondition) {
         switch weatherKitCondition {
         case .clear: self = .clear
         case .cloudy: self = .cloudy
-        case .fog, .mist: self = .fog  // ✅ Some versions use `.mist`
         case .haze: self = .haze
         case .rain: self = .rain
         case .snow: self = .snow
         case .thunderstorms: self = .thunderstorms
-        case .wind, .breezy: self = .windy  // ✅ Some versions use `.breezy`
-        case .hot, .heat: self = .hot  // ✅ Check for `.heat`
-        case .cold, .chilly: self = .cold  // ✅ Some versions use `.chilly`
+        case .breezy: self = .breezy
+        case .hot: self = .hot
         case .sunFlurries: self = .sunFlurries
         case .sunShowers: self = .sunShowers
         case .sleet: self = .sleet
         case .blowingSnow: self = .blowingSnow
         case .blizzard: self = .blizzard
-        @unknown default: self = .unknown
+        default: self = .unknown
         }
     }
 }
-

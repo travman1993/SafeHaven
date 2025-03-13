@@ -1,4 +1,9 @@
+import Foundation
 import SwiftUI
+import CloudKit
+import WeatherKit
+import CoreLocation
+import AuthenticationServices
 
 extension Color {
     init(hex: String) {

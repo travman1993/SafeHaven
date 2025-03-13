@@ -1,8 +1,9 @@
+import Foundation
 import SwiftUI
-import MapKit
+import CloudKit
+import WeatherKit
 import CoreLocation
-import Firebase
-import FirebaseFirestore
+import AuthenticationServices
 
 // MARK: - Resource Model
 struct ResourceLocation: Identifiable, Hashable, Equatable {

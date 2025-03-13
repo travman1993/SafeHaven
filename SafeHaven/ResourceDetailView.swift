@@ -5,8 +5,12 @@
 //  Created by Travis Rodriguez on 2/28/25.
 //
 
+import Foundation
 import SwiftUI
-import MapKit
+import CloudKit
+import WeatherKit
+import CoreLocation
+import AuthenticationServices
 
 struct ResourceDetailView: View {
     let resource: ResourceLocation

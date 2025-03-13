@@ -1,6 +1,9 @@
+import Foundation
 import SwiftUI
-import UIKit
+import CloudKit
+import WeatherKit
 import CoreLocation
+import AuthenticationServices
 
 // Extension to handle phone calls
 extension UIApplication {

@@ -4,7 +4,12 @@
 //
 //  Created by Travis Rodriguez on 3/1/25.
 //
+import Foundation
 import SwiftUI
+import CloudKit
+import WeatherKit
+import CoreLocation
+import AuthenticationServices
 import StoreKit
 
 struct PaywallView: View {

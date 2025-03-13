@@ -1,22 +1,64 @@
-<?xml version="1.0"?>
-<gpx version="1.1" creator="Xcode">
+import Foundation
+import SwiftUI
+import CloudKit
+import WeatherKit
+import CoreLocation
+import AuthenticationServices
+
+struct MyLocationView: View {
+    @StateObject private var locationService = LocationService()
+    @State private var selectedPlace: MKMapItem?
+    @State private var region: MKCoordinateRegion?
     
-    <!--
-     Provide one or more waypoints containing a latitude/longitude pair. If you provide one
-     waypoint, Xcode will simulate that specific location. If you provide multiple waypoints,
-     Xcode will simulate a route visiting each waypoint.
-     -->
-    <wpt lat="34.166080" lon="-84.800613">
-        <name>Cartersville</name>
-        
-        <!--
-         Optionally provide a time element for each waypoint. Xcode will interpolate movement
-         at a rate of speed based on the time elapsed between each waypoint. If you do not provide
-         a time element, then Xcode will use a fixed rate of speed.
-         
-         Waypoints must be sorted by time in ascending order.
-         -->
-        <time>2025-02-24T20:11:37Z</time>
-    </wpt>
+    var body: some View {
+        VStack {
+            if let currentLocation = locationService.currentLocation {
+                MapView(region: region ?? MKCoordinateRegion(
+                    center: currentLocation.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+                ))
+                .edgesIgnoringSafeArea(.all)
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Current Location")
+                        .font(.headline)
+                    
+                    Text(locationService.formattedAddress())
+                        .foregroundColor(.secondary)
+                    
+                    Text("Latitude: \(currentLocation.coordinate.latitude)")
+                    Text("Longitude: \(currentLocation.coordinate.longitude)")
+                }
+                .padding()
+            } else {
+                ProgressView("Fetching Location")
+                    .onAppear {
+                        locationService.requestLocation()
+                    }
+            }
+        }
+        .onChange(of: locationService.currentLocation) { newLocation in
+            if let location = newLocation {
+                region = MKCoordinateRegion(
+                    center: location.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+                )
+            }
+        }
+    }
+}
+
+struct MapView: UIViewRepresentable {
+    var region: MKCoordinateRegion
     
-</gpx>
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.region = region
+        mapView.showsUserLocation = true
+        return mapView
+    }
+    
+    func updateUIView(_ uiView: MKMapView, context: Context) {
+        uiView.region = region
+    }
+}

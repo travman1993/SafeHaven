@@ -28,16 +28,27 @@ class AuthenticationService: ObservableObject {
         
         // Verify the saved user identifier
         let appleIDProvider = ASAuthorizationAppleIDProvider()
-        appleIDProvider.getCredentialState(forUserID: savedUserIdentifier) { [weak self] credentialState, error in
-            DispatchQueue.main.async {
-                switch credentialState {
-                case .authorized:
-                    self?.isSignedIn = true
-                    self?.userIdentifier = savedUserIdentifier
-                case .revoked, .notFound:
-                    self?.signOut()
-                @unknown default:
-                    self?.signOut()
+        Task {
+            do {
+                let credentialState = try await appleIDProvider.credentialState(forUserID: savedUserIdentifier)
+                
+                await MainActor.run {
+                    switch credentialState {
+                    case .authorized:
+                        self.isSignedIn = true
+                        self.userIdentifier = savedUserIdentifier
+                    case .revoked, .notFound:
+                        self.signOut()
+                    case .transferred:  // Add any missing cases explicitly
+                        self.signOut()
+                    @unknown default:  // This handles any future cases added to the enum
+                        self.signOut()
+                    }
+                }
+            } catch {
+                print("Error checking credential state: \(error)")
+                await MainActor.run {
+                    self.signOut()
                 }
             }
         }

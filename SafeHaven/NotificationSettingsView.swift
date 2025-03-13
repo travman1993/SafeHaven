@@ -4,21 +4,16 @@
 //
 //  Created by Travis Rodriguez on 2/27/25.
 //
-import Foundation
 import SwiftUI
-import CloudKit
-import WeatherKit
-import CoreLocation
-import AuthenticationServices
 import UserNotifications
 
 struct NotificationSettingsView: View {
     @AppStorage("motivationNotificationsEnabled") private var notificationsEnabled = false
     @AppStorage("motivationNotificationHour") private var notificationHour = 9
     @AppStorage("motivationNotificationMinute") private var notificationMinute = 0
-    @State private var showingAuthAlert = false
     @State private var selectedDate = Date()
-    @Environment(\.presentationMode) var presentationMode
+    @State private var showingAuthAlert = false
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         Form {
@@ -31,7 +26,7 @@ struct NotificationSettingsView: View {
                             updateNotificationSettings()
                         }
                     }
-                
+
                 if notificationsEnabled {
                     DatePicker("Notification Time", selection: $selectedDate, displayedComponents: .hourAndMinute)
                         .onChange(of: selectedDate) { oldValue, newValue in
@@ -42,6 +37,7 @@ struct NotificationSettingsView: View {
                                 updateNotificationSettings()
                             }
                         }
+                        
                         .onAppear {
                             // Set the date picker to show the stored time
                             var components = DateComponents()
@@ -61,20 +57,29 @@ struct NotificationSettingsView: View {
                 }
             }
             
-            Section(header: Text("About"), footer: Text("Notifications deliver daily motivation quotes to help inspire you throughout your day.")) {
+            Section(header: Text("Emergency Alerts")) {
+                Toggle("Resource Updates", isOn: .constant(true))
+                Toggle("Weather Warnings", isOn: .constant(true))
+                Toggle("Location-based Alerts", isOn: .constant(false))
+            }
+            
+            Section(header: Text("About"), footer: Text("Notifications deliver daily motivation quotes and important safety alerts to help you stay informed and inspired.")) {
                 Text("You'll receive motivational quotes daily at your preferred time.")
                     .font(.subheadline)
-                    .foregroundColor(Color(hex: "718096"))
+                    .foregroundColor(AppTheme.textSecondary)
             }
         }
         .navigationTitle("Notification Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .alert(isPresented: $showingAuthAlert) {
-            Alert(
-                title: Text("Enable Notifications"),
-                message: Text("Please enable notifications for SafeHaven in your device settings to receive daily motivation."),
-                dismissButton: .default(Text("OK"))
-            )
+        .alert("Enable Notifications", isPresented: $showingAuthAlert) {
+            Button("OK", role: .cancel) { }
+            Button("Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } message: {
+            Text("Please enable notifications for SafeHaven in your device settings to receive daily motivation and important safety alerts.")
         }
     }
     

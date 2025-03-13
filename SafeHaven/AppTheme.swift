@@ -1,15 +1,15 @@
 import SwiftUI
 
 struct AppTheme {
-    static let primary = Color(hex: "6A89CC")
-    static let secondary = Color(hex: "41B3A3")
-    static let accent = Color(hex: "E8505B")
-    static let background = Color(hex: "F5F7FA")
+    // More prominent primary blue color
+        static let primary = Color(hex: "4A76D4")  // More vibrant blue
+        static let secondary = Color(hex: "36A599")  // Richer teal
+        static let accent = Color(hex: "FF5062")  // Brighter accent
+        static let background = Color(hex: "F0F2F6")  // Slightly cooler background
 
-    static let textPrimary = Color(hex: "2D3748")
-    static let textSecondary = Color(hex: "718096")
-    static let textLight = Color.white
-
+        static let textPrimary = Color(hex: "2D3748")
+        static let textSecondary = Color(hex: "718096")
+        static let textLight = Color.white
     struct ButtonStyle: ViewModifier {
         var bgColor: Color
         var isLarge: Bool = false

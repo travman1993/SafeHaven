@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var emergencyContacts: [EmergencyContact] = []
     @State private var customMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
     @State private var showingEmergencyContacts = false
+    @State private var showingMotivationView = false
 
     // State for active tab/section
     @State private var selectedTab: Tab = .home
@@ -49,21 +50,12 @@ struct ContentView: View {
                 }
                 .tag(Tab.profile)
         }
-        .accentColor(Color(hex: "6A89CC"))
+        .accentColor(AppTheme.primary)
         .sheet(isPresented: $showingEmergencyContacts) {
-            VStack {
-                Text("Emergency Contacts")
-                    .font(.title)
-                    .padding()
-                
-                Text("Coming soon")
-                    .foregroundColor(.secondary)
-                
-                Button("Close") {
-                    showingEmergencyContacts = false
-                }
-                .padding()
-            }
+            EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
+        }
+        .sheet(isPresented: $showingMotivationView) {
+            MotivationView()
         }
         .onAppear {
             loadEmergencyContacts()
@@ -115,7 +107,7 @@ struct ContentView: View {
             }
             .padding()
         }
-        .background(Color(hex: "F5F7FA").ignoresSafeArea())
+        .background(AppTheme.background.ignoresSafeArea())
         .navigationTitle("SafeHaven")
         .navigationBarTitleDisplayMode(.large)
     }
@@ -126,12 +118,12 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Welcome")
                     .font(.headline)
-                    .foregroundColor(Color(hex: "6A89CC"))
+                    .foregroundColor(AppTheme.primary)
                 
                 Text(getTimeBasedGreeting())
                     .font(.largeTitle)
                     .fontWeight(.bold)
-                    .foregroundColor(Color(hex: "2D3748"))
+                    .foregroundColor(AppTheme.textPrimary)
             }
             
             Spacer()
@@ -147,11 +139,11 @@ struct ContentView: View {
                         Image(systemName: getWeatherIcon(for: currentWeather.condition))
                             .font(.title2)
                     }
-                    .foregroundColor(Color(hex: "2D3748"))
+                    .foregroundColor(AppTheme.textPrimary)
                     
                     Text(weatherConditionText(for: currentWeather.condition))
                         .font(.subheadline)
-                        .foregroundColor(Color(hex: "718096"))
+                        .foregroundColor(AppTheme.textSecondary)
                 }
             } else {
                 ProgressView()
@@ -169,7 +161,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Emergency")
                 .font(.headline)
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.textPrimary)
             
             EmergencySlider(
                 onEmergencyCall: {
@@ -188,7 +180,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Daily Tasks")
                 .font(.headline)
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.textPrimary)
             
             TodoView()
         }
@@ -199,19 +191,19 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Daily Motivation")
                 .font(.headline)
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.textPrimary)
             
             ZStack {
                 // Background gradient
                 LinearGradient(
-                    gradient: Gradient(colors: [Color(hex: "6A89CC"), Color(hex: "41B3A3")]),
+                    gradient: Gradient(colors: [AppTheme.primary, AppTheme.secondary]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
                 .cornerRadius(12)
                 
                 // Quote
-                Text(getRandomMotivationalQuote())
+                Text(getRandomDailyQuote())
                     .font(.system(.body, design: .serif))
                     .fontWeight(.medium)
                     .foregroundColor(.white)
@@ -221,11 +213,11 @@ struct ContentView: View {
             .frame(height: 120)
             
             Button(action: {
-                selectedTab = .journal
+                showingMotivationView = true
             }) {
                 Text("View More Motivational Quotes")
                     .font(.subheadline)
-                    .foregroundColor(Color(hex: "6A89CC"))
+                    .foregroundColor(AppTheme.primary)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.top, 4)
@@ -241,52 +233,58 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Weather & Safety")
                 .font(.headline)
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.textPrimary)
             
-            if let weather = weatherService.currentWeather {
-                HStack {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: getWeatherIcon(for: weather.condition))
-                                .font(.title)
-                            Text(weather.temperatureString)
-                                .font(.title2)
-                                .fontWeight(.semibold)
+            // Check if the weatherService is in a loading state
+            Group {
+                if weatherService.currentWeather == nil {
+                    HStack {
+                        ProgressView()
+                            .padding(.trailing, 10)
+                        Text("Loading weather data...")
+                            .font(.subheadline)
+                            .foregroundColor(AppTheme.textSecondary)
+                    }
+                    .frame(height: 100)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                } else if let weather = weatherService.currentWeather {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: getWeatherIcon(for: weather.condition))
+                                    .font(.title)
+                                Text(weather.temperatureString)
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                            }
+                            
+                            Text("Feels like \(weather.feelsLikeString)")
+                                .font(.subheadline)
+                            
+                            Text("Humidity: \(weather.humidityString)")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.textSecondary)
+                            
+                            Text("Wind: \(weather.windSpeedString)")
+                                .font(.caption)
+                                .foregroundColor(AppTheme.textSecondary)
                         }
                         
-                        Text("Feels like \(weather.feelsLikeString)")
-                            .font(.subheadline)
+                        Spacer()
                         
-                        Text("Humidity: \(weather.humidityString)")
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "718096"))
-                        
-                        Text("Wind: \(weather.windSpeedString)")
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "718096"))
+                        // Weather safety tips
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Safety Tips:")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            
+                            Text(getWeatherSafetyTip(for: weather.condition))
+                                .font(.caption)
+                                .foregroundColor(AppTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    
-                    Spacer()
-                    
-                    // Weather safety tips
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Safety Tips:")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        
-                        Text(getWeatherSafetyTip(for: weather.condition))
-                            .font(.caption)
-                            .foregroundColor(Color(hex: "718096"))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            } else {
-                HStack {
-                    ProgressView()
-                    Text("Loading weather data...")
-                        .font(.subheadline)
-                        .foregroundColor(Color(hex: "718096"))
                 }
             }
         }
@@ -301,14 +299,14 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Quick Access")
                 .font(.headline)
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.textPrimary)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 // Resources
                 quickAccessButton(
                     title: "Find Resources",
                     icon: "mappin.and.ellipse",
-                    color: Color(hex: "6A89CC")
+                    color: AppTheme.primary
                 ) {
                     selectedTab = .resources
                 }
@@ -317,7 +315,7 @@ struct ContentView: View {
                 quickAccessButton(
                     title: "Journal",
                     icon: "book.fill",
-                    color: Color(hex: "41B3A3")
+                    color: AppTheme.secondary
                 ) {
                     selectedTab = .journal
                 }
@@ -326,7 +324,7 @@ struct ContentView: View {
                 quickAccessButton(
                     title: "Emergency Contacts",
                     icon: "person.crop.circle.badge.plus",
-                    color: Color(hex: "E8505B"),
+                    color: AppTheme.accent,
                     action: {
                         showingEmergencyContacts = true
                     }
@@ -357,7 +355,7 @@ struct ContentView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "person.crop.circle.fill")
                             .font(.system(size: 80))
-                            .foregroundColor(Color(hex: "6A89CC"))
+                            .foregroundColor(AppTheme.primary)
                         
                         Text(authService.fullName?.formatted() ?? "User")
                             .font(.title)
@@ -365,7 +363,7 @@ struct ContentView: View {
                         
                         Text(authService.userEmail ?? "")
                             .font(.subheadline)
-                            .foregroundColor(Color(hex: "718096"))
+                            .foregroundColor(AppTheme.textSecondary)
                     }
                     .padding()
                     
@@ -373,35 +371,25 @@ struct ContentView: View {
                     VStack(spacing: 24) {
                         // Account Settings
                         settingsSection(title: "Account", items: [
-                            SettingsItem(title: "Emergency Contacts", icon: "person.crop.circle.badge.plus") {
-                                // Navigate to emergency contacts
-                            },
-                            SettingsItem(title: "Notification Settings", icon: "bell.badge") {
-                                // Navigate to notification settings
-                            }
+                            NavigationSettingsItem(title: "Emergency Contacts", icon: "person.crop.circle.badge.plus", destination: AnyView(EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage))),
+                            
+                            NavigationSettingsItem(title: "Notification Settings", icon: "bell.badge", destination: AnyView(NotificationSettingsView()))
                         ])
                         
                         // App Settings
                         settingsSection(title: "App Settings", items: [
-                            SettingsItem(title: "App Appearance", icon: "paintbrush") {
-                                // Navigate to appearance settings
-                            },
-                            SettingsItem(title: "Privacy Settings", icon: "lock.shield") {
-                                // Navigate to privacy settings
-                            }
+                            NavigationSettingsItem(title: "App Appearance", icon: "paintbrush", destination: AnyView(AppearanceSettingsView())),
+                            
+                            NavigationSettingsItem(title: "Privacy Settings", icon: "lock.shield", destination: AnyView(PrivacySettingsView()))
                         ])
                         
                         // About & Support
                         settingsSection(title: "About & Support", items: [
-                            SettingsItem(title: "About SafeHaven", icon: "info.circle") {
-                                // Show about info
-                            },
-                            SettingsItem(title: "Developer Story", icon: "person.text.rectangle") {
-                                // Navigate to developer story
-                            },
-                            SettingsItem(title: "Help & Support", icon: "questionmark.circle") {
-                                // Navigate to help
-                            }
+                            NavigationSettingsItem(title: "About SafeHaven", icon: "info.circle", destination: AnyView(AboutSafeHavenView())),
+                            
+                            NavigationSettingsItem(title: "Developer Story", icon: "person.text.rectangle", destination: AnyView(DeveloperStoryView())),
+                            
+                            NavigationSettingsItem(title: "Help & Support", icon: "questionmark.circle", destination: AnyView(HelpSupportView()))
                         ])
                         
                         // Sign Out
@@ -413,7 +401,7 @@ struct ContentView: View {
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(Color(hex: "E8505B"))
+                                .background(AppTheme.accent)
                                 .cornerRadius(12)
                         }
                         .padding(.horizontal)
@@ -422,7 +410,7 @@ struct ContentView: View {
                     .padding(.bottom, 40)
                 }
             }
-            .background(Color(hex: "F5F7FA").ignoresSafeArea())
+            .background(AppTheme.background.ignoresSafeArea())
             .navigationTitle("Profile")
         }
     }
@@ -440,7 +428,7 @@ struct ContentView: View {
             
             Text(title)
                 .font(.subheadline)
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -457,26 +445,27 @@ struct ContentView: View {
         }
     }
     
-    private func settingsSection(title: String, items: [SettingsItem]) -> some View {
+    private func settingsSection(title: String, items: [NavigationSettingsItem]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(title)
                 .font(.headline)
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.textPrimary)
                 .padding(.horizontal)
             
             VStack(spacing: 0) {
                 ForEach(items.indices, id: \.self) { index in
                     let item = items[index]
-                    Button(action: item.action) {
+                    
+                    NavigationLink(destination: item.destination) {
                         HStack {
                             Image(systemName: item.icon)
                                 .font(.system(size: 20))
-                                .foregroundColor(Color(hex: "6A89CC"))
+                                .foregroundColor(AppTheme.primary)
                                 .frame(width: 24, height: 24)
                             
                             Text(item.title)
                                 .font(.body)
-                                .foregroundColor(Color(hex: "2D3748"))
+                                .foregroundColor(AppTheme.textPrimary)
                             
                             Spacer()
                             
@@ -525,6 +514,22 @@ struct ContentView: View {
         } else {
             return "Good Evening"
         }
+    }
+    
+    private func getRandomDailyQuote() -> String {
+        // Use the current date to seed the random generator
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let dateComponents = calendar.dateComponents([.day, .month, .year], from: today)
+        
+        // Create a consistent seed value for the day
+        let seed = (dateComponents.day ?? 1) +
+                   ((dateComponents.month ?? 1) * 31) +
+                   ((dateComponents.year ?? 2025) * 366)
+        
+        // Use the seed to deterministically select a quote for the day
+        let quoteIndex = seed % motivationalQuotes.count
+        return motivationalQuotes[quoteIndex]
     }
     
     private func getWeatherIcon(for condition: WeatherCondition) -> String {
@@ -626,6 +631,13 @@ struct ContentView: View {
 }
 
 // MARK: - Supporting Struct
+struct NavigationSettingsItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let icon: String
+    let destination: AnyView
+}
+
 struct SettingsItem {
     let title: String
     let icon: String

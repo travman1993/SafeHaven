@@ -46,7 +46,9 @@ struct LoginViewContent: View {
         Group {
             if showingOnboarding {
                 // Use your existing OnboardingView - no onComplete parameter
-                OnboardingView(hasCompletedOnboarding: $showingOnboarding)
+                OnboardingView(hasCompletedOnboarding: $showingOnboarding, onComplete: {
+                    signInAsGuest()
+                })
                     .onChange(of: showingOnboarding) { oldValue, newValue in
                         if oldValue == true && newValue == false {
                             // When onboarding completes

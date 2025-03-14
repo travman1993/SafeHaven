@@ -7,6 +7,7 @@
 import Foundation
 import StoreKit
 
+@MainActor
 class SubscriptionManager: ObservableObject {
     @Published var isSubscribed = false
     @Published var isLoading = false
@@ -14,25 +15,24 @@ class SubscriptionManager: ObservableObject {
     @Published var purchasedProductIDs = Set<String>()
     
     // Monthly subscription product ID - configure this in App Store Connect
-    private let monthlySubscriptionID = "com.rodriguez.travis.safehaven.subscription.monthly"
+    private let monthlySubscriptionID = "com.safehaven.premium.monthly"
     
+    // Singleton instance
     static let shared = SubscriptionManager()
     
     private init() {
-        // For now, just set to false by default
-        isSubscribed = false
-        
-        // Request products
+        // Check existing subscriptions on initialization
         Task {
-            await loadProducts()
+            await checkSubscriptionStatus()
         }
     }
     
-    @MainActor
+    // Load available products from App Store
     func loadProducts() async {
         isLoading = true
         
         do {
+            // Fetch products that match the subscription ID
             let storeProducts = try await Product.products(for: [monthlySubscriptionID])
             self.products = storeProducts
             self.isLoading = false
@@ -42,20 +42,33 @@ class SubscriptionManager: ObservableObject {
         }
     }
     
-    // Simplified purchase method to avoid type issues
-    @MainActor
+    // Purchase a subscription product
     func purchase(_ product: Product) async -> Bool {
         do {
-            // Try to purchase the product
             let result = try await product.purchase()
             
-            // Process the result
-            if case .success = result {
-                // Mark as subscribed without complex verification for now
-                self.isSubscribed = true
-                self.purchasedProductIDs.insert(product.id)
-                return true
-            } else {
+            switch result {
+            case .success(let verification):
+                switch verification {
+                case .verified(let transaction):
+                    // Transaction verified successfully
+                    await transaction.finish()
+                    
+                    // Update subscription status
+                    await updateCustomerProductStatus()
+                    
+                    return true
+                case .unverified(_, _):
+                    // Transaction could not be verified
+                    return false
+                }
+            case .userCancelled:
+                // User cancelled the purchase
+                return false
+            case .pending:
+                // Purchase is pending
+                return false
+            @unknown default:
                 return false
             }
         } catch {
@@ -63,11 +76,64 @@ class SubscriptionManager: ObservableObject {
             return false
         }
     }
+    
+    // Check and update subscription status
+    private func checkSubscriptionStatus() async {
+        // Remove do-catch entirely
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result else {
+                continue
+            }
+            
+            if transaction.productID == monthlySubscriptionID &&
+               transaction.expirationDate ?? .now > .now {
+                isSubscribed = true
+                return
+            }
+        }
+        
+        // If no active subscription found
+        isSubscribed = false
+    }
+    
+    // Update customer's product status after successful purchase
+    private func updateCustomerProductStatus() async {
+        // Recheck subscription status
+        await checkSubscriptionStatus()
+    }
+    
+    // Restore purchases
+    func restorePurchases() async -> Bool {
+        do {
+            // Synchronize transactions with App Store
+            try await AppStore.sync()
+            
+            // Recheck subscription status
+            await checkSubscriptionStatus()
+            
+            return isSubscribed
+        } catch {
+            print("Error restoring purchases: \(error)")
+            return false
+        }
+    }
+    
+    // Cancel subscription
+    func cancelSubscription() {
+        // Open App Store subscription management
+        if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+            UIApplication.shared.open(url)
+        }
+    }
 }
 
-// Extension for product price formatting
+// Extension to format product price
 extension Product {
     var displayPrice: String {
-        return self.price.formatted(.currency(code: self.priceFormatStyle.locale.currency?.identifier ?? "USD"))
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = priceFormatStyle.locale
+        
+        return formatter.string(from: price as NSNumber) ?? ""
     }
 }

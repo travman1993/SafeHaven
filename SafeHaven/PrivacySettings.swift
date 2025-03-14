@@ -13,26 +13,27 @@ struct PrivacySettingsView: View {
     @AppStorage("shareLocationForEmergencies") private var shareLocationForEmergencies = true
     @AppStorage("analyticsOptIn") private var analyticsOptIn = true
     @State private var showingLocationAlert = false
+    @State private var showingDataStorageDetails = false
     
     var body: some View {
         Form {
             Section(header: Text("Location Sharing")) {
                 Toggle("Weather Information", isOn: $shareLocationForWeather)
-                    .onChange(of: shareLocationForWeather) { oldValue, newValue in
+                    .onChange(of: shareLocationForWeather) { _, newValue in
                         if newValue {
                             checkLocationPermission()
                         }
                     }
 
                 Toggle("Find Resources Nearby", isOn: $shareLocationForResources)
-                    .onChange(of: shareLocationForResources) { oldValue, newValue in
+                    .onChange(of: shareLocationForResources) { _, newValue in
                         if newValue {
                             checkLocationPermission()
                         }
                     }
 
                 Toggle("Emergency Services", isOn: $shareLocationForEmergencies)
-                    .onChange(of: shareLocationForEmergencies) { oldValue, newValue in
+                    .onChange(of: shareLocationForEmergencies) { _, newValue in
                         if newValue {
                             checkLocationPermission()
                         }
@@ -42,8 +43,49 @@ struct PrivacySettingsView: View {
             Section(header: Text("Data Usage"), footer: Text("We use anonymized analytics to improve the app and help more people.")) {
                 Toggle("Anonymous Usage Analytics", isOn: $analyticsOptIn)
                 
-                NavigationLink(destination: Text("Your data is stored securely and encrypted. We never sell your data to third parties.").padding()) {
+                Button(action: {
+                    showingDataStorageDetails = true
+                }) {
                     Text("Data Storage & Security")
+                }
+                .sheet(isPresented: $showingDataStorageDetails) {
+                    NavigationView {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Your data is stored securely and encrypted. We never sell your data to third parties.")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                                
+                                Text("Security Measures:")
+                                    .font(.headline)
+                                    .padding(.top)
+                                
+                                HStack(spacing: 12) {
+                                    Image(systemName: "lock.shield.fill")
+                                        .foregroundColor(AppTheme.primary)
+                                    Text("End-to-end encryption")
+                                }
+                                
+                                HStack(spacing: 12) {
+                                    Image(systemName: "cloud.fill")
+                                        .foregroundColor(AppTheme.primary)
+                                    Text("Secure cloud storage")
+                                }
+                                
+                                HStack(spacing: 12) {
+                                    Image(systemName: "hand.raised.fill")
+                                        .foregroundColor(AppTheme.primary)
+                                    Text("Strict privacy controls")
+                                }
+                            }
+                            .padding()
+                            .navigationTitle("Data Storage & Security")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .navigationBarItems(trailing: Button("Done") {
+                                showingDataStorageDetails = false
+                            })
+                        }
+                    }
                 }
             }
             
@@ -90,7 +132,7 @@ struct DeleteAccountView: View {
     @State private var confirmationText = ""
     @State private var password = ""
     @State private var showingAlert = false
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
         Form {
@@ -113,7 +155,7 @@ struct DeleteAccountView: View {
         .alert("Account Deleted", isPresented: $showingAlert) {
             Button("OK", role: .cancel) {
                 // In a real app, this would sign out the user
-                dismiss()
+                presentationMode.wrappedValue.dismiss()
             }
         } message: {
             Text("Your account and all associated data have been permanently deleted.")

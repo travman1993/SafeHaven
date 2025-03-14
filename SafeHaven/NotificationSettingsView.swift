@@ -11,6 +11,9 @@ struct NotificationSettingsView: View {
     @AppStorage("motivationNotificationsEnabled") private var notificationsEnabled = false
     @AppStorage("motivationNotificationHour") private var notificationHour = 9
     @AppStorage("motivationNotificationMinute") private var notificationMinute = 0
+    @AppStorage("resourceUpdateNotificationsEnabled") private var resourceUpdateNotificationsEnabled = false
+    @AppStorage("weatherWarningsEnabled") private var weatherWarningsEnabled = false
+    @AppStorage("locationBasedAlertsEnabled") private var locationBasedAlertsEnabled = false
     @State private var selectedDate = Date()
     @State private var showingAuthAlert = false
     @Environment(\.dismiss) var dismiss
@@ -58,9 +61,9 @@ struct NotificationSettingsView: View {
             }
             
             Section(header: Text("Emergency Alerts")) {
-                Toggle("Resource Updates", isOn: .constant(true))
-                Toggle("Weather Warnings", isOn: .constant(true))
-                Toggle("Location-based Alerts", isOn: .constant(false))
+                Toggle("Resource Updates", isOn: $resourceUpdateNotificationsEnabled)
+                Toggle("Weather Warnings", isOn: $weatherWarningsEnabled)
+                Toggle("Location-based Alerts", isOn: $locationBasedAlertsEnabled)
             }
             
             Section(header: Text("About"), footer: Text("Notifications deliver daily motivation quotes and important safety alerts to help you stay informed and inspired.")) {

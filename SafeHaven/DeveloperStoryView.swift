@@ -112,8 +112,9 @@ struct DeveloperStoryView: View {
                         .padding(.horizontal)
                     
                     Button(action: {
-                        // Navigate back to support page
-                        // This is handled by the NavigationView system
+                        // Open Stripe donation link
+                        if let url = URL(string: "https://buy.stripe.com/yourStripeAccountDonationLink") { UIApplication.shared.open(url)
+                        }
                     }) {
                         Text("Support Our Mission")
                             .font(.system(size: 16, weight: .semibold))

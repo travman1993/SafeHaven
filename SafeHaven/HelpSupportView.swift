@@ -133,7 +133,7 @@ struct HelpSupportView: View {
                                                 title: "Knowledge Base",
                                                 description: "Browse our comprehensive guides and tutorials",
                                                 action: {
-                                                    if let url = URL(string: "https://safehaven-app.com/help") {
+                                                    if let url = URL(string: "https://safehaven.cc") {
                                                         UIApplication.shared.open(url)
                                                     }
                                                 }
@@ -144,7 +144,7 @@ struct HelpSupportView: View {
                                                 title: "Community Forum",
                                                 description: "Connect with other users and share experiences",
                                                 action: {
-                                                    if let url = URL(string: "https://forum.safehaven-app.com") {
+                                                    if let url = URL(string: "https://safehaven.cc") {
                                                         UIApplication.shared.open(url)
                                                     }
                                                 }
@@ -155,7 +155,7 @@ struct HelpSupportView: View {
                                                 title: "Video Tutorials",
                                                 description: "Watch step-by-step guides for using the app",
                                                 action: {
-                                                    if let url = URL(string: "https://safehaven-app.com/tutorials") {
+                                                    if let url = URL(string: "https://safehaven.cc") {
                                                         UIApplication.shared.open(url)
                                                     }
                                                 }

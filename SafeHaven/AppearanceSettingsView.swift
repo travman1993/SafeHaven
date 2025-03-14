@@ -1,15 +1,40 @@
-//
-//  AppearanceSettingsView.swift
-//  SafeHaven
-//
-//  Created by Travis Rodriguez on 3/13/25.
-//
 import SwiftUI
+
+class AccessibilityManager {
+    static func updateReduceMotion(_ enabled: Bool) {
+        // You cannot directly set this property
+        // Instead, provide guidance or use system settings
+        print("Reduce Motion setting: \(enabled)")
+        // Optionally open Settings if you want to guide user
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    static func updateBoldText(_ enabled: Bool) {
+        // Similar approach for Bold Text
+        print("Bold Text setting: \(enabled)")
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    // Getter methods to check current state
+    static var isReduceMotionEnabled: Bool {
+        UIAccessibility.isReduceMotionEnabled
+    }
+    
+    static var isBoldTextEnabled: Bool {
+        UIAccessibility.isBoldTextEnabled
+    }
+}
 
 struct AppearanceSettingsView: View {
     @AppStorage("useSystemTheme") private var useSystemTheme = true
     @AppStorage("darkModeEnabled") private var darkModeEnabled = false
-    @AppStorage("accentColorString") private var accentColorString = "6A89CC" // Default blue
+    @AppStorage("accentColorString") private var accentColorString = "6A89CC"
+    @AppStorage("reduceMotion") private var reduceMotion = false
+    @AppStorage("boldText") private var boldText = false
     
     private let colorOptions = [
         ColorOption(name: "Blue", hex: "6A89CC"),
@@ -18,7 +43,6 @@ struct AppearanceSettingsView: View {
         ColorOption(name: "Purple", hex: "7952B3"),
         ColorOption(name: "Orange", hex: "F9844A")
     ]
-    
     var body: some View {
         Form {
             Section(header: Text("Theme")) {
@@ -34,6 +58,7 @@ struct AppearanceSettingsView: View {
                 ForEach(colorOptions) { option in
                     Button(action: {
                         accentColorString = option.hex
+                        updateAppAccentColor(option.hex)
                     }) {
                         HStack {
                             Circle()
@@ -55,22 +80,42 @@ struct AppearanceSettingsView: View {
             }
             
             Section(header: Text("UI Settings"), footer: Text("These settings affect the appearance of cards and elements in the app.")) {
-                Toggle("Reduce Motion", isOn: .constant(false))
-                Toggle("Reduce Transparency", isOn: .constant(false))
-                Toggle("Bold Text", isOn: .constant(false))
-            }
+                            Toggle("Reduce Motion", isOn: $reduceMotion)
+                                .onChange(of: reduceMotion) { oldValue, newValue in
+                                    AccessibilityManager.updateReduceMotion(newValue)
+                                }
+                            
+                            Toggle("Reduce Transparency", isOn: $reduceMotion)
+                            
+                            Toggle("Bold Text", isOn: $boldText)
+                                .onChange(of: boldText) { oldValue, newValue in
+                                    AccessibilityManager.updateBoldText(newValue)
+                                }
+                        }
             
             Section(footer: Text("These settings will be applied when you restart the app.")) {
                 Button("Reset to Defaults") {
-                    useSystemTheme = true
-                    darkModeEnabled = false
-                    accentColorString = "6A89CC"
+                    resetToDefaults()
                 }
                 .foregroundColor(.red)
             }
         }
         .navigationTitle("Appearance")
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    private func updateAppAccentColor(_ hexColor: String) {
+        AppTheme.primary = Color(hex: hexColor)
+    }
+    
+    private func resetToDefaults() {
+        useSystemTheme = true
+        darkModeEnabled = false
+        accentColorString = "6A89CC"
+        reduceMotion = false
+        boldText = false
+        
+        updateAppAccentColor("6A89CC")
     }
 }
 

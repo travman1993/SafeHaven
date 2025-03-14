@@ -22,48 +22,48 @@ struct PaywallView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "star.square.fill")
                             .font(.system(size: 60))
-                            .foregroundColor(Color(hex: "6A89CC"))
+                            .foregroundColor(AppTheme.primary)
                             .padding(.top, 20)
                         
-                        Text("Safe Haven Premium")
+                        Text("SafeHaven Premium")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(hex: "2D3748"))
+                            .foregroundColor(AppTheme.textPrimary)
                         
-                        Text("Access all premium features")
+                        Text("Unlock Full Potential")
                             .font(.system(size: 18, weight: .medium, design: .rounded))
-                            .foregroundColor(Color(hex: "6A89CC"))
+                            .foregroundColor(AppTheme.primary)
                     }
                     
                     // Feature List
                     VStack(alignment: .leading, spacing: 20) {
                         FeatureRow(
                             icon: "book.fill",
-                            title: "Daily Journal",
-                            description: "Track your mood and thoughts with a personal journal"
+                            title: "Unlimited Journal Entries",
+                            description: "Track unlimited entries and access advanced journaling tools"
                         )
                         
                         FeatureRow(
                             icon: "checklist",
-                            title: "Todo List",
-                            description: "Organize your daily tasks with a simple todo list"
+                            title: "Advanced Todo Management",
+                            description: "Create recurring tasks and get detailed task insights"
                         )
                         
                         FeatureRow(
                             icon: "quote.bubble.fill",
-                            title: "Daily Motivation",
-                            description: "Access personalized motivational quotes and inspiration"
+                            title: "Personalized Motivation",
+                            description: "Custom quote selection and daily inspiration tracking"
                         )
                         
                         FeatureRow(
                             icon: "person.crop.circle.badge.exclamationmark",
-                            title: "Emergency Contacts",
-                            description: "Set up contacts to notify in case of emergency"
+                            title: "Enhanced Emergency Contacts",
+                            description: "More contact slots and advanced emergency messaging"
                         )
                         
                         FeatureRow(
-                            icon: "exclamationmark.shield.fill",
-                            title: "Emergency SOS",
-                            description: "Quick access to emergency services with automated texts"
+                            icon: "mappin.and.ellipse",
+                            title: "Advanced Resource Finder",
+                            description: "Detailed resource information and expanded search capabilities"
                         )
                     }
                     .padding()
@@ -80,19 +80,18 @@ struct PaywallView: View {
                             ProgressView()
                                 .padding()
                         } else if let product = subscriptionManager.products.first {
-                            // Subscription option
                             VStack(spacing: 10) {
                                 Text("Monthly Premium")
                                     .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(Color(hex: "2D3748"))
+                                    .foregroundColor(AppTheme.textPrimary)
                                 
                                 Text("\(product.displayPrice) / month")
                                     .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(Color(hex: "6A89CC"))
+                                    .foregroundColor(AppTheme.primary)
                                 
                                 Text("Cancel anytime")
                                     .font(.system(size: 14))
-                                    .foregroundColor(Color(hex: "718096"))
+                                    .foregroundColor(AppTheme.textSecondary)
                             }
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -103,95 +102,54 @@ struct PaywallView: View {
                             )
                             .padding(.horizontal)
                             
-                            // Subscribe button
                             Button(action: {
                                 purchaseSubscription(product: product)
                             }) {
-                                if isProcessing {
-                                    ProgressView()
-                                        .tint(.white)
-                                } else {
-                                    Text("Subscribe Now")
-                                        .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.white)
-                                }
+                                Text("Subscribe Now")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(AppTheme.primary)
+                                    .cornerRadius(12)
+                                    .padding(.horizontal)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(hex: "6A89CC"))
-                            )
-                            .padding(.horizontal)
                             .disabled(isProcessing)
                         } else {
-                            // No products available
-                            Text("Subscription information unavailable")
-                                .font(.system(size: 16))
-                                .foregroundColor(Color(hex: "718096"))
-                                .multilineTextAlignment(.center)
-                                .padding()
-                            
-                            Button(action: {
-                                Task {
-                                    await subscriptionManager.loadProducts()
-                                }
-                            }) {
-                                Text("Refresh")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 24)
-                                    .background(Color(hex: "6A89CC"))
-                                    .cornerRadius(8)
-                            }
+                            Text("Subscription unavailable")
+                                .foregroundColor(AppTheme.textSecondary)
                         }
                     }
                     .padding(.vertical)
                     
-                    // Benefits
-                    Text("Subscribers help us continue developing new features and maintaining the service.")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color(hex: "718096"))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-                    
-                    // Space for terms
-                    VStack(spacing: 8) {
-                        Text("Subscription automatically renews unless cancelled")
+                    // Footer
+                    VStack(spacing: 10) {
+                        Text("Subscribers help us continue developing and maintaining SafeHaven")
                             .font(.system(size: 12))
-                            .foregroundColor(Color(hex: "A0AEC0"))
+                            .foregroundColor(AppTheme.textSecondary)
+                            .multilineTextAlignment(.center)
                         
                         HStack(spacing: 16) {
-                            Button(action: {
-                                // Link to terms
-                            }) {
-                                Text("Terms of Service")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(Color(hex: "6A89CC"))
+                            Button("Terms of Service") {
+                                // Open Terms of Service
                             }
+                            .font(.system(size: 12))
+                            .foregroundColor(AppTheme.primary)
                             
-                            Button(action: {
-                                // Link to privacy policy
-                            }) {
-                                Text("Privacy Policy")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(Color(hex: "6A89CC"))
+                            Button("Privacy Policy") {
+                                // Open Privacy Policy
                             }
+                            .font(.system(size: 12))
+                            .foregroundColor(AppTheme.primary)
                         }
                     }
                     .padding(.bottom, 20)
                 }
-                .padding(.vertical)
             }
-            .background(Color(hex: "F5F7FA").ignoresSafeArea())
-            .navigationBarTitle("Premium Features", displayMode: .inline)
-            .navigationBarItems(trailing: Button(action: {
+            .background(AppTheme.background.ignoresSafeArea())
+            .navigationBarTitle("Premium", displayMode: .inline)
+            .navigationBarItems(trailing: Button("Close") {
                 dismiss()
-            }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(Color(hex: "718096"))
             })
             .alert(isPresented: $showAlert) {
                 Alert(
@@ -202,10 +160,9 @@ struct PaywallView: View {
             }
         }
         .onAppear {
-            if subscriptionManager.products.isEmpty {
-                Task {
-                    await subscriptionManager.loadProducts()
-                }
+            // Load products when view appears
+            Task {
+                await subscriptionManager.loadProducts()
             }
         }
     }
@@ -216,18 +173,19 @@ struct PaywallView: View {
         Task {
             let success = await subscriptionManager.purchase(product)
             
-            // Update UI on main thread
-            DispatchQueue.main.async {
+            await MainActor.run {
                 isProcessing = false
+                
                 if success {
-                    alertMessage = "Thank you for subscribing to Safe Haven Premium!"
+                    alertMessage = "Thank you for subscribing to SafeHaven Premium!"
                     showAlert = true
-                    // Dismiss the paywall after a short delay
+                    
+                    // Optional: Dismiss after a short delay
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         dismiss()
                     }
                 } else {
-                    alertMessage = "There was an issue processing your subscription. Please try again."
+                    alertMessage = "Subscription purchase failed. Please try again."
                     showAlert = true
                 }
             }
@@ -244,19 +202,19 @@ struct FeatureRow: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 22))
-                .foregroundColor(Color(hex: "6A89CC"))
+                .foregroundColor(AppTheme.primary)
                 .frame(width: 44, height: 44)
-                .background(Color(hex: "6A89CC").opacity(0.1))
+                .background(AppTheme.primary.opacity(0.1))
                 .clipShape(Circle())
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Color(hex: "2D3748"))
+                    .foregroundColor(AppTheme.textPrimary)
                 
                 Text(description)
                     .font(.system(size: 14))
-                    .foregroundColor(Color(hex: "718096"))
+                    .foregroundColor(AppTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

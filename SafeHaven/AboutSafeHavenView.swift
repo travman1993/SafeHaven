@@ -57,6 +57,9 @@ struct AboutSafeHavenView: View {
                         FeatureItem(icon: "cloud.sun.fill", title: "Weather & Safety", description: "Real-time weather with safety recommendations based on conditions")
                         
                         FeatureItem(icon: "book.fill", title: "Personal Journal", description: "Track your thoughts, feelings, and progress with a private journal")
+                        
+                        FeatureItem(icon: "quote.bubble.fill", title: "Daily Motivation", description: "Get inspirational quotes to boost your mood and motivation daily"
+                        )
                     }
                     .padding()
                     .background(Color.white)
@@ -95,29 +98,7 @@ struct AboutSafeHavenView: View {
                             .padding(.leading, 50)
                         
                         Button(action: {
-                            if let url = URL(string: "https://safehaven-app.com/faq") {
-                                UIApplication.shared.open(url)
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "questionmark.circle.fill")
-                                    .foregroundColor(AppTheme.primary)
-                                Text("Frequently Asked Questions")
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(Color(hex: "A0AEC0"))
-                            }
-                            .padding()
-                            .contentShape(Rectangle())
-                        }
-                        
-                        Divider()
-                            .padding(.leading, 50)
-                        
-                        Button(action: {
-                            if let url = URL(string: "https://safehaven-app.com") {
+                            if let url = URL(string: "https://safehaven.cc") {
                                 UIApplication.shared.open(url)
                             }
                         }) {

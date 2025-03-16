@@ -15,6 +15,21 @@ struct SafeHavenApp: App {
     @StateObject private var authService = AuthenticationService()
     @StateObject private var locationService = LocationService()
     @StateObject private var weatherService = WeatherService.shared
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
+    
+    init() {
+        // Set feature flags for the subscription manager
+        if UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+            // Set up notification observer for showing paywall
+            NotificationCenter.default.addObserver(
+                forName: Notification.Name("ShowPaywall"),
+                object: nil,
+                queue: .main
+            ) { _ in
+                // This will be handled in ContentView
+            }
+        }
+    }
     
     var body: some Scene {
         WindowGroup {

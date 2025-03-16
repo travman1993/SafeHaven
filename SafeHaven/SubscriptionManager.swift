@@ -7,6 +7,16 @@
 import Foundation
 import StoreKit
 
+// Add new enum to track different features
+enum AppFeature {
+    case emergencyContacts(count: Int)
+    case journal
+    case motivation
+    case todoList
+    case weatherInfo
+    case resourceFinder
+}
+
 @MainActor
 class SubscriptionManager: ObservableObject {
     @Published var isSubscribed = false
@@ -17,6 +27,12 @@ class SubscriptionManager: ObservableObject {
     // Monthly subscription product ID - configure this in App Store Connect
     private let monthlySubscriptionID = "com.safehaven.premium.monthly"
     
+    // Feature restrictions for free version
+    let maxEmergencyContactsFree = 1
+    let journalFeatureEnabled = false
+    let motivationFeatureEnabled = false
+    let todoFeatureEnabled = false
+    
     // Singleton instance
     static let shared = SubscriptionManager()
     
@@ -24,6 +40,28 @@ class SubscriptionManager: ObservableObject {
         // Check existing subscriptions on initialization
         Task {
             await checkSubscriptionStatus()
+        }
+    }
+    
+    // Check if a specific feature is available
+    func canUseFeature(_ feature: AppFeature) -> Bool {
+        if isSubscribed {
+            return true
+        }
+        
+        switch feature {
+        case .emergencyContacts(let count):
+            return count <= maxEmergencyContactsFree
+        case .journal:
+            return journalFeatureEnabled
+        case .motivation:
+            return motivationFeatureEnabled
+        case .todoList:
+            return todoFeatureEnabled
+        case .weatherInfo:
+            return true // Weather info available to all users
+        case .resourceFinder:
+            return true // Resource finder available to all users
         }
     }
     

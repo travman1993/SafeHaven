@@ -15,6 +15,8 @@ struct EmergencyContactsView: View {
     @State private var newPhone = ""
     @State private var newRelationship = ""
     @Environment(\.dismiss) var dismiss
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
+    @State private var showingSubscriptionAlert = false
     
     var body: some View {
         NavigationView {
@@ -68,7 +70,22 @@ struct EmergencyContactsView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 8)
                     }
-                    .disabled(newName.isEmpty || newPhone.isEmpty)
+                    .disabled(newName.isEmpty || newPhone.isEmpty || !canAddMoreContacts())
+                }
+                
+                if !subscriptionManager.isSubscribed && contacts.count >= subscriptionManager.maxEmergencyContactsFree {
+                    Section {
+                        Button(action: {
+                            showPaywall()
+                        }) {
+                            HStack {
+                                Image(systemName: "star.fill")
+                                Text("Upgrade to add more contacts")
+                            }
+                            .foregroundColor(AppTheme.primary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        }
+                    }
                 }
                 
                 Section(footer: Text("These contacts will receive your emergency text message with your location when you use the Emergency SOS feature.")) {
@@ -87,22 +104,43 @@ struct EmergencyContactsView: View {
             .navigationBarItems(trailing: Button("Done") {
                 dismiss()
             })
+            .alert("Subscription Required", isPresented: $showingSubscriptionAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Subscribe") {
+                    showPaywall()
+                }
+            } message: {
+                Text("Upgrade to SafeHaven Premium to add more than \(subscriptionManager.maxEmergencyContactsFree) emergency contact.")
+            }
         }
     }
     
+    private func canAddMoreContacts() -> Bool {
+        if subscriptionManager.isSubscribed {
+            return true
+        }
+        return contacts.count < subscriptionManager.maxEmergencyContactsFree
+    }
+    
     private func addContact() {
-        let contact = EmergencyContact(
-            name: newName,
-            phoneNumber: newPhone,
-            relationship: newRelationship.isEmpty ? "Contact" : newRelationship
-        )
-        contacts.append(contact)
-        newName = ""
-        newPhone = ""
-        newRelationship = ""
+        if !canAddMoreContacts() {
+            showingSubscriptionAlert = true
+            return
+        }
         
-        // Optional: save to CloudKit or local storage
-        saveContacts()
+        if !newName.isEmpty && !newPhone.isEmpty {
+            let contact = EmergencyContact(
+                name: newName,
+                phoneNumber: newPhone,
+                relationship: newRelationship.isEmpty ? "Contact" : newRelationship
+            )
+            contacts.append(contact)
+            newName = ""
+            newPhone = ""
+            newRelationship = ""
+            
+            saveContacts()
+        }
     }
     
     private func deleteContact(at offsets: IndexSet) {
@@ -117,6 +155,14 @@ struct EmergencyContactsView: View {
         // If you want to persist these contacts, you could implement
         // similar CloudKit logic as in your EmergencyContactView
         // or use another storage mechanism that works with your app's architecture
+    }
+    
+    private func showPaywall() {
+        // Dismiss current view
+        dismiss()
+        
+        // Use NotificationCenter to show Paywall
+        NotificationCenter.default.post(name: Notification.Name("ShowPaywall"), object: nil)
     }
 }
 

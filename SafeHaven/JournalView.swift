@@ -6,8 +6,6 @@
 //
 import SwiftUI
 
-
-
 struct JournalEntry: Identifiable, Codable {
     var id = UUID()
     var date: Date
@@ -56,7 +54,9 @@ class JournalManager: ObservableObject {
 
 struct JournalView: View {
     @StateObject private var journalManager = JournalManager()
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showingNewEntryView = false
+    @State private var showingPaywall = false
     
     // Date formatter
     private let dateFormatter: DateFormatter = {
@@ -66,132 +66,171 @@ struct JournalView: View {
     }()
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack {
-                HStack(spacing: 12) {
-                    Image(systemName: "book.fill")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundColor(Color(hex: "6A89CC"))
+        if subscriptionManager.canUseFeature(.journal) {
+            // Original journal functionality
+            VStack(alignment: .leading, spacing: 0) {
+                // Header
+                HStack {
+                    HStack(spacing: 12) {
+                        Image(systemName: "book.fill")
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundColor(Color(hex: "6A89CC"))
+                        
+                        Text("Journal")
+                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .foregroundColor(Color(hex: "333333"))
+                    }
                     
-                    Text("Journal")
-                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                        .foregroundColor(Color(hex: "333333"))
-                }
-                
-                Spacer()
-                
-                Button(action: {
-                    showingNewEntryView = true
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(Color(hex: "6A89CC"))
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(Color(hex: "F8F9FA"))
-            
-            Divider()
-                .padding(.horizontal, 20)
-            
-            // Journal Entries
-            if journalManager.entries.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "book")
-                        .font(.system(size: 36))
-                        .foregroundColor(Color(hex: "CCCCCC"))
-                        .padding(.top, 30)
-                    
-                    Text("Your journal is empty")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundColor(Color(hex: "999999"))
-                    
-                    Text("Start writing to track your journey")
-                        .font(.system(size: 14, design: .rounded))
-                        .foregroundColor(Color(hex: "AAAAAA"))
+                    Spacer()
                     
                     Button(action: {
                         showingNewEntryView = true
                     }) {
-                        Text("Write First Entry")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .background(Color(hex: "6A89CC"))
-                            .cornerRadius(8)
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(Color(hex: "6A89CC"))
                     }
-                    .padding(.top, 10)
-                    .padding(.bottom, 30)
                 }
-                .frame(maxWidth: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(journalManager.entries) { entry in
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack {
-                                    Text(entry.title)
-                                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                        .foregroundColor(Color(hex: "333333"))
-                                    
-                                    Spacer()
-                                    
-                                    Text(dateFormatter.string(from: entry.date))
-                                        .font(.system(size: 14, design: .rounded))
-                                        .foregroundColor(Color(hex: "999999"))
-                                }
-                                
-                                HStack {
-                                    getMoodIcon(for: entry.mood)
-                                        .foregroundColor(getMoodColor(for: entry.mood))
-                                    
-                                    Text(entry.mood.capitalized)
-                                        .font(.system(size: 14, design: .rounded))
-                                        .foregroundColor(getMoodColor(for: entry.mood))
-                                    
-                                    Spacer()
-                                }
-                                .padding(.vertical, 4)
-                                
-                                Text(entry.content)
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundColor(Color(hex: "555555"))
-                                    .lineLimit(3)
-                                    .padding(.top, 2)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-                            .padding(.horizontal, 20)
-                            .contextMenu {
-                                Button(role: .destructive, action: {
-                                    withAnimation {
-                                        journalManager.deleteEntry(entry)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(Color(hex: "F8F9FA"))
+                
+                Divider()
+                    .padding(.horizontal, 20)
+                
+                // Journal Entries
+                if journalManager.entries.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "book")
+                            .font(.system(size: 36))
+                            .foregroundColor(Color(hex: "CCCCCC"))
+                            .padding(.top, 30)
+                        
+                        Text("Your journal is empty")
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .foregroundColor(Color(hex: "999999"))
+                        
+                        Text("Start writing to track your journey")
+                            .font(.system(size: 14, design: .rounded))
+                            .foregroundColor(Color(hex: "AAAAAA"))
+                        
+                        Button(action: {
+                            showingNewEntryView = true
+                        }) {
+                            Text("Write First Entry")
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(Color(hex: "6A89CC"))
+                                .cornerRadius(8)
+                        }
+                        .padding(.top, 10)
+                        .padding(.bottom, 30)
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(journalManager.entries) { entry in
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text(entry.title)
+                                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                            .foregroundColor(Color(hex: "333333"))
+                                        
+                                        Spacer()
+                                        
+                                        Text(dateFormatter.string(from: entry.date))
+                                            .font(.system(size: 14, design: .rounded))
+                                            .foregroundColor(Color(hex: "999999"))
                                     }
-                                }) {
-                                    Label("Delete", systemImage: "trash")
+                                    
+                                    HStack {
+                                        getMoodIcon(for: entry.mood)
+                                            .foregroundColor(getMoodColor(for: entry.mood))
+                                        
+                                        Text(entry.mood.capitalized)
+                                            .font(.system(size: 14, design: .rounded))
+                                            .foregroundColor(getMoodColor(for: entry.mood))
+                                        
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 4)
+                                    
+                                    Text(entry.content)
+                                        .font(.system(size: 15, design: .rounded))
+                                        .foregroundColor(Color(hex: "555555"))
+                                        .lineLimit(3)
+                                        .padding(.top, 2)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+                                .padding(.horizontal, 20)
+                                .contextMenu {
+                                    Button(role: .destructive, action: {
+                                        withAnimation {
+                                            journalManager.deleteEntry(entry)
+                                        }
+                                    }) {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
                             }
                         }
+                        .padding(.vertical, 16)
                     }
-                    .padding(.vertical, 16)
                 }
             }
-        }
-        .background(Color(hex: "F9FAFB"))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(hex: "EEEEEE"), lineWidth: 1)
-        )
-        .sheet(isPresented: $showingNewEntryView) {
-            NewJournalEntryView(journalManager: journalManager)
+            .background(Color(hex: "F9FAFB"))
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color(hex: "EEEEEE"), lineWidth: 1)
+            )
+            .sheet(isPresented: $showingNewEntryView) {
+                NewJournalEntryView(journalManager: journalManager)
+            }
+        } else {
+            // Subscription required view
+            VStack(spacing: 24) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 50))
+                    .foregroundColor(AppTheme.primary)
+                
+                Text("Journal Feature")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("Track your journey and emotions with our private journaling feature.")
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(AppTheme.textSecondary)
+                    .padding(.horizontal)
+                
+                Button(action: {
+                    showingPaywall = true
+                }) {
+                    Text("Upgrade to Premium")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(AppTheme.primary)
+                        .cornerRadius(12)
+                        .padding(.horizontal, 40)
+                }
+            }
+            .padding()
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView()
+            }
         }
     }
     

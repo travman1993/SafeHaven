@@ -6,12 +6,14 @@ struct ContentView: View {
     @EnvironmentObject private var authService: AuthenticationService
     @EnvironmentObject private var weatherService: WeatherService
     @StateObject private var locationManager = LocationManager()
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     // State for emergency slider
     @State private var emergencyContacts: [EmergencyContact] = []
     @State private var customMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
     @State private var showingEmergencyContacts = false
     @State private var showingMotivationView = false
+    @State private var showingPaywall = false
 
     // State for active tab/section
     @State private var selectedTab: Tab = .home
@@ -55,7 +57,14 @@ struct ContentView: View {
             EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
         }
         .sheet(isPresented: $showingMotivationView) {
-            MotivationView()
+            if subscriptionManager.canUseFeature(.motivation) {
+                MotivationView()
+            } else {
+                PaywallView()
+            }
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView()
         }
         .onAppear {
             loadEmergencyContacts()
@@ -69,6 +78,15 @@ struct ContentView: View {
             // Setup notification for when location changes
             NotificationCenter.default.addObserver(forName: NSNotification.Name("LocationDidUpdate"), object: nil, queue: .main) { _ in
                 updateWeatherIfLocationAvailable()
+            }
+            
+            // Listen for paywall requests
+            NotificationCenter.default.addObserver(
+                forName: Notification.Name("ShowPaywall"),
+                object: nil,
+                queue: .main
+            ) { _ in
+                showingPaywall = true
             }
         }
     }
@@ -182,7 +200,45 @@ struct ContentView: View {
                 .font(.headline)
                 .foregroundColor(AppTheme.textPrimary)
             
-            TodoView()
+            if subscriptionManager.canUseFeature(.todoList) {
+                TodoView()
+            } else {
+                VStack(spacing: 16) {
+                    HStack(spacing: 16) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(AppTheme.primary)
+                            .frame(width: 60, height: 60)
+                            .background(AppTheme.primary.opacity(0.1))
+                            .clipShape(Circle())
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Premium Feature")
+                                .font(.headline)
+                            
+                            Text("Upgrade to access the todo list")
+                                .font(.subheadline)
+                                .foregroundColor(AppTheme.textSecondary)
+                        }
+                    }
+                    
+                    Button(action: {
+                        showingPaywall = true
+                    }) {
+                        Text("Upgrade to Premium")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(AppTheme.primary)
+                            .cornerRadius(12)
+                    }
+                }
+                .padding()
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            }
         }
     }
     
@@ -202,20 +258,39 @@ struct ContentView: View {
                 )
                 .cornerRadius(12)
                 
-                // Quote
-                Text(getRandomDailyQuote())
-                    .font(.system(.body, design: .serif))
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
+                if subscriptionManager.canUseFeature(.motivation) {
+                    // Quote
+                    Text(getRandomDailyQuote())
+                        .font(.system(.body, design: .serif))
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                        .padding()
+                        .multilineTextAlignment(.center)
+                } else {
+                    VStack {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 30))
+                            .foregroundColor(.white)
+                        
+                        Text("Upgrade to Premium")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        
+                        Text("Unlock daily motivation quotes")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.9))
+                    }
                     .padding()
-                    .multilineTextAlignment(.center)
+                }
             }
             .frame(height: 120)
             
             Button(action: {
                 showingMotivationView = true
             }) {
-                Text("View More Motivational Quotes")
+                Text(subscriptionManager.canUseFeature(.motivation) ?
+                     "View More Motivational Quotes" :
+                     "Unlock Motivation Feature")
                     .font(.subheadline)
                     .foregroundColor(AppTheme.primary)
             }
@@ -366,6 +441,53 @@ struct ContentView: View {
                             .foregroundColor(AppTheme.textSecondary)
                     }
                     .padding()
+                    
+                    // Subscription status
+                    if !subscriptionManager.isSubscribed {
+                        Button(action: {
+                            showingPaywall = true
+                        }) {
+                            HStack {
+                                Image(systemName: "star.circle.fill")
+                                    .font(.system(size: 22))
+                                    .foregroundColor(.yellow)
+                                
+                                Text("Upgrade to Premium")
+                                    .font(.headline)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(AppTheme.textSecondary)
+                            }
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(hex: "F9F9F9"))
+                                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                            )
+                            .padding(.horizontal)
+                        }
+                    } else {
+                        HStack {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(.green)
+                            
+                            Text("Premium Subscriber")
+                                .font(.headline)
+                            
+                            Spacer()
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(hex: "F9F9F9"))
+                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        )
+                        .padding(.horizontal)
+                    }
                     
                     // Settings sections
                     VStack(spacing: 24) {

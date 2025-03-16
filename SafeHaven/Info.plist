@@ -2,17 +2,57 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key></key>
-	<string></string>
-	<key>CFBundleIdentifier</key>
-	<string></string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>SafeHaven needs your location to provide relevant safety and weather information</string>
-	<key>NSWeatherUsageDescription</key>
-	<string>SafeHaven uses weather information to provide local safety alerts and relevant weather-based safety recommendations.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
+    <key>CFBundleIdentifier</key>
+    <string>rodriguez.travis.SafeHaven</string>
+    <key>CFBundleName</key>
+    <string>SafeHaven</string>
+    <key>CFBundleDisplayName</key>
+    <string>SafeHaven</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIImageName</key>
+        <string>launch-background</string>
+        <key>UIColorName</key>
+        <string>launch-background-color</string>
+    </dict>
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
+        <key>UISceneConfigurations</key>
+        <dict>
+            <key>UIWindowSceneSessionRoleApplication</key>
+            <array>
+                <dict>
+                    <key>UISceneConfigurationName</key>
+                    <string>Default Configuration</string>
+                    <key>UISceneDelegateClassName</key>
+                    <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+                </dict>
+            </array>
+        </dict>
+    </dict>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>SafeHaven needs your location to provide relevant safety and weather information</string>
+    <key>NSWeatherUsageDescription</key>
+    <string>SafeHaven uses weather information to provide local safety alerts and relevant weather-based safety recommendations.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+    </array>
+    <key>NSCameraUsageDescription</key>
+    <string>SafeHaven uses the camera to scan QR codes for emergency resources</string>
+    <key>NSContactsUsageDescription</key>
+    <string>SafeHaven allows you to add emergency contacts from your address book</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>SafeHaven allows you to upload photos for emergency documentation</string>
 </dict>
 </plist>

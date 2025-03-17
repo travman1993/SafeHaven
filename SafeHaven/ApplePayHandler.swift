@@ -8,13 +8,19 @@ import Foundation
 import PassKit
 import SwiftUI
 
-// Handler class for Apple Pay delegate methods
 class ApplePayHandler: NSObject, PKPaymentAuthorizationControllerDelegate {
     static let shared = ApplePayHandler()
     var completionHandler: ((Bool) -> Void)?
     
+    // Private initializer to enforce singleton pattern
+    private override init() {
+        super.init()
+    }
+    
     func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
-        controller.dismiss(completion: nil)
+        controller.dismiss {
+            // Nothing needed here
+        }
     }
     
     func paymentAuthorizationController(_ controller: PKPaymentAuthorizationController, didAuthorizePayment payment: PKPayment, handler completion: @escaping (PKPaymentAuthorizationResult) -> Void) {

@@ -7,7 +7,6 @@
 import SwiftUI
 import PassKit
 
-// Apple Pay button
 struct ApplePayButton: View {
     var type: PKPaymentButtonType
     var style: PKPaymentButtonStyle
@@ -20,24 +19,33 @@ struct ApplePayButton: View {
             action()
         }) {
             ZStack {
-                PKPaymentButton(type, style)
+                // This is just a transparent placeholder to make the button area clickable
+                Rectangle()
+                    .fill(Color.clear)
                     .frame(minWidth: 100, maxWidth: .infinity)
                     .frame(height: 45)
-                    .opacity(0.01) // Make the actual button invisible but still clickable
                 
                 // Custom styling to match Apple Pay button
                 HStack {
                     if style == .black {
-                        Image("apple-pay-logo")
+                        Image(systemName: "apple.logo")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(height: 20)
                             .foregroundColor(.white)
+                        
+                        Text("Pay")
+                            .font(.headline)
+                            .foregroundColor(.white)
                     } else {
-                        Image("apple-pay-logo-black")
+                        Image(systemName: "apple.logo")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(height: 20)
+                            .foregroundColor(.black)
+                        
+                        Text("Pay")
+                            .font(.headline)
                             .foregroundColor(.black)
                     }
                 }

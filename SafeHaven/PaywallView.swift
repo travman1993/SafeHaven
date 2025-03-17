@@ -8,6 +8,42 @@ import SwiftUI
 import StoreKit
 import PassKit
 
+struct FeatureRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    let isRestricted: Bool
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(isRestricted ? AppTheme.primary : AppTheme.secondary)
+                .frame(width: 24, height: 24)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(AppTheme.textPrimary)
+                    
+                    if isRestricted {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundColor(AppTheme.primary)
+                    }
+                }
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(AppTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
 struct PaywallView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var subscriptionManager = SubscriptionManager.shared
@@ -203,7 +239,8 @@ struct PaywallView: View {
                 }
             }
             .background(AppTheme.background.ignoresSafeArea())
-            .navigationTitle("Premium", displayMode: .inline)
+            .navigationTitle("Premium")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(trailing: Button("Close") {
                 dismiss()
             })

@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSWeatherKitUsageDescription</key>
+	<string>SafeHaven uses weather data to provide safety recommendations</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>SafeHaven needs your location to show nearby resources and provide weather information</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+	</array>
 	<key>om.apple.developer.in-app-payments</key>
 	<string>merchant.com.rodriguez.travis.safehaven</string>
 	<key>NSApplePayMerchantIdentifierUsageDescription</key>

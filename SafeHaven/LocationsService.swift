@@ -5,6 +5,13 @@
 //  Created by Travis Rodriguez on 3/12/25.
 //
 
+//
+//  LocationsService.swift
+//  SafeHaven
+//
+//  Created by Travis Rodriguez on 3/12/25.
+//
+
 import Foundation
 import CloudKit
 import CoreLocation
@@ -21,6 +28,15 @@ class LocationService: NSObject, ObservableObject {
     override init() {
         super.init()
         setupLocationManager()
+        
+        // Check status immediately on init
+        authorizationStatus = locationManager.authorizationStatus
+        
+        // If already authorized, start updating
+        if locationManager.authorizationStatus == .authorizedWhenInUse ||
+           locationManager.authorizationStatus == .authorizedAlways {
+            locationManager.startUpdatingLocation()
+        }
     }
     
     private func setupLocationManager() {
@@ -107,6 +123,9 @@ extension LocationService: CLLocationManagerDelegate {
         
         currentLocation = location
         reverseGeocodeLocation(location)
+        
+        // Notify observers that location updated
+        NotificationCenter.default.post(name: NSNotification.Name("LocationDidUpdate"), object: nil)
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {

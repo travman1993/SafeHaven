@@ -106,21 +106,19 @@ struct EmergencySlider: View {
     }
     
     private func triggerEmergency() {
-        // Only allow emergency calls if subscribed
-        if !subscriptionManager.isSubscribed {
-            // This is a safeguard that shouldn't be needed since the UI shouldn't allow
-            // non-subscribers to interact with this component
-            return
-        }
-        
         // Show confirmation alert
         showingEmergencyAlert = true
         
         // This will initiate a call to emergency services
-        onEmergencyCall()
+        // Use a slight delay to allow the alert to appear first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.onEmergencyCall()
+        }
         
         // Send text messages to emergency contacts
-        sendEmergencyTexts()
+        if !emergencyContacts.isEmpty {
+            sendEmergencyTexts()
+        }
         
         // Provide haptic feedback
         let generator = UINotificationFeedbackGenerator()

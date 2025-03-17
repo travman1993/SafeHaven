@@ -5,7 +5,7 @@ import CoreLocation
 struct ContentView: View {
     @EnvironmentObject private var authService: AuthenticationService
     @EnvironmentObject private var weatherService: WeatherService
-    @StateObject private var locationManager = LocationManager()
+    @StateObject private var locationService = LocationService()
     @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     // State for emergency slider
@@ -70,7 +70,7 @@ struct ContentView: View {
             loadEmergencyContacts()
             
             // Request location
-            locationManager.requestLocation()
+            locationService.requestLocation()
             
             // If location is already available, use it
             updateWeatherIfLocationAvailable()
@@ -92,10 +92,13 @@ struct ContentView: View {
     }
     
     private func updateWeatherIfLocationAvailable() {
-        if let locationCoordinate = locationManager.userLocation {
-            let location = CLLocation(latitude: locationCoordinate.latitude, longitude: locationCoordinate.longitude)
-            weatherService.fetchWeather(for: location)
+        guard let location = locationService.currentLocation else {
+            print("Location not available for weather update")
+            return
         }
+        
+        print("Updating weather with location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+        weatherService.fetchWeather(for: location)
     }
     
     // MARK: - Home View

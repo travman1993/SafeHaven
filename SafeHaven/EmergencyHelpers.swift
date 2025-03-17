@@ -17,23 +17,27 @@ extension UIApplication {
 // Utility to handle SMS functionality
 class EmergencyServices {
     static func callEmergency() {
-        UIApplication.makePhoneCall(to: "911")
+        // Use dispatch async to ensure UI operations happen on main thread
+        DispatchQueue.main.async {
+            if let url = URL(string: "tel://911"), UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url)
+            }
+        }
     }
     
+    // In EmergencyHelpers.swift
     static func getCurrentLocationString() -> String {
-        // We'll return a general location description for safety
-        // A real implementation would use the CLLocationManager data
-        return "my current location"
+        let locationService = LocationService()
+        if let location = locationService.currentLocation {
+            return "Latitude: \(location.coordinate.latitude), Longitude: \(location.coordinate.longitude)"
+        }
+        return "unknown location"
     }
     
     static func sendEmergencyTexts(to contacts: [EmergencyContact], withMessage message: String) {
         let locationString = getCurrentLocationString()
         let personalizedMessage = message.replacingOccurrences(of: "[Location]", with: locationString)
         
-        // In a real app, you would use MFMessageComposeViewController or a third-party
-        // SMS service to send the emergency messages
-        
-        // This is for demonstration purposes only
         for contact in contacts {
             sendTextMessage(to: contact.phoneNumber, message: personalizedMessage)
         }

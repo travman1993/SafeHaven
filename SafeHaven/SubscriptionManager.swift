@@ -6,6 +6,7 @@
 //
 import Foundation
 import StoreKit
+import PassKit
 
 // Add new enum to track different features
 enum AppFeature {
@@ -124,7 +125,7 @@ class SubscriptionManager: ObservableObject {
             }
             
             if transaction.productID == monthlySubscriptionID &&
-               transaction.expirationDate ?? .now > .now {
+                transaction.expirationDate ?? .now > .now {
                 isSubscribed = true
                 return
             }
@@ -163,15 +164,79 @@ class SubscriptionManager: ObservableObject {
             UIApplication.shared.open(url)
         }
     }
-}
-
-// Extension to format product price
-extension Product {
-    var displayPrice: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = priceFormatStyle.locale
+    
+    // MARK: - Apple Pay Integration
+    
+    // Check if Apple Pay is available on the device
+    extension SubscriptionManager {
+        // Check if Apple Pay is available on the device
+        func canMakeApplePayPayments() -> Bool {
+            return PKPaymentAuthorizationController.canMakePayments()
+        }
         
-        return formatter.string(from: price as NSNumber) ?? ""
+        // Present Apple Pay for subscription purchase
+        func purchaseWithApplePay(product: Product, completion: @escaping (Bool) -> Void) {
+            // Create payment request
+            let paymentRequest = PKPaymentRequest()
+            
+            // Use your merchant ID - replace with your actual merchant ID
+            paymentRequest.merchantIdentifier = "merchant.com.rodriguez.travis.safehaven"
+            paymentRequest.supportedNetworks = [.visa, .masterCard, .amex, .discover]
+            paymentRequest.merchantCapabilities = .capability3DS
+            paymentRequest.countryCode = "US"
+            paymentRequest.currencyCode = "USD"
+            
+            // Set up the payment summary items
+            let monthlyPrice = NSDecimalNumber(string: "\(product.price)")
+            
+            // Name of your product
+            let productName = "SafeHaven Premium"
+            
+            // Set up the line items - using normal type instead of recurring which may not be available
+            paymentRequest.paymentSummaryItems = [
+                PKPaymentSummaryItem(label: productName, amount: monthlyPrice),
+                PKPaymentSummaryItem(label: "SafeHaven", amount: monthlyPrice)
+            ]
+            
+            // Present Apple Pay
+            let paymentController = PKPaymentAuthorizationController(paymentRequest: paymentRequest)
+            paymentController.delegate = ApplePayHandler.shared
+            
+            // Store completion handler for later use
+            ApplePayHandler.shared.completionHandler = { success in
+                if success {
+                    // If Apple Pay succeeded, now process the actual subscription with StoreKit
+                    Task {
+                        let purchased = await self.purchase(product)
+                        DispatchQueue.main.async {
+                            completion(purchased)
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(false)
+                    }
+                }
+            }
+            
+            paymentController.present(completion: { presented in
+                if !presented {
+                    DispatchQueue.main.async {
+                        completion(false)
+                    }
+                }
+            })
+        }
+    }
+    
+    // Extension to format product price
+    extension Product {
+        var displayPrice: String {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .currency
+            formatter.locale = priceFormatStyle.locale
+            
+            return formatter.string(from: price as NSNumber) ?? ""
+        }
     }
 }

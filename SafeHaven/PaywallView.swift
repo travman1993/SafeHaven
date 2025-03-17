@@ -6,6 +6,7 @@
 //
 import SwiftUI
 import StoreKit
+import PassKit
 
 struct PaywallView: View {
     @Environment(\.dismiss) var dismiss
@@ -13,6 +14,12 @@ struct PaywallView: View {
     @State private var isProcessing = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var paymentMethod: PaymentMethod = .applePay
+    
+    enum PaymentMethod {
+        case applePay
+        case standard
+    }
     
     var body: some View {
         NavigationView {
@@ -101,7 +108,7 @@ struct PaywallView: View {
                                     .font(.system(size: 24, weight: .bold))
                                     .foregroundColor(AppTheme.primary)
                                 
-                                Text("Cancel anytime")
+                                Text("First month free, cancel anytime")
                                     .font(.system(size: 14))
                                     .foregroundColor(AppTheme.textSecondary)
                             }
@@ -114,26 +121,47 @@ struct PaywallView: View {
                             )
                             .padding(.horizontal)
                             
-                            Button(action: {
-                                purchaseSubscription(product: product)
-                            }) {
-                                HStack {
-                                    if isProcessing {
-                                        ProgressView()
-                                            .padding(.trailing, 10)
-                                    }
-                                    
-                                    Text("Subscribe Now")
+                            // Payment Method Selection
+                            if subscriptionManager.canMakeApplePayPayments() {
+                                Picker("Payment Method", selection: $paymentMethod) {
+                                    Text("Apple Pay").tag(PaymentMethod.applePay)
+                                    Text("Standard").tag(PaymentMethod.standard)
                                 }
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(isProcessing ? AppTheme.primary.opacity(0.7) : AppTheme.primary)
-                                .cornerRadius(12)
+                                .pickerStyle(SegmentedPickerStyle())
                                 .padding(.horizontal)
                             }
-                            .disabled(isProcessing)
+                            
+                            // Apple Pay Button
+                            if paymentMethod == .applePay {
+                                ApplePayButton(type: .subscribe, style: .black) {
+                                    handleApplePayPurchase(product: product)
+                                }
+                                .frame(height: 50)
+                                .padding(.horizontal)
+                                .disabled(isProcessing)
+                            } else {
+                                // Standard Subscribe Button
+                                Button(action: {
+                                    handleStandardPurchase(product: product)
+                                }) {
+                                    HStack {
+                                        if isProcessing {
+                                            ProgressView()
+                                                .padding(.trailing, 10)
+                                        }
+                                        
+                                        Text("Subscribe Now")
+                                    }
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(isProcessing ? AppTheme.primary.opacity(0.7) : AppTheme.primary)
+                                    .cornerRadius(12)
+                                    .padding(.horizontal)
+                                }
+                                .disabled(isProcessing)
+                            }
                             
                             Button(action: {
                                 restorePurchases()
@@ -175,7 +203,7 @@ struct PaywallView: View {
                 }
             }
             .background(AppTheme.background.ignoresSafeArea())
-            .navigationBarTitle("Premium", displayMode: .inline)
+            .navigationTitle("Premium", displayMode: .inline)
             .navigationBarItems(trailing: Button("Close") {
                 dismiss()
             })
@@ -195,7 +223,28 @@ struct PaywallView: View {
         }
     }
     
-    private func purchaseSubscription(product: Product) {
+    private func handleApplePayPurchase(product: Product) {
+        isProcessing = true
+        
+        subscriptionManager.purchaseWithApplePay(product: product) { success in
+            isProcessing = false
+            
+            if success {
+                alertMessage = "Thank you for subscribing to SafeHaven Premium!"
+                showAlert = true
+                
+                // Optional: Dismiss after a short delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    dismiss()
+                }
+            } else {
+                alertMessage = "Subscription purchase failed. Please try again."
+                showAlert = true
+            }
+        }
+    }
+    
+    private func handleStandardPurchase(product: Product) {
         isProcessing = true
         
         Task {
@@ -241,62 +290,6 @@ struct PaywallView: View {
                     alertMessage = "No purchases to restore."
                     showAlert = true
                 }
-            }
-        }
-    }
-}
-
-// Update the FeatureRow to highlight restricted features
-struct FeatureRow: View {
-    let icon: String
-    let title: String
-    let description: String
-    let isRestricted: Bool
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Image(systemName: icon)
-                    .font(.system(size: 22))
-                    .foregroundColor(isRestricted ? .white : AppTheme.primary)
-                    .frame(width: 44, height: 44)
-                    .background(isRestricted ? AppTheme.primary : AppTheme.primary.opacity(0.1))
-                    .clipShape(Circle())
-                
-                if isRestricted {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(.white)
-                        .background(
-                            Circle()
-                                .fill(Color.orange)
-                                .frame(width: 18, height: 18)
-                        )
-                        .offset(x: 15, y: -15)
-                }
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(title)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppTheme.textPrimary)
-                    
-                    if isRestricted {
-                        Text("Premium")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(AppTheme.accent)
-                            .cornerRadius(4)
-                    }
-                }
-                
-                Text(description)
-                    .font(.system(size: 14))
-                    .foregroundColor(AppTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "SafeHavenIcon.png",
+      "filename" : "applestore-badge 1.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "SafeHavenIcon 1.png",
+      "filename" : "applestore-badge.svg",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "SafeHavenIcon 2.png",
+      "filename" : "applestore-badge 2.svg",
       "idiom" : "universal",
       "scale" : "3x"
     }

@@ -30,9 +30,9 @@ class SubscriptionManager: ObservableObject {
     
     // Feature restrictions for free version
     let maxEmergencyContactsFree = 1
-    let journalFeatureEnabled = false
-    let motivationFeatureEnabled = false
-    let todoFeatureEnabled = false
+    let journalFeatureEnabled = true
+    let motivationFeatureEnabled = true
+    let todoFeatureEnabled = true
     
     // Singleton instance
     static let shared = SubscriptionManager()

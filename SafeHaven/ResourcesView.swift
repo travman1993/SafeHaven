@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import CoreLocation
 import MapKit
@@ -120,154 +121,187 @@ enum ResourceCategory: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Resource Service (Mock Implementation)
+// MARK: - Resource Service
 class ResourceService: ObservableObject {
     @Published var resources: [ResourceLocation] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-
-    func fetchResources() {
+    
+    // Dictionary mapping resource categories to search queries
+    private let categoryQueries: [ResourceCategory: String] = [
+        .shelter: "homeless shelter",
+        .food: "food bank",
+        .healthcare: "health clinic hospital",
+        .mentalHealth: "mental health services counseling",
+        .support: "community support center",
+        .legal: "legal aid services",
+        .financial: "financial assistance",
+        .education: "adult education center",
+        .childcare: "childcare services",
+        .employment: "employment center job services",
+        .transportation: "transportation services",
+        .clothing: "clothing donation center",
+        .veterans: "veterans services",
+        .lgbtq: "lgbtq support center",
+        .seniors: "senior services assistance",
+        .disabilities: "disability services support",
+        .addiction: "addiction recovery services",
+        .domesticViolence: "domestic violence shelter",
+        .immigrants: "immigrant refugee services",
+        .youth: "youth services center",
+        .women: "women's services center",
+        .men: "men's services support"
+    ]
+    
+    func fetchResources(category: ResourceCategory = .all, near location: CLLocation? = nil, radius: Double = 5000) {
         isLoading = true
+        resources = []
         
-        // Simulate network delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.isLoading = false
-            
-            // Sample data instead of Firestore
-            self?.resources = [
-                ResourceLocation(
-                    id: "1",
-                    name: "Downtown Shelter",
-                    category: .shelter,
-                    address: "123 Main St, Anytown, USA",
-                    phoneNumber: "555-123-4567",
-                    description: "Emergency shelter providing temporary housing, meals, and basic necessities for individuals and families in crisis.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.749, longitude: -84.388),
-                    icon: "house.fill",
-                    website: "www.downtownshelter.org",
-                    hours: "Open 24/7",
-                    services: ["Emergency Housing", "Meals", "Clothing", "Counseling"]
-                ),
-                ResourceLocation(
-                    id: "2",
-                    name: "Community Food Bank",
-                    category: .food,
-                    address: "456 Oak Ave, Anytown, USA",
-                    phoneNumber: "555-987-6543",
-                    description: "Provides free groceries, prepared meals, and nutrition education to those experiencing food insecurity.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.753, longitude: -84.393),
-                    icon: "fork.knife",
-                    website: "www.communityfoodbank.org",
-                    hours: "Mon-Fri: 9am-5pm, Sat: 10am-2pm",
-                    services: ["Food Packages", "Hot Meals", "Nutrition Education"]
-                ),
-                ResourceLocation(
-                    id: "3",
-                    name: "Free Health Clinic",
-                    category: .healthcare,
-                    address: "789 Elm St, Anytown, USA",
-                    phoneNumber: "555-789-0123",
-                    description: "Provides free or reduced-cost medical care, medications, and mental health services to uninsured individuals.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.755, longitude: -84.383),
-                    icon: "cross.fill",
-                    website: "www.freehealthclinic.org",
-                    hours: "Mon-Sat: 8am-8pm",
-                    services: ["Medical Exams", "Prescriptions", "Mental Health", "Dental Care"]
-                ),
-                ResourceLocation(
-                    id: "4",
-                    name: "Crisis Support Center",
-                    category: .support,
-                    address: "101 Pine St, Anytown, USA",
-                    phoneNumber: "555-321-6789",
-                    description: "Provides crisis intervention, counseling, and support services for individuals experiencing trauma or emotional distress.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.748, longitude: -84.376),
-                    icon: "person.2.fill",
-                    website: "www.crisissupport.org",
-                    hours: "Open 24/7 - Crisis Hotline Available",
-                    services: ["Crisis Counseling", "Support Groups", "Referral Services"]
-                ),
-                ResourceLocation(
-                    id: "5",
-                    name: "Legal Aid Society",
-                    category: .legal,
-                    address: "222 Maple Ave, Anytown, USA",
-                    phoneNumber: "555-456-7890",
-                    description: "Provides free legal assistance to low-income individuals for civil matters including housing, family law, and public benefits.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.760, longitude: -84.390),
-                    icon: "building.columns.fill",
-                    website: "www.legalaid.org",
-                    hours: "Mon-Fri: 9am-5pm",
-                    services: ["Legal Consultation", "Document Preparation", "Court Representation"]
-                ),
-                ResourceLocation(
-                    id: "6",
-                    name: "Financial Assistance Center",
-                    category: .financial,
-                    address: "333 Birch Blvd, Anytown, USA",
-                    phoneNumber: "555-234-5678",
-                    description: "Provides emergency financial assistance for rent, utilities, and other basic needs, as well as financial education and counseling.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.745, longitude: -84.395),
-                    icon: "dollarsign.circle.fill",
-                    website: "www.financialhelp.org",
-                    hours: "Mon-Fri: 9am-4pm",
-                    services: ["Emergency Assistance", "Financial Counseling", "Budgeting Classes"]
-                ),
-                ResourceLocation(
-                    id: "7",
-                    name: "Adult Education Center",
-                    category: .education,
-                    address: "444 Cedar St, Anytown, USA",
-                    phoneNumber: "555-876-5432",
-                    description: "Offers free adult education classes including GED preparation, English language learning, and job skills training.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.757, longitude: -84.378),
-                    icon: "book.fill",
-                    website: "www.adulteducation.org",
-                    hours: "Mon-Thu: 8am-8pm, Fri: 8am-5pm",
-                    services: ["GED Classes", "ESL Classes", "Computer Skills", "Job Training"]
-                ),
-                // Add sample data for additional categories
-                ResourceLocation(
-                    id: "8",
-                    name: "Mental Health Clinic",
-                    category: .mentalHealth,
-                    address: "555 Pine Street, Anytown, USA",
-                    phoneNumber: "555-111-2222",
-                    description: "Offers counseling, therapy, and psychiatric services at low or no cost for individuals in need.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.752, longitude: -84.380),
-                    icon: "brain.head.profile",
-                    website: "www.mentalhealthclinic.org",
-                    hours: "Mon-Fri: 9am-5pm",
-                    services: ["Individual Therapy", "Group Therapy", "Crisis Intervention", "Medication Management"]
-                ),
-                ResourceLocation(
-                    id: "9",
-                    name: "Women's Resource Center",
-                    category: .women,
-                    address: "666 Oak Avenue, Anytown, USA",
-                    phoneNumber: "555-333-4444",
-                    description: "Provides support, advocacy, and resources specifically for women facing challenges or crisis situations.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.748, longitude: -84.385),
-                    icon: "figure.dress",
-                    website: "www.womensresourcecenter.org",
-                    hours: "Mon-Sat: 8am-8pm",
-                    services: ["Crisis Support", "Housing Assistance", "Employment Resources", "Health Services"]
-                ),
-                ResourceLocation(
-                    id: "10",
-                    name: "Youth Outreach Center",
-                    category: .youth,
-                    address: "777 Maple Street, Anytown, USA",
-                    phoneNumber: "555-555-6666",
-                    description: "Dedicated to supporting youth with education, career development, and social services.",
-                    coordinate: CLLocationCoordinate2D(latitude: 33.751, longitude: -84.391),
-                    icon: "figure.child",
-                    website: "www.youthoutreach.org",
-                    hours: "Mon-Fri: 10am-7pm, Sat: 10am-4pm",
-                    services: ["Tutoring", "Mentorship", "Recreation", "Career Guidance"]
-                )
-            ]
+        guard let location = location else {
+            // If no location is provided, use a default location or show an error
+            self.isLoading = false
+            self.errorMessage = "Location not available"
+            return
         }
+        
+        // If "all" category is selected, fetch multiple categories in sequence
+        if category == .all {
+            var categoriesToFetch = Array(categoryQueries.keys.prefix(5)) // Limit to 5 categories to avoid too many requests
+            fetchNextCategory(categories: categoriesToFetch, location: location, radius: radius)
+        } else {
+            fetchSingleCategory(category: category, location: location, radius: radius)
+        }
+    }
+    
+    private func fetchNextCategory(categories: [ResourceCategory], location: CLLocation, radius: Double, index: Int = 0) {
+        // Base case: if we've processed all categories, stop
+        if index >= categories.count {
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+            return
+        }
+        
+        let category = categories[index]
+        
+        // Create a search request for the current category
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = categoryQueries[category] ?? category.rawValue
+        request.region = MKCoordinateRegion(
+            center: location.coordinate,
+            latitudinalMeters: radius,
+            longitudinalMeters: radius
+        )
+        
+        // Perform the search
+        let search = MKLocalSearch(request: request)
+        search.start { [weak self] response, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Error searching for \(category.rawValue): \(error.localizedDescription)")
+            }
+            
+            if let response = response {
+                // Convert MKMapItems to ResourceLocation objects and add to our resources
+                let newResources = response.mapItems.map { item in
+                    ResourceLocation(
+                        id: "\(category.rawValue)-\(item.placemark.coordinate.latitude)-\(item.placemark.coordinate.longitude)",
+                        name: item.name ?? "Unknown Location",
+                        category: category,
+                        address: self.formatAddress(item.placemark),
+                        phoneNumber: item.phoneNumber ?? "No phone available",
+                        description: "A local resource providing \(category.rawValue.lowercased()) services.",
+                        coordinate: item.placemark.coordinate,
+                        icon: category.icon,
+                        website: item.url?.absoluteString,
+                        hours: nil,
+                        services: [category.rawValue]
+                    )
+                }
+                
+                DispatchQueue.main.async {
+                    self.resources.append(contentsOf: newResources)
+                }
+            }
+            
+            // Continue with the next category
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Small delay to avoid rate limiting
+                self.fetchNextCategory(categories: categories, location: location, radius: radius, index: index + 1)
+            }
+        }
+    }
+    
+    private func fetchSingleCategory(category: ResourceCategory, location: CLLocation, radius: Double) {
+        // Create a search request for the specified category
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = categoryQueries[category] ?? category.rawValue
+        request.region = MKCoordinateRegion(
+            center: location.coordinate,
+            latitudinalMeters: radius,
+            longitudinalMeters: radius
+        )
+        
+        // Perform the search
+        let search = MKLocalSearch(request: request)
+        search.start { [weak self] response, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                
+                if let error = error {
+                    self?.errorMessage = error.localizedDescription
+                    return
+                }
+                
+                guard let response = response else {
+                    self?.errorMessage = "No results found"
+                    return
+                }
+                
+                // Convert MKMapItems to ResourceLocation objects
+                self?.resources = response.mapItems.map { item in
+                    ResourceLocation(
+                        id: "\(category.rawValue)-\(item.placemark.coordinate.latitude)-\(item.placemark.coordinate.longitude)",
+                        name: item.name ?? "Unknown Location",
+                        category: category,
+                        address: self?.formatAddress(item.placemark) ?? "No address",
+                        phoneNumber: item.phoneNumber ?? "No phone available",
+                        description: "A local resource providing \(category.rawValue.lowercased()) services.",
+                        coordinate: item.placemark.coordinate,
+                        icon: category.icon,
+                        website: item.url?.absoluteString,
+                        hours: nil,
+                        services: [category.rawValue]
+                    )
+                }
+            }
+        }
+    }
+    
+    private func formatAddress(_ placemark: MKPlacemark) -> String {
+        var addressComponents: [String] = []
+        
+        if let subThoroughfare = placemark.subThoroughfare {
+            addressComponents.append(subThoroughfare)
+        }
+        
+        if let thoroughfare = placemark.thoroughfare {
+            addressComponents.append(thoroughfare)
+        }
+        
+        if let locality = placemark.locality {
+            addressComponents.append(locality)
+        }
+        
+        if let administrativeArea = placemark.administrativeArea {
+            addressComponents.append(administrativeArea)
+        }
+        
+        if let postalCode = placemark.postalCode {
+            addressComponents.append(postalCode)
+        }
+        
+        return addressComponents.joined(separator: ", ")
     }
 }
 
@@ -292,6 +326,15 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
             locationManager.startUpdatingLocation()
         }
+    }
+    
+    // Add these methods to LocationManager class
+    func requestWhenInUseAuthorization() {
+        locationManager.requestWhenInUseAuthorization()
+    }
+
+    func startUpdatingLocation() {
+        locationManager.startUpdatingLocation()
     }
 }
 
@@ -365,6 +408,7 @@ struct ResourcesView: View {
                                     color: category.color
                                 ) {
                                     selectedCategory = category
+                                    loadResources()
                                 }
                             }
                         }
@@ -404,7 +448,23 @@ struct ResourcesView: View {
             ResourceDetailView(resource: resource)
         }
         .onAppear {
-            resourceService.fetchResources()
+            locationManager.requestWhenInUseAuthorization()
+            locationManager.startUpdatingLocation()
+            loadResources()
+        }
+        .onReceive(locationManager.$userLocation.compactMap { $0 }) { _ in
+            loadResources()
+        }
+    }
+    
+    private func loadResources() {
+        if let userLocation = locationManager.userLocation {
+            let location = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
+            resourceService.fetchResources(category: selectedCategory, near: location)
+        } else {
+            // Request location if we don't have it
+            locationManager.requestWhenInUseAuthorization()
+            locationManager.startUpdatingLocation()
         }
     }
 }

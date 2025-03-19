@@ -118,9 +118,3 @@ struct AppearanceSettingsView: View {
         updateAppAccentColor("6A89CC")
     }
 }
-
-struct ColorOption: Identifiable {
-    let id = UUID()
-    let name: String
-    let hex: String
-}

@@ -4,7 +4,6 @@
 //
 //  Created by Travis Rodriguez on 2/26/25.
 //
-
 import SwiftUI
 import CoreLocation
 
@@ -14,11 +13,6 @@ struct OnboardingView: View {
     @State private var currentPage = 0
     var onComplete: () -> Void
     
-    // Add initializer to make onComplete required
-    init(hasCompletedOnboarding: Binding<Bool>, onComplete: @escaping () -> Void) {
-        self._hasCompletedOnboarding = hasCompletedOnboarding
-        self.onComplete = onComplete
-    }
     // Enhanced pages with more detailed content
     let pages = [
         OnboardingPage(
@@ -53,9 +47,9 @@ struct OnboardingView: View {
         ),
         OnboardingPage(
             title: "Ready to Get Started?",
-            subtitle: "Set up your safety network",
+            subtitle: "Everything is completely free!",
             image: "checkmark.shield.fill",
-            description: "Add emergency contacts, customize your preferences, and create your personal safety plan in just a few steps."
+            description: "All features are available with no subscription required. Your data stays on your device for maximum privacy."
         )
     ]
     
@@ -174,9 +168,6 @@ struct OnboardingView: View {
                     Spacer()
                     
                     // Next/Get Started button
-                    // In OnboardingView.swift, update the Get Started button:
-
-                    // Next/Get Started button
                     if currentPage < pages.count - 1 {
                         Button(action: {
                             withAnimation {
@@ -193,23 +184,21 @@ struct OnboardingView: View {
                     } else {
                         Button(action: {
                             // Complete onboarding
-                            withAnimation {
-                                            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-                                            hasCompletedOnboarding = false
-                                            onComplete()  // Call the completion handler
-                                        }
-                                    }) {
-                                        Text("Get Started")
-                                            .font(.system(size: 18, weight: .semibold))
-                                            .foregroundColor(.white)
-                                            .padding(.vertical, 16)
-                                            .padding(.horizontal, 32)
-                                            .background(AppTheme.secondary)
-                                            .cornerRadius(12)
-                                            .shadow(color: AppTheme.secondary.opacity(0.3), radius: 5, x: 0, y: 3)
-                                    }
-                                }
-                            }
+                            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+                            hasCompletedOnboarding = true
+                            onComplete()  // Call the completion handler
+                        }) {
+                            Text("Get Started")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.vertical, 16)
+                                .padding(.horizontal, 32)
+                                .background(AppTheme.secondary)
+                                .cornerRadius(12)
+                                .shadow(color: AppTheme.secondary.opacity(0.3), radius: 5, x: 0, y: 3)
+                        }
+                    }
+                }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 40)
             }
@@ -222,4 +211,11 @@ struct OnboardingPage {
     let subtitle: String
     let image: String
     let description: String
+}
+
+// Preview
+struct OnboardingView_Previews: PreviewProvider {
+    static var previews: some View {
+        OnboardingView(hasCompletedOnboarding: .constant(false), onComplete: {})
+    }
 }

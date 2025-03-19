@@ -1,9 +1,6 @@
 import Foundation
 import SwiftUI
-import CloudKit
-import WeatherKit
 import CoreLocation
-import AuthenticationServices
 
 // Extension to handle phone calls
 extension UIApplication {
@@ -25,7 +22,6 @@ class EmergencyServices {
         }
     }
     
-    // In EmergencyHelpers.swift
     static func getCurrentLocationString() -> String {
         let locationService = LocationService()
         if let location = locationService.currentLocation {

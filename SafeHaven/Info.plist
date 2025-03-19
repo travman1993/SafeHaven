@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.rodriguez.travis.SafeHaven</string>
+	</array>
 	<key>NSWeatherKitUsageDescription</key>
 	<string>SafeHaven uses weather data to provide safety recommendations</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -54,10 +58,6 @@
 	<string>SafeHaven needs your location to provide relevant safety and weather information</string>
 	<key>NSWeatherUsageDescription</key>
 	<string>SafeHaven uses weather information to provide local safety alerts and relevant weather-based safety recommendations.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>SafeHaven uses the camera to scan QR codes for emergency resources</string>
 	<key>NSContactsUsageDescription</key>

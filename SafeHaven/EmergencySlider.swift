@@ -8,7 +8,6 @@ struct EmergencySlider: View {
     @State private var showingEmergencyAlert = false
     @State private var emergencyContacts: [EmergencyContact] = []
     @State private var customMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     let sliderWidth: CGFloat = UIScreen.main.bounds.width - 80
     let sliderHeight: CGFloat = 64
@@ -102,6 +101,17 @@ struct EmergencySlider: View {
                 message: Text("Calling 911 and sending emergency text messages to your \(emergencyContacts.count) emergency contacts."),
                 dismissButton: .default(Text("OK"))
             )
+        }
+        .onAppear {
+            // Load contacts from UserDefaults
+            loadEmergencyContacts()
+        }
+    }
+    
+    private func loadEmergencyContacts() {
+        if let data = UserDefaults.standard.data(forKey: "emergencyContacts"),
+           let contacts = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
+            self.emergencyContacts = contacts
         }
     }
     

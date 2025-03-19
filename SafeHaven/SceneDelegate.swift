@@ -17,8 +17,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         // Create the SwiftUI view that provides the window contents.
         let contentView = ContentView()
-            .environmentObject(AuthenticationService())
-            .environmentObject(CloudKitManager.shared)
             .environmentObject(WeatherService.shared)
             .environmentObject(LocationService())
         

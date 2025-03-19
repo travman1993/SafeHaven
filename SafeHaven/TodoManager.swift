@@ -6,10 +6,6 @@
 //
 import Foundation
 import SwiftUI
-import CloudKit
-import WeatherKit
-import CoreLocation
-import AuthenticationServices
 
 class TodoManager: ObservableObject {
     @Published var items: [TodoItem] = []

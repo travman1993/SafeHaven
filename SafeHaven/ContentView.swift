@@ -1,25 +1,22 @@
 import SwiftUI
-import CloudKit
 import CoreLocation
 
 struct ContentView: View {
-    @EnvironmentObject private var authService: AuthenticationService
     @EnvironmentObject private var weatherService: WeatherService
     @StateObject private var locationService = LocationService()
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     // State for emergency slider
     @State private var emergencyContacts: [EmergencyContact] = []
     @State private var customMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
     @State private var showingEmergencyContacts = false
     @State private var showingMotivationView = false
-    @State private var showingPaywall = false
+    @State private var showingSupportersView = false
 
     // State for active tab/section
     @State private var selectedTab: Tab = .home
     
     enum Tab {
-        case home, resources, journal, profile
+        case home, resources, journal, settings
     }
     
     var body: some View {
@@ -45,26 +42,22 @@ struct ContentView: View {
                 }
                 .tag(Tab.journal)
             
-            // MARK: - Profile Tab
-            profileView
+            // MARK: - Settings Tab (formerly Profile)
+            SettingsView(showingSupportersView: $showingSupportersView)
                 .tabItem {
-                    Label("Profile", systemImage: "person.fill")
+                    Label("Settings", systemImage: "gear")
                 }
-                .tag(Tab.profile)
+                .tag(Tab.settings)
         }
         .accentColor(AppTheme.primary)
         .sheet(isPresented: $showingEmergencyContacts) {
             EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
         }
         .sheet(isPresented: $showingMotivationView) {
-            if subscriptionManager.canUseFeature(.motivation) {
-                MotivationView()
-            } else {
-                PaywallView()
-            }
+            MotivationView()
         }
-        .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+        .sheet(isPresented: $showingSupportersView) {
+            SupportersView()
         }
         .onAppear {
             loadEmergencyContacts()
@@ -78,15 +71,6 @@ struct ContentView: View {
             // Setup notification for when location changes
             NotificationCenter.default.addObserver(forName: NSNotification.Name("LocationDidUpdate"), object: nil, queue: .main) { _ in
                 updateWeatherIfLocationAvailable()
-            }
-            
-            // Listen for paywall requests
-            NotificationCenter.default.addObserver(
-                forName: Notification.Name("ShowPaywall"),
-                object: nil,
-                queue: .main
-            ) { _ in
-                showingPaywall = true
             }
         }
     }
@@ -203,46 +187,12 @@ struct ContentView: View {
                 .font(.headline)
                 .foregroundColor(AppTheme.textPrimary)
             
-            if subscriptionManager.canUseFeature(.todoList) {
-                TodoView()
-            } else {
-                VStack(spacing: 16) {
-                    HStack(spacing: 16) {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(AppTheme.primary)
-                            .frame(width: 60, height: 60)
-                            .background(AppTheme.primary.opacity(0.1))
-                            .clipShape(Circle())
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Premium Feature")
-                                .font(.headline)
-                            
-                            Text("Upgrade to access the todo list")
-                                .font(.subheadline)
-                                .foregroundColor(AppTheme.textSecondary)
-                        }
-                    }
-                    
-                    Button(action: {
-                        showingPaywall = true
-                    }) {
-                        Text("Upgrade to Premium")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(AppTheme.primary)
-                            .cornerRadius(12)
-                    }
-                }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-            }
+            TodoView()
         }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - Motivation Card
@@ -261,39 +211,20 @@ struct ContentView: View {
                 )
                 .cornerRadius(12)
                 
-                if subscriptionManager.canUseFeature(.motivation) {
-                    // Quote
-                    Text(getRandomDailyQuote())
-                        .font(.system(.body, design: .serif))
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-                        .padding()
-                        .multilineTextAlignment(.center)
-                } else {
-                    VStack {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 30))
-                            .foregroundColor(.white)
-                        
-                        Text("Upgrade to Premium")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        
-                        Text("Unlock daily motivation quotes")
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.9))
-                    }
+                // Quote
+                Text(getRandomDailyQuote())
+                    .font(.system(.body, design: .serif))
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
                     .padding()
-                }
+                    .multilineTextAlignment(.center)
             }
             .frame(height: 120)
             
             Button(action: {
                 showingMotivationView = true
             }) {
-                Text(subscriptionManager.canUseFeature(.motivation) ?
-                     "View More Motivational Quotes" :
-                     "Unlock Motivation Feature")
+                Text("View More Motivational Quotes")
                     .font(.subheadline)
                     .foregroundColor(AppTheme.primary)
             }
@@ -408,13 +339,13 @@ struct ContentView: View {
                     }
                 )
                 
-                // Profile/Settings
+                // Settings
                 quickAccessButton(
-                    title: "Profile",
-                    icon: "person.fill",
+                    title: "Settings",
+                    icon: "gear",
                     color: Color(hex: "F9C74F")
                 ) {
-                    selectedTab = .profile
+                    selectedTab = .settings
                 }
             }
         }
@@ -424,124 +355,8 @@ struct ContentView: View {
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - Profile View
-    private var profileView: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Profile header
-                    VStack(spacing: 16) {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(AppTheme.primary)
-                        
-                        Text(authService.fullName?.formatted() ?? "User")
-                            .font(.title)
-                            .fontWeight(.bold)
-                        
-                        Text(authService.userEmail ?? "")
-                            .font(.subheadline)
-                            .foregroundColor(AppTheme.textSecondary)
-                    }
-                    .padding()
-                    
-                    // Subscription status
-                    if !subscriptionManager.isSubscribed {
-                        Button(action: {
-                            showingPaywall = true
-                        }) {
-                            HStack {
-                                Image(systemName: "star.circle.fill")
-                                    .font(.system(size: 22))
-                                    .foregroundColor(.yellow)
-                                
-                                Text("Upgrade to Premium")
-                                    .font(.headline)
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(AppTheme.textSecondary)
-                            }
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(hex: "F9F9F9"))
-                                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
-                            )
-                            .padding(.horizontal)
-                        }
-                    } else {
-                        HStack {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 22))
-                                .foregroundColor(.green)
-                            
-                            Text("Premium Subscriber")
-                                .font(.headline)
-                            
-                            Spacer()
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(hex: "F9F9F9"))
-                                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
-                        )
-                        .padding(.horizontal)
-                    }
-                    
-                    // Settings sections
-                    VStack(spacing: 24) {
-                        // Account Settings
-                        settingsSection(title: "Account", items: [
-                            NavigationSettingsItem(title: "Emergency Contacts", icon: "person.crop.circle.badge.plus", destination: AnyView(EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage))),
-                            
-                            NavigationSettingsItem(title: "Notification Settings", icon: "bell.badge", destination: AnyView(NotificationSettingsView()))
-                        ])
-                        
-                        // App Settings
-                        settingsSection(title: "App Settings", items: [
-                            NavigationSettingsItem(title: "App Appearance", icon: "paintbrush", destination: AnyView(AppearanceSettingsView())),
-                            
-                            NavigationSettingsItem(title: "Privacy Settings", icon: "lock.shield", destination: AnyView(PrivacySettingsView()))
-                        ])
-                        
-                        // About & Support
-                        settingsSection(title: "About & Support", items: [
-                            NavigationSettingsItem(title: "About SafeHaven", icon: "info.circle", destination: AnyView(AboutSafeHavenView())),
-                            
-                            NavigationSettingsItem(title: "Developer Story", icon: "person.text.rectangle", destination: AnyView(DeveloperStoryView())),
-                            
-                            NavigationSettingsItem(title: "Help & Support", icon: "questionmark.circle", destination: AnyView(HelpSupportView()))
-                        ])
-                        
-                        // Sign Out
-                        Button(action: {
-                            authService.signOut()
-                        }) {
-                            Text("Sign Out")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(AppTheme.accent)
-                                .cornerRadius(12)
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 16)
-                    }
-                    .padding(.bottom, 40)
-                }
-            }
-            .background(AppTheme.background.ignoresSafeArea())
-            .navigationTitle("Profile")
-        }
-    }
-    
     // MARK: - Helper Views
-    // Button content helper (to be used both with Button and NavigationLink)
+    // Button content helper
     private func quickAccessButtonContent(title: String, icon: String, color: Color) -> some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
@@ -570,62 +385,12 @@ struct ContentView: View {
         }
     }
     
-    private func settingsSection(title: String, items: [NavigationSettingsItem]) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(title)
-                .font(.headline)
-                .foregroundColor(AppTheme.textPrimary)
-                .padding(.horizontal)
-            
-            VStack(spacing: 0) {
-                ForEach(items.indices, id: \.self) { index in
-                    let item = items[index]
-                    
-                    NavigationLink(destination: item.destination) {
-                        HStack {
-                            Image(systemName: item.icon)
-                                .font(.system(size: 20))
-                                .foregroundColor(AppTheme.primary)
-                                .frame(width: 24, height: 24)
-                            
-                            Text(item.title)
-                                .font(.body)
-                                .foregroundColor(AppTheme.textPrimary)
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "A0AEC0"))
-                        }
-                        .padding()
-                        .background(Color.white)
-                    }
-                    
-                    if index < items.count - 1 {
-                        Divider()
-                            .padding(.leading, 56)
-                    }
-                }
-            }
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-            .padding(.horizontal)
-        }
-    }
-    
     // MARK: - Helper Methods
     private func loadEmergencyContacts() {
-        CloudKitManager.shared.fetchEmergencyContacts { result in
-            switch result {
-            case .success(let contacts):
-                DispatchQueue.main.async {
-                    self.emergencyContacts = contacts
-                }
-            case .failure(let error):
-                print("Error fetching emergency contacts: \(error.localizedDescription)")
-            }
+        // Load from UserDefaults instead of CloudKit
+        if let data = UserDefaults.standard.data(forKey: "emergencyContacts"),
+           let contacts = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
+            self.emergencyContacts = contacts
         }
     }
     
@@ -641,13 +406,7 @@ struct ContentView: View {
             greeting = "Good Evening"
         }
         
-        // Add the user's first name if available
-        if let fullName = authService.fullName {
-            let firstName = fullName.givenName ?? ""
-            return "\(greeting), \(firstName)"
-        } else {
-            return greeting
-        }
+        return greeting
     }
     
     private func getRandomDailyQuote() -> String {
@@ -761,28 +520,5 @@ struct ContentView: View {
         default:
             return "Stay updated on changing weather conditions and have emergency supplies ready."
         }
-    }
-}
-
-// MARK: - Supporting Struct
-struct NavigationSettingsItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let icon: String
-    let destination: AnyView
-}
-
-struct SettingsItem {
-    let title: String
-    let icon: String
-    let action: () -> Void
-}
-
-// MARK: - Location Manager Extension
-extension LocationManager {
-    func requestLocation() {
-        let manager = CLLocationManager()
-        manager.requestWhenInUseAuthorization()
-        manager.startUpdatingLocation()
     }
 }

@@ -4,9 +4,7 @@
 //
 //  Created by Travis Rodriguez on 3/12/25.
 //
-
 import SwiftUI
-import CloudKit
 
 struct EmergencyContactsView: View {
     @Binding var contacts: [EmergencyContact]
@@ -15,8 +13,6 @@ struct EmergencyContactsView: View {
     @State private var newPhone = ""
     @State private var newRelationship = ""
     @Environment(\.dismiss) var dismiss
-    @StateObject private var subscriptionManager = SubscriptionManager.shared
-    @State private var showingSubscriptionAlert = false
     
     var body: some View {
         NavigationView {
@@ -70,22 +66,7 @@ struct EmergencyContactsView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 8)
                     }
-                    .disabled(newName.isEmpty || newPhone.isEmpty || !canAddMoreContacts())
-                }
-                
-                if !subscriptionManager.isSubscribed && contacts.count >= subscriptionManager.maxEmergencyContactsFree {
-                    Section {
-                        Button(action: {
-                            showPaywall()
-                        }) {
-                            HStack {
-                                Image(systemName: "star.fill")
-                                Text("Upgrade to add more contacts")
-                            }
-                            .foregroundColor(AppTheme.primary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        }
-                    }
+                    .disabled(newName.isEmpty || newPhone.isEmpty)
                 }
                 
                 Section(footer: Text("These contacts will receive your emergency text message with your location when you use the Emergency SOS feature.")) {
@@ -102,32 +83,13 @@ struct EmergencyContactsView: View {
             }
             .navigationTitle("Emergency Contacts")
             .navigationBarItems(trailing: Button("Done") {
+                saveContacts()
                 dismiss()
             })
-            .alert("Subscription Required", isPresented: $showingSubscriptionAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Subscribe") {
-                    showPaywall()
-                }
-            } message: {
-                Text("Upgrade to SafeHaven Premium to add more than \(subscriptionManager.maxEmergencyContactsFree) emergency contact.")
-            }
         }
-    }
-    
-    private func canAddMoreContacts() -> Bool {
-        if subscriptionManager.isSubscribed {
-            return true
-        }
-        return contacts.count < subscriptionManager.maxEmergencyContactsFree
     }
     
     private func addContact() {
-        if !canAddMoreContacts() {
-            showingSubscriptionAlert = true
-            return
-        }
-        
         if !newName.isEmpty && !newPhone.isEmpty {
             let contact = EmergencyContact(
                 name: newName,
@@ -145,40 +107,13 @@ struct EmergencyContactsView: View {
     
     private func deleteContact(at offsets: IndexSet) {
         contacts.remove(atOffsets: offsets)
-        
-        // Optional: update CloudKit or local storage
         saveContacts()
     }
     
-    // Optional: Save contacts to CloudKit or local storage
+    // Save contacts to UserDefaults instead of CloudKit
     private func saveContacts() {
-        // If you want to persist these contacts, you could implement
-        // similar CloudKit logic as in your EmergencyContactView
-        // or use another storage mechanism that works with your app's architecture
-    }
-    
-    private func showPaywall() {
-        // Dismiss current view
-        dismiss()
-        
-        // Use NotificationCenter to show Paywall
-        NotificationCenter.default.post(name: Notification.Name("ShowPaywall"), object: nil)
-    }
-}
-
-// Preview
-struct EmergencyContactsView_Previews: PreviewProvider {
-    @State static var previewContacts: [EmergencyContact] = [
-        EmergencyContact(name: "John Doe", phoneNumber: "555-123-4567", relationship: "Family"),
-        EmergencyContact(name: "Jane Smith", phoneNumber: "555-987-6543", relationship: "Friend")
-    ]
-    
-    @State static var previewMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
-    
-    static var previews: some View {
-        EmergencyContactsView(
-            contacts: $previewContacts,
-            customMessage: $previewMessage
-        )
+        if let encoded = try? JSONEncoder().encode(contacts) {
+            UserDefaults.standard.set(encoded, forKey: "emergencyContacts")
+        }
     }
 }

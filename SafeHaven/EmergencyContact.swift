@@ -20,3 +20,4 @@ struct EmergencyContact: Identifiable, Codable {
         self.relationship = relationship
     }
 }
+

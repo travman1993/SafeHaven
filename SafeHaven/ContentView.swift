@@ -245,56 +245,80 @@ struct ContentView: View {
                 .foregroundColor(AppTheme.textPrimary)
             
             // Check if the weatherService is in a loading state
-            Group {
-                if weatherService.currentWeather == nil {
-                    HStack {
-                        ProgressView()
-                            .padding(.trailing, 10)
-                        Text("Loading weather data...")
+            if weatherService.isLoading {
+                HStack {
+                    ProgressView()
+                        .padding(.trailing, 10)
+                    Text("Loading weather data...")
+                        .font(.subheadline)
+                        .foregroundColor(AppTheme.textSecondary)
+                }
+                .frame(height: 100)
+                .frame(maxWidth: .infinity, alignment: .center)
+            } else if let weather = weatherService.currentWeather {
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: getWeatherIcon(for: weather.condition))
+                                .font(.title)
+                            Text(weather.temperatureString)
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                        }
+                        
+                        Text("Feels like \(weather.feelsLikeString)")
                             .font(.subheadline)
+                        
+                        Text("Humidity: \(weather.humidityString)")
+                            .font(.caption)
+                            .foregroundColor(AppTheme.textSecondary)
+                        
+                        Text("Wind: \(weather.windSpeedString)")
+                            .font(.caption)
                             .foregroundColor(AppTheme.textSecondary)
                     }
-                    .frame(height: 100)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                } else if let weather = weatherService.currentWeather {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: getWeatherIcon(for: weather.condition))
-                                    .font(.title)
-                                Text(weather.temperatureString)
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                            }
-                            
-                            Text("Feels like \(weather.feelsLikeString)")
-                                .font(.subheadline)
-                            
-                            Text("Humidity: \(weather.humidityString)")
-                                .font(.caption)
-                                .foregroundColor(AppTheme.textSecondary)
-                            
-                            Text("Wind: \(weather.windSpeedString)")
-                                .font(.caption)
-                                .foregroundColor(AppTheme.textSecondary)
-                        }
+                    
+                    Spacer()
+                    
+                    // Weather safety tips
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Safety Tips:")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
                         
-                        Spacer()
-                        
-                        // Weather safety tips
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Safety Tips:")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            
-                            Text(getWeatherSafetyTip(for: weather.condition))
-                                .font(.caption)
-                                .foregroundColor(AppTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .frame(maxWidth: .infinity)
+                        Text(getWeatherSafetyTip(for: weather.condition))
+                            .font(.caption)
+                            .foregroundColor(AppTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            } else if let error = weatherService.error {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundColor(.orange)
+                    VStack(alignment: .leading) {
+                        Text("Unable to load weather data")
+                            .font(.subheadline)
+                            .foregroundColor(AppTheme.textSecondary)
+                        Text(error.localizedDescription)
+                            .font(.caption)
+                            .foregroundColor(AppTheme.textSecondary)
                     }
                 }
+                .frame(height: 100)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+            } else {
+                HStack {
+                    Image(systemName: "cloud.sun")
+                        .foregroundColor(.orange)
+                    Text("Weather information will appear here")
+                        .font(.subheadline)
+                        .foregroundColor(AppTheme.textSecondary)
+                }
+                .frame(height: 100)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .padding()

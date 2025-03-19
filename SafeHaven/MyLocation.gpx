@@ -1,63 +1,7 @@
-import Foundation
-import SwiftUI
-import WeatherKit
-import CoreLocation
-
-
-struct MyLocationView: View {
-    @StateObject private var locationService = LocationService()
-    @State private var selectedPlace: MKMapItem?
-    @State private var region: MKCoordinateRegion?
-    
-    var body: some View {
-        VStack {
-            if let currentLocation = locationService.currentLocation {
-                MapView(region: region ?? MKCoordinateRegion(
-                    center: currentLocation.coordinate,
-                    span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
-                ))
-                .edgesIgnoringSafeArea(.all)
-                
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Current Location")
-                        .font(.headline)
-                    
-                    Text(locationService.formattedAddress())
-                        .foregroundColor(.secondary)
-                    
-                    Text("Latitude: \(currentLocation.coordinate.latitude)")
-                    Text("Longitude: \(currentLocation.coordinate.longitude)")
-                }
-                .padding()
-            } else {
-                ProgressView("Fetching Location")
-                    .onAppear {
-                        locationService.requestLocation()
-                    }
-            }
-        }
-        .onChange(of: locationService.currentLocation) { newLocation in
-            if let location = newLocation {
-                region = MKCoordinateRegion(
-                    center: location.coordinate,
-                    span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
-                )
-            }
-        }
-    }
-}
-
-struct MapView: UIViewRepresentable {
-    var region: MKCoordinateRegion
-    
-    func makeUIView(context: Context) -> MKMapView {
-        let mapView = MKMapView()
-        mapView.region = region
-        mapView.showsUserLocation = true
-        return mapView
-    }
-    
-    func updateUIView(_ uiView: MKMapView, context: Context) {
-        uiView.region = region
-    }
-}
+<?xml version="1.0"?>
+<gpx version="1.1" creator="SafeHaven">
+    <wpt lat="37.7749" lon="-122.4194">
+        <name>San Francisco</name>
+        <desc>Default test location</desc>
+    </wpt>
+</gpx>

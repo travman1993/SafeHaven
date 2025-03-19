@@ -4,13 +4,6 @@
 //
 //  Created by Travis Rodriguez on 3/12/25.
 //
-
-//
-//  LocationsService.swift
-//  SafeHaven
-//
-//  Created by Travis Rodriguez on 3/12/25.
-//
 import SwiftUI
 import CoreLocation
 import MapKit
@@ -145,94 +138,3 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 }
 
-// MARK: - Map Content View with Improved Location Handling
-struct MapContentView: View {
-    let resources: [ResourceLocation]
-    let userLocation: CLLocationCoordinate2D?
-    @Binding var selectedResource: ResourceLocation?
-    @State private var region: MKCoordinateRegion
-    @State private var isMapInitialized = false
-    
-    init(resources: [ResourceLocation], userLocation: CLLocationCoordinate2D?, selectedResource: Binding<ResourceLocation?>) {
-        self.resources = resources
-        self.userLocation = userLocation
-        self._selectedResource = selectedResource
-        
-        // Initialize with user location if available, otherwise use a default
-        if let userLocation = userLocation {
-            self._region = State(initialValue: MKCoordinateRegion(
-                center: userLocation,
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-            ))
-        } else {
-            // Default to San Francisco if no location is available
-            self._region = State(initialValue: MKCoordinateRegion(
-                center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-            ))
-        }
-    }
-    
-    var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Map(coordinateRegion: $region, showsUserLocation: true, annotationItems: resources) { resource in
-                MapAnnotation(coordinate: resource.coordinate) {
-                    ResourceMapPin(resource: resource, onTap: {
-                        selectedResource = resource
-                    })
-                }
-            }
-            .ignoresSafeArea(edges: .bottom)
-            .onAppear {
-                updateRegionIfNeeded()
-            }
-            .onChange(of: userLocation) { newValue in
-                updateRegionIfNeeded()
-            }
-            
-            // User location button
-            Button(action: {
-                if let userLocation = userLocation {
-                    withAnimation {
-                        region = MKCoordinateRegion(
-                            center: userLocation,
-                            span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
-                        )
-                    }
-                }
-            }) {
-                Image(systemName: "location.fill")
-                    .font(.system(size: 22))
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 50)
-                    .background(Color.blue)
-                    .clipShape(Circle())
-                    .shadow(radius: 4)
-            }
-            .padding(20)
-            .opacity(userLocation != nil ? 1.0 : 0.5)
-            .disabled(userLocation == nil)
-        }
-    }
-    
-    private func updateRegionIfNeeded() {
-        // Update region with user location if available and not already set
-        if let userLocation = userLocation, !isMapInitialized {
-            isMapInitialized = true
-            region = MKCoordinateRegion(
-                center: userLocation,
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-            )
-        }
-        
-        // If we have resources but no user location, center on the first resource
-        if userLocation == nil && !resources.isEmpty && !isMapInitialized {
-            isMapInitialized = true
-            let firstResource = resources[0]
-            region = MKCoordinateRegion(
-                center: firstResource.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-            )
-        }
-    }
-}

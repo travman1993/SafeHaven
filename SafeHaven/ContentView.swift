@@ -20,57 +20,59 @@ struct ContentView: View {
     }
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // MARK: - Home Tab
-            homeView
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(Tab.home)
-            
-            // MARK: - Resources Tab
-            ResourcesView()
-                .tabItem {
-                    Label("Resources", systemImage: "mappin.and.ellipse")
-                }
-                .tag(Tab.resources)
-            
-            // MARK: - Journal Tab
-            JournalView()
-                .tabItem {
-                    Label("Journal", systemImage: "book.fill")
-                }
-                .tag(Tab.journal)
-            
-            // MARK: - Settings Tab (formerly Profile)
-            SettingsView(showingSupportersView: $showingSupportersView)
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
-                .tag(Tab.settings)
-        }
-        .accentColor(AppTheme.primary)
-        .sheet(isPresented: $showingEmergencyContacts) {
-            EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
-        }
-        .sheet(isPresented: $showingMotivationView) {
-            MotivationView()
-        }
-        .sheet(isPresented: $showingSupportersView) {
-            SupportersView()
-        }
-        .onAppear {
-            loadEmergencyContacts()
-            
-            // Request location
-            locationService.requestLocation()
-            
-            // If location is already available, use it
-            updateWeatherIfLocationAvailable()
-            
-            // Setup notification for when location changes
-            NotificationCenter.default.addObserver(forName: NSNotification.Name("LocationDidUpdate"), object: nil, queue: .main) { _ in
+        GeometryReader { geometry in
+            TabView(selection: $selectedTab) {
+                // MARK: - Home Tab
+                homeView(for: geometry)
+                    .tabItem {
+                        Label("Home", systemImage: "house.fill")
+                    }
+                    .tag(Tab.home)
+                
+                // MARK: - Resources Tab
+                ResourcesView()
+                    .tabItem {
+                        Label("Resources", systemImage: "mappin.and.ellipse")
+                    }
+                    .tag(Tab.resources)
+                
+                // MARK: - Journal Tab
+                JournalView()
+                    .tabItem {
+                        Label("Journal", systemImage: "book.fill")
+                    }
+                    .tag(Tab.journal)
+                
+                // MARK: - Settings Tab (formerly Profile)
+                SettingsView(showingSupportersView: $showingSupportersView)
+                    .tabItem {
+                        Label("Settings", systemImage: "gear")
+                    }
+                    .tag(Tab.settings)
+            }
+            .accentColor(AppTheme.primary)
+            .sheet(isPresented: $showingEmergencyContacts) {
+                EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
+            }
+            .sheet(isPresented: $showingMotivationView) {
+                MotivationView()
+            }
+            .sheet(isPresented: $showingSupportersView) {
+                SupportersView()
+            }
+            .onAppear {
+                loadEmergencyContacts()
+                
+                // Request location
+                locationService.requestLocation()
+                
+                // If location is already available, use it
                 updateWeatherIfLocationAvailable()
+                
+                // Setup notification for when location changes
+                NotificationCenter.default.addObserver(forName: NSNotification.Name("LocationDidUpdate"), object: nil, queue: .main) { _ in
+                    updateWeatherIfLocationAvailable()
+                }
             }
         }
     }
@@ -85,49 +87,48 @@ struct ContentView: View {
         weatherService.fetchWeather(for: location)
     }
     
-    // MARK: - Home View
-    private var homeView: some View {
+    // MARK: - Home View with Responsive Design
+    private func homeView(for geometry: GeometryProxy) -> some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: ResponsiveLayout.padding(20)) {
                 // Header with greeting and weather
-                headerView
+                headerView(for: geometry)
                 
                 // Emergency Slider
-                emergencySliderSection
+                emergencySliderSection(for: geometry)
                 
                 // Daily Tasks
-                dailyTasksSection
+                dailyTasksSection(for: geometry)
                 
                 // Motivation Card
-                motivationCard
+                motivationCard(for: geometry)
                 
                 // Weather Information
-                weatherCard
+                weatherCard(for: geometry)
                 
                 // Quick Access Sections
-                quickAccessGrid
+                quickAccessGrid(for: geometry)
                 
                 // Space at bottom for comfortable scrolling
-                Spacer(minLength: 40)
+                Spacer(minLength: ResponsiveLayout.padding(40))
             }
-            .padding()
+            .padding(ResponsiveLayout.padding())
         }
         .background(AppTheme.background.ignoresSafeArea())
         .navigationTitle("SafeHaven")
         .navigationBarTitleDisplayMode(.large)
     }
     
-    // MARK: - Header View
-    private var headerView: some View {
+    // MARK: - Responsive Header View
+    private func headerView(for geometry: GeometryProxy) -> some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Welcome")
-                    .font(.headline)
+                    .font(.system(size: ResponsiveLayout.fontSize(16), weight: .medium))
                     .foregroundColor(AppTheme.primary)
                 
                 Text(getTimeBasedGreeting())
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .font(.system(size: ResponsiveLayout.fontSize(24), weight: .bold))
                     .foregroundColor(AppTheme.textPrimary)
             }
             
@@ -138,16 +139,15 @@ struct ContentView: View {
                 VStack(alignment: .trailing) {
                     HStack(spacing: 4) {
                         Text(currentWeather.temperatureString)
-                            .font(.title2)
-                            .fontWeight(.semibold)
+                            .font(.system(size: ResponsiveLayout.fontSize(20), weight: .semibold))
                         
                         Image(systemName: getWeatherIcon(for: currentWeather.condition))
-                            .font(.title2)
+                            .font(.system(size: ResponsiveLayout.fontSize(20)))
                     }
                     .foregroundColor(AppTheme.textPrimary)
                     
                     Text(weatherConditionText(for: currentWeather.condition))
-                        .font(.subheadline)
+                        .font(.system(size: ResponsiveLayout.fontSize(14)))
                         .foregroundColor(AppTheme.textSecondary)
                 }
             } else {
@@ -155,51 +155,52 @@ struct ContentView: View {
                     .progressViewStyle(CircularProgressViewStyle())
             }
         }
-        .padding()
+        .padding(ResponsiveLayout.padding())
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
-    // MARK: - Emergency Slider Section
-    private var emergencySliderSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    // MARK: - Responsive Emergency Slider Section
+    private func emergencySliderSection(for geometry: GeometryProxy) -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
             Text("Emergency")
-                .font(.headline)
+                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .semibold))
                 .foregroundColor(AppTheme.textPrimary)
             
             EmergencySlider(
                 onEmergencyCall: {
                     EmergencyServices.callEmergency()
-                }
+                },
+                sliderWidth: geometry.size.width - ResponsiveLayout.padding(40)
             )
         }
-        .padding()
+        .padding(ResponsiveLayout.padding())
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - Daily Tasks Section
-    private var dailyTasksSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func dailyTasksSection(for geometry: GeometryProxy) -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
             Text("Daily Tasks")
-                .font(.headline)
+                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .semibold))
                 .foregroundColor(AppTheme.textPrimary)
             
             TodoView()
         }
-        .padding()
+        .padding(ResponsiveLayout.padding())
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - Motivation Card
-    private var motivationCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func motivationCard(for geometry: GeometryProxy) -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
             Text("Daily Motivation")
-                .font(.headline)
+                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .semibold))
                 .foregroundColor(AppTheme.textPrimary)
             
             ZStack {
@@ -213,35 +214,35 @@ struct ContentView: View {
                 
                 // Quote
                 Text(getRandomDailyQuote())
-                    .font(.system(.body, design: .serif))
+                    .font(.system(size: ResponsiveLayout.fontSize(16), design: .serif))
                     .fontWeight(.medium)
                     .foregroundColor(.white)
                     .padding()
                     .multilineTextAlignment(.center)
             }
-            .frame(height: 120)
+            .frame(height: ResponsiveLayout.isIPad ? 180 : 120)
             
             Button(action: {
                 showingMotivationView = true
             }) {
                 Text("View More Motivational Quotes")
-                    .font(.subheadline)
+                    .font(.system(size: ResponsiveLayout.fontSize(14)))
                     .foregroundColor(AppTheme.primary)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.top, 4)
         }
-        .padding()
+        .padding(ResponsiveLayout.padding())
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - Weather Card
-    private var weatherCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func weatherCard(for geometry: GeometryProxy) -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
             Text("Weather & Safety")
-                .font(.headline)
+                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .semibold))
                 .foregroundColor(AppTheme.textPrimary)
             
             // Check if the weatherService is in a loading state
@@ -250,48 +251,48 @@ struct ContentView: View {
                     ProgressView()
                         .padding(.trailing, 10)
                     Text("Loading weather data...")
-                        .font(.subheadline)
+                        .font(.system(size: ResponsiveLayout.fontSize(14)))
                         .foregroundColor(AppTheme.textSecondary)
                 }
                 .frame(height: 100)
                 .frame(maxWidth: .infinity, alignment: .center)
             } else if let weather = weatherService.currentWeather {
-                HStack {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: getWeatherIcon(for: weather.condition))
-                                .font(.title)
-                            Text(weather.temperatureString)
-                                .font(.title2)
-                                .fontWeight(.semibold)
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: getWeatherIcon(for: weather.condition))
+                                    .font(.system(size: ResponsiveLayout.fontSize(24)))
+                                Text(weather.temperatureString)
+                                    .font(.system(size: ResponsiveLayout.fontSize(22), weight: .semibold))
+                            }
+                            
+                            Text("Feels like \(weather.feelsLikeString)")
+                                .font(.system(size: ResponsiveLayout.fontSize(14)))
+                            
+                            Text("Humidity: \(weather.humidityString)")
+                                .font(.system(size: ResponsiveLayout.fontSize(12)))
+                                .foregroundColor(AppTheme.textSecondary)
+                            
+                            Text("Wind: \(weather.windSpeedString)")
+                                .font(.system(size: ResponsiveLayout.fontSize(12)))
+                                .foregroundColor(AppTheme.textSecondary)
                         }
                         
-                        Text("Feels like \(weather.feelsLikeString)")
-                            .font(.subheadline)
+                        Spacer()
                         
-                        Text("Humidity: \(weather.humidityString)")
-                            .font(.caption)
-                            .foregroundColor(AppTheme.textSecondary)
-                        
-                        Text("Wind: \(weather.windSpeedString)")
-                            .font(.caption)
-                            .foregroundColor(AppTheme.textSecondary)
+                        // Weather safety tips
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Safety Tips:")
+                                .font(.system(size: ResponsiveLayout.fontSize(14), weight: .medium))
+                            
+                            Text(getWeatherSafetyTip(for: weather.condition))
+                                .font(.system(size: ResponsiveLayout.fontSize(12)))
+                                .foregroundColor(AppTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    
-                    Spacer()
-                    
-                    // Weather safety tips
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Safety Tips:")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        
-                        Text(getWeatherSafetyTip(for: weather.condition))
-                            .font(.caption)
-                            .foregroundColor(AppTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: .infinity)
                 }
             } else if let error = weatherService.error {
                 HStack {
@@ -299,10 +300,10 @@ struct ContentView: View {
                         .foregroundColor(.orange)
                     VStack(alignment: .leading) {
                         Text("Unable to load weather data")
-                            .font(.subheadline)
+                            .font(.system(size: ResponsiveLayout.fontSize(14)))
                             .foregroundColor(AppTheme.textSecondary)
                         Text(error.localizedDescription)
-                            .font(.caption)
+                            .font(.system(size: ResponsiveLayout.fontSize(12)))
                             .foregroundColor(AppTheme.textSecondary)
                     }
                 }
@@ -314,27 +315,27 @@ struct ContentView: View {
                     Image(systemName: "cloud.sun")
                         .foregroundColor(.orange)
                     Text("Weather information will appear here")
-                        .font(.subheadline)
+                        .font(.system(size: ResponsiveLayout.fontSize(14)))
                         .foregroundColor(AppTheme.textSecondary)
                 }
                 .frame(height: 100)
                 .frame(maxWidth: .infinity, alignment: .center)
             }
         }
-        .padding()
+        .padding(ResponsiveLayout.padding())
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - Quick Access Grid
-    private var quickAccessGrid: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func quickAccessGrid(for geometry: GeometryProxy) -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
             Text("Quick Access")
-                .font(.headline)
+                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .semibold))
                 .foregroundColor(AppTheme.textPrimary)
             
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+            LazyVGrid(columns: ResponsiveLayout.gridColumns(), spacing: ResponsiveLayout.padding(16)) {
                 // Resources
                 quickAccessButton(
                     title: "Find Resources",
@@ -373,176 +374,176 @@ struct ContentView: View {
                 }
             }
         }
-        .padding()
+        .padding(ResponsiveLayout.padding())
         .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 0)
     }
     
     // MARK: - Helper Views
-    // Button content helper
-    private func quickAccessButtonContent(title: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 28))
-                .foregroundColor(color)
-                .frame(width: 60, height: 60)
-                .background(color.opacity(0.1))
-                .clipShape(Circle())
+        // Button content helper
+        private func quickAccessButtonContent(title: String, icon: String, color: Color) -> some View {
+            VStack(spacing: ResponsiveLayout.padding(12)) {
+                Image(systemName: icon)
+                    .font(.system(size: ResponsiveLayout.fontSize(28)))
+                    .foregroundColor(color)
+                    .frame(width: ResponsiveLayout.isIPad ? 80 : 60, height: ResponsiveLayout.isIPad ? 80 : 60)
+                    .background(color.opacity(0.1))
+                    .clipShape(Circle())
+                
+                Text(title)
+                    .font(.system(size: ResponsiveLayout.fontSize(14)))
+                    .foregroundColor(AppTheme.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(ResponsiveLayout.padding())
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
+        }
+        
+        private func quickAccessButton(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
+            Button(action: action) {
+                quickAccessButtonContent(title: title, icon: icon, color: color)
+            }
+        }
+        
+        // MARK: - Helper Methods
+        private func loadEmergencyContacts() {
+            // Load from UserDefaults instead of CloudKit
+            if let data = UserDefaults.standard.data(forKey: "emergencyContacts"),
+               let contacts = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
+                self.emergencyContacts = contacts
+            }
+        }
+        
+        private func getTimeBasedGreeting() -> String {
+            let hour = Calendar.current.component(.hour, from: Date())
             
-            Text(title)
-                .font(.subheadline)
-                .foregroundColor(AppTheme.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-    }
-    
-    private func quickAccessButton(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            quickAccessButtonContent(title: title, icon: icon, color: color)
-        }
-    }
-    
-    // MARK: - Helper Methods
-    private func loadEmergencyContacts() {
-        // Load from UserDefaults instead of CloudKit
-        if let data = UserDefaults.standard.data(forKey: "emergencyContacts"),
-           let contacts = try? JSONDecoder().decode([EmergencyContact].self, from: data) {
-            self.emergencyContacts = contacts
-        }
-    }
-    
-    private func getTimeBasedGreeting() -> String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        
-        let greeting: String
-        if hour < 12 {
-            greeting = "Good Morning"
-        } else if hour < 17 {
-            greeting = "Good Afternoon"
-        } else {
-            greeting = "Good Evening"
+            let greeting: String
+            if hour < 12 {
+                greeting = "Good Morning"
+            } else if hour < 17 {
+                greeting = "Good Afternoon"
+            } else {
+                greeting = "Good Evening"
+            }
+            
+            return greeting
         }
         
-        return greeting
-    }
-    
-    private func getRandomDailyQuote() -> String {
-        // Use the current date to seed the random generator
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let dateComponents = calendar.dateComponents([.day, .month, .year], from: today)
+        private func getRandomDailyQuote() -> String {
+            // Use the current date to seed the random generator
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+            let dateComponents = calendar.dateComponents([.day, .month, .year], from: today)
+            
+            // Create a consistent seed value for the day
+            let seed = (dateComponents.day ?? 1) +
+                       ((dateComponents.month ?? 1) * 31) +
+                       ((dateComponents.year ?? 2025) * 366)
+            
+            // Use the seed to deterministically select a quote for the day
+            let quoteIndex = seed % motivationalQuotes.count
+            return motivationalQuotes[quoteIndex]
+        }
         
-        // Create a consistent seed value for the day
-        let seed = (dateComponents.day ?? 1) +
-                   ((dateComponents.month ?? 1) * 31) +
-                   ((dateComponents.year ?? 2025) * 366)
+        private func getWeatherIcon(for condition: WeatherCondition) -> String {
+            switch condition {
+            case .clear:
+                return "sun.max.fill"
+            case .cloudy:
+                return "cloud.fill"
+            case .fog, .mist:
+                return "cloud.fog.fill"
+            case .haze:
+                return "sun.haze.fill"
+            case .rain:
+                return "cloud.rain.fill"
+            case .snow:
+                return "cloud.snow.fill"
+            case .thunderstorms:
+                return "cloud.bolt.fill"
+            case .wind, .breezy:
+                return "wind"
+            case .hot, .heat:
+                return "thermometer.sun.fill"
+            case .cold, .chilly:
+                return "thermometer.snowflake"
+            case .sunFlurries:
+                return "sun.snow.fill"
+            case .sunShowers:
+                return "sun.rain.fill"
+            case .sleet:
+                return "cloud.sleet.fill"
+            case .blowingSnow:
+                return "wind.snow"
+            case .blizzard:
+                return "snowflake"
+            default:
+                return "questionmark.circle"
+            }
+        }
         
-        // Use the seed to deterministically select a quote for the day
-        let quoteIndex = seed % motivationalQuotes.count
-        return motivationalQuotes[quoteIndex]
-    }
-    
-    private func getWeatherIcon(for condition: WeatherCondition) -> String {
-        switch condition {
-        case .clear:
-            return "sun.max.fill"
-        case .cloudy:
-            return "cloud.fill"
-        case .fog, .mist:
-            return "cloud.fog.fill"
-        case .haze:
-            return "sun.haze.fill"
-        case .rain:
-            return "cloud.rain.fill"
-        case .snow:
-            return "cloud.snow.fill"
-        case .thunderstorms:
-            return "cloud.bolt.fill"
-        case .wind, .breezy:
-            return "wind"
-        case .hot, .heat:
-            return "thermometer.sun.fill"
-        case .cold, .chilly:
-            return "thermometer.snowflake"
-        case .sunFlurries:
-            return "sun.snow.fill"
-        case .sunShowers:
-            return "sun.rain.fill"
-        case .sleet:
-            return "cloud.sleet.fill"
-        case .blowingSnow:
-            return "wind.snow"
-        case .blizzard:
-            return "snowflake"
-        default:
-            return "questionmark.circle"
+        private func weatherConditionText(for condition: WeatherCondition) -> String {
+            switch condition {
+            case .clear:
+                return "Clear Sky"
+            case .cloudy:
+                return "Cloudy"
+            case .fog, .mist:
+                return "Foggy"
+            case .haze:
+                return "Hazy"
+            case .rain:
+                return "Rainy"
+            case .snow:
+                return "Snowy"
+            case .thunderstorms:
+                return "Thunderstorms"
+            case .wind, .breezy:
+                return "Windy"
+            case .hot, .heat:
+                return "Hot"
+            case .cold, .chilly:
+                return "Cold"
+            case .sunFlurries:
+                return "Sun & Snow"
+            case .sunShowers:
+                return "Sun & Rain"
+            case .sleet:
+                return "Sleet"
+            case .blowingSnow:
+                return "Blowing Snow"
+            case .blizzard:
+                return "Blizzard"
+            default:
+                return "Unknown"
+            }
+        }
+        
+        private func getWeatherSafetyTip(for condition: WeatherCondition) -> String {
+            switch condition {
+            case .clear:
+                return "Enjoy the good weather, but don't forget sunscreen if you're spending time outdoors."
+            case .hot, .heat:
+                return "Stay hydrated and seek shade during peak hours. Check on vulnerable people who may need assistance."
+            case .cold, .chilly:
+                return "Dress in layers and cover extremities. Keep emergency supplies in your vehicle if traveling."
+            case .rain:
+                return "Drive carefully on wet roads and watch for flash flooding in low-lying areas."
+            case .thunderstorms:
+                return "Stay indoors and away from windows. Avoid using electrical appliances if lightning is nearby."
+            case .snow, .blowingSnow, .blizzard:
+                return "Travel only if necessary. Keep emergency supplies and warm clothing accessible."
+            case .fog, .mist:
+                return "Use low beam headlights when driving and reduce speed. Allow extra distance between vehicles."
+            case .wind, .breezy:
+                return "Secure loose objects outdoors. Be cautious of falling branches and power lines."
+            default:
+                return "Stay updated on changing weather conditions and have emergency supplies ready."
+            }
         }
     }
-    
-    private func weatherConditionText(for condition: WeatherCondition) -> String {
-        switch condition {
-        case .clear:
-            return "Clear Sky"
-        case .cloudy:
-            return "Cloudy"
-        case .fog, .mist:
-            return "Foggy"
-        case .haze:
-            return "Hazy"
-        case .rain:
-            return "Rainy"
-        case .snow:
-            return "Snowy"
-        case .thunderstorms:
-            return "Thunderstorms"
-        case .wind, .breezy:
-            return "Windy"
-        case .hot, .heat:
-            return "Hot"
-        case .cold, .chilly:
-            return "Cold"
-        case .sunFlurries:
-            return "Sun & Snow"
-        case .sunShowers:
-            return "Sun & Rain"
-        case .sleet:
-            return "Sleet"
-        case .blowingSnow:
-            return "Blowing Snow"
-        case .blizzard:
-            return "Blizzard"
-        default:
-            return "Unknown"
-        }
-    }
-    
-    private func getWeatherSafetyTip(for condition: WeatherCondition) -> String {
-        switch condition {
-        case .clear:
-            return "Enjoy the good weather, but don't forget sunscreen if you're spending time outdoors."
-        case .hot, .heat:
-            return "Stay hydrated and seek shade during peak hours. Check on vulnerable people who may need assistance."
-        case .cold, .chilly:
-            return "Dress in layers and cover extremities. Keep emergency supplies in your vehicle if traveling."
-        case .rain:
-            return "Drive carefully on wet roads and watch for flash flooding in low-lying areas."
-        case .thunderstorms:
-            return "Stay indoors and away from windows. Avoid using electrical appliances if lightning is nearby."
-        case .snow, .blowingSnow, .blizzard:
-            return "Travel only if necessary. Keep emergency supplies and warm clothing accessible."
-        case .fog, .mist:
-            return "Use low beam headlights when driving and reduce speed. Allow extra distance between vehicles."
-        case .wind, .breezy:
-            return "Secure loose objects outdoors. Be cautious of falling branches and power lines."
-        default:
-            return "Stay updated on changing weather conditions and have emergency supplies ready."
-        }
-    }
-}

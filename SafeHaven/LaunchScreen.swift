@@ -3,8 +3,6 @@
 //  SafeHaven
 //
 //  Created by Travis Rodriguez on 3/16/25.
-//
-// LaunchScreen.swift
 import SwiftUI
 
 struct LaunchScreen: View {
@@ -13,7 +11,7 @@ struct LaunchScreen: View {
             Color(hex: "F0F2F6")
                 .ignoresSafeArea()
             
-            VStack(spacing: 20) {
+            VStack(spacing: ResponsiveLayout.padding(20)) {
                 // Shield logo similar to login screen
                 ZStack {
                     Circle()
@@ -22,35 +20,55 @@ struct LaunchScreen: View {
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
-                        .frame(width: 130, height: 130)
+                        .frame(
+                            width: ResponsiveLayout.isIPad ? 180 : 130,
+                            height: ResponsiveLayout.isIPad ? 180 : 130
+                        )
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
                     
                     Image(systemName: "shield.fill")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 80, height: 80)
+                        .frame(
+                            width: ResponsiveLayout.isIPad ? 100 : 80,
+                            height: ResponsiveLayout.isIPad ? 100 : 80
+                        )
                         .foregroundColor(.white.opacity(0.9))
                     
                     Image(systemName: "house.fill")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 40, height: 40)
+                        .frame(
+                            width: ResponsiveLayout.isIPad ? 50 : 40,
+                            height: ResponsiveLayout.isIPad ? 50 : 40
+                        )
                         .foregroundColor(.white)
                     
                     Image(systemName: "heart.fill")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
+                        .frame(
+                            width: ResponsiveLayout.isIPad ? 30 : 20,
+                            height: ResponsiveLayout.isIPad ? 30 : 20
+                        )
                         .foregroundColor(.white)
-                        .offset(y: 10)
+                        .offset(y: ResponsiveLayout.isIPad ? 15 : 10)
                 }
                 
                 Text("SafeHaven")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .font(.system(
+                        size: ResponsiveLayout.fontSize(36),
+                        weight: .bold,
+                        design: .rounded
+                    ))
                     .foregroundColor(AppTheme.textPrimary)
                 
                 Text("Secure Your Safety")
-                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .font(.system(
+                        size: ResponsiveLayout.fontSize(18),
+                        weight: .medium,
+                        design: .rounded
+                    ))
                     .foregroundColor(AppTheme.textSecondary)
             }
         }

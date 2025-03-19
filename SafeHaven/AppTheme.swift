@@ -11,6 +11,22 @@ struct AppTheme {
     static var textSecondary = Color(hex: "718096")
     static var textLight = Color.white
     
+    static func responsiveFont(baseSize: CGFloat) -> CGFloat {
+            let screenWidth = UIScreen.main.bounds.width
+            let isPad = UIDevice.current.userInterfaceIdiom == .pad
+            
+            if isPad {
+                return baseSize * 1.2 // Slightly larger on iPad
+            } else {
+                // Scale font size based on iPhone screen width
+                return baseSize * (screenWidth / 375.0)
+            }
+        }
+    
+    static func responsivePadding() -> CGFloat {
+            return UIDevice.current.userInterfaceIdiom == .pad ? 24 : 16
+        }
+    
     struct ButtonStyle: ViewModifier {
         var bgColor: Color
         var isLarge: Bool = false

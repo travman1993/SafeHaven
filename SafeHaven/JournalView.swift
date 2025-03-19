@@ -3,9 +3,10 @@
 //  SafeHaven
 //
 //  Created by Travis Rodriguez on 3/1/25.
-//
+import Foundation
 import SwiftUI
 
+// Journal Entry Model
 struct JournalEntry: Identifiable, Codable {
     var id = UUID()
     var date: Date
@@ -14,6 +15,7 @@ struct JournalEntry: Identifiable, Codable {
     var mood: String
 }
 
+// Journal Manager
 class JournalManager: ObservableObject {
     @Published var entries: [JournalEntry] = []
     
@@ -41,13 +43,12 @@ class JournalManager: ObservableObject {
     }
     
     func deleteEntry(_ entry: JournalEntry) {
-        if let index = entries.firstIndex(where: { $0.id == entry.id }) {
-            entries.remove(at: index)
-            saveEntries()
-        }
+        entries.removeAll { $0.id == entry.id }
+        saveEntries()
     }
 }
 
+// Existing JournalView code remains the same as in the previous responsive implementation
 struct JournalView: View {
     @StateObject private var journalManager = JournalManager()
     @State private var showingNewEntryView = false
@@ -60,132 +61,177 @@ struct JournalView: View {
     }()
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack {
-                HStack(spacing: 12) {
-                    Image(systemName: "book.fill")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundColor(Color(hex: "6A89CC"))
+        GeometryReader { geometry in
+            VStack(alignment: .leading, spacing: 0) {
+                // Header
+                HStack {
+                    HStack(spacing: ResponsiveLayout.padding(12)) {
+                        Image(systemName: "book.fill")
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(22),
+                                weight: .medium
+                            ))
+                            .foregroundColor(Color(hex: "6A89CC"))
+                        
+                        Text("Journal")
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(20),
+                                weight: .semibold,
+                                design: .rounded
+                            ))
+                            .foregroundColor(Color(hex: "333333"))
+                    }
                     
-                    Text("Journal")
-                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                        .foregroundColor(Color(hex: "333333"))
-                }
-                
-                Spacer()
-                
-                Button(action: {
-                    showingNewEntryView = true
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(Color(hex: "6A89CC"))
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(Color(hex: "F8F9FA"))
-            
-            Divider()
-                .padding(.horizontal, 20)
-            
-            // Journal Entries
-            if journalManager.entries.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "book")
-                        .font(.system(size: 36))
-                        .foregroundColor(Color(hex: "CCCCCC"))
-                        .padding(.top, 30)
-                    
-                    Text("Your journal is empty")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundColor(Color(hex: "999999"))
-                    
-                    Text("Start writing to track your journey")
-                        .font(.system(size: 14, design: .rounded))
-                        .foregroundColor(Color(hex: "AAAAAA"))
+                    Spacer()
                     
                     Button(action: {
                         showingNewEntryView = true
                     }) {
-                        Text("Write First Entry")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .background(Color(hex: "6A89CC"))
-                            .cornerRadius(8)
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: ResponsiveLayout.fontSize(22)))
+                            .foregroundColor(Color(hex: "6A89CC"))
                     }
-                    .padding(.top, 10)
-                    .padding(.bottom, 30)
                 }
-                .frame(maxWidth: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(journalManager.entries) { entry in
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack {
-                                    Text(entry.title)
-                                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                        .foregroundColor(Color(hex: "333333"))
-                                    
-                                    Spacer()
-                                    
-                                    Text(dateFormatter.string(from: entry.date))
-                                        .font(.system(size: 14, design: .rounded))
-                                        .foregroundColor(Color(hex: "999999"))
-                                }
-                                
-                                HStack {
-                                    getMoodIcon(for: entry.mood)
-                                        .foregroundColor(getMoodColor(for: entry.mood))
-                                    
-                                    Text(entry.mood.capitalized)
-                                        .font(.system(size: 14, design: .rounded))
-                                        .foregroundColor(getMoodColor(for: entry.mood))
-                                    
-                                    Spacer()
-                                }
-                                .padding(.vertical, 4)
-                                
-                                Text(entry.content)
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundColor(Color(hex: "555555"))
-                                    .lineLimit(3)
-                                    .padding(.top, 2)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
-                            .padding(.horizontal, 20)
-                            .contextMenu {
-                                Button(role: .destructive, action: {
-                                    withAnimation {
-                                        journalManager.deleteEntry(entry)
-                                    }
-                                }) {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        }
-                    }
-                    .padding(.vertical, 16)
+                .padding(.horizontal, ResponsiveLayout.padding(20))
+                .padding(.vertical, ResponsiveLayout.padding(16))
+                .background(Color(hex: "F8F9FA"))
+                
+                Divider()
+                    .padding(.horizontal, ResponsiveLayout.padding(20))
+                
+                // Journal Entries
+                if journalManager.entries.isEmpty {
+                    emptyStateView(in: geometry)
+                } else {
+                    entriesListView(in: geometry)
                 }
             }
+            .background(Color(hex: "F9FAFB"))
+            .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
+            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 20 : 16)
+                    .stroke(Color(hex: "EEEEEE"), lineWidth: 1)
+            )
+            .sheet(isPresented: $showingNewEntryView) {
+                NewJournalEntryView(journalManager: journalManager)
+            }
         }
-        .background(Color(hex: "F9FAFB"))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(hex: "EEEEEE"), lineWidth: 1)
-        )
-        .sheet(isPresented: $showingNewEntryView) {
-            NewJournalEntryView(journalManager: journalManager)
+    }
+    
+    private func emptyStateView(in geometry: GeometryProxy) -> some View {
+        VStack(spacing: ResponsiveLayout.padding(12)) {
+            Image(systemName: "book")
+                .font(.system(size: ResponsiveLayout.fontSize(36)))
+                .foregroundColor(Color(hex: "CCCCCC"))
+                .padding(.top, ResponsiveLayout.padding(30))
+            
+            Text("Your journal is empty")
+                .font(.system(
+                    size: ResponsiveLayout.fontSize(16),
+                    weight: .medium,
+                    design: .rounded
+                ))
+                .foregroundColor(Color(hex: "999999"))
+            
+            Text("Start writing to track your journey")
+                .font(.system(
+                    size: ResponsiveLayout.fontSize(14),
+                    design: .rounded
+                ))
+                .foregroundColor(Color(hex: "AAAAAA"))
+            
+            Button(action: {
+                showingNewEntryView = true
+            }) {
+                Text("Write First Entry")
+                    .font(.system(
+                        size: ResponsiveLayout.fontSize(16),
+                        weight: .medium,
+                        design: .rounded
+                    ))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, ResponsiveLayout.padding(20))
+                    .padding(.vertical, ResponsiveLayout.padding(10))
+                    .background(Color(hex: "6A89CC"))
+                    .cornerRadius(8)
+            }
+            .padding(.top, ResponsiveLayout.padding(10))
+            .padding(.bottom, ResponsiveLayout.padding(30))
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private func entriesListView(in geometry: GeometryProxy) -> some View {
+        ScrollView {
+            LazyVStack(spacing: ResponsiveLayout.padding(12)) {
+                ForEach(journalManager.entries) { entry in
+                    entryRowView(entry)
+                }
+            }
+            .padding(.vertical, ResponsiveLayout.padding(16))
+        }
+    }
+    
+    private func entryRowView(_ entry: JournalEntry) -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(6)) {
+            HStack {
+                Text(entry.title)
+                    .font(.system(
+                        size: ResponsiveLayout.fontSize(17),
+                        weight: .semibold,
+                        design: .rounded
+                    ))
+                    .foregroundColor(Color(hex: "333333"))
+                
+                Spacer()
+                
+                Text(dateFormatter.string(from: entry.date))
+                    .font(.system(
+                        size: ResponsiveLayout.fontSize(14),
+                        design: .rounded
+                    ))
+                    .foregroundColor(Color(hex: "999999"))
+            }
+            
+            HStack {
+                getMoodIcon(for: entry.mood)
+                    .foregroundColor(getMoodColor(for: entry.mood))
+                
+                Text(entry.mood.capitalized)
+                    .font(.system(
+                        size: ResponsiveLayout.fontSize(14),
+                        design: .rounded
+                    ))
+                    .foregroundColor(getMoodColor(for: entry.mood))
+                
+                Spacer()
+            }
+            .padding(.vertical, ResponsiveLayout.padding(4))
+            
+            Text(entry.content)
+                .font(.system(
+                    size: ResponsiveLayout.fontSize(15),
+                    design: .rounded
+                ))
+                .foregroundColor(Color(hex: "555555"))
+                .lineLimit(3)
+                .padding(.top, ResponsiveLayout.padding(2))
+        }
+        .padding(.horizontal, ResponsiveLayout.padding(16))
+        .padding(.vertical, ResponsiveLayout.padding(12))
+        .background(Color.white)
+        .cornerRadius(10)
+        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+        .padding(.horizontal, ResponsiveLayout.padding(20))
+        .contextMenu {
+            Button(role: .destructive, action: {
+                withAnimation {
+                    journalManager.deleteEntry(entry)
+                }
+            }) {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
     
@@ -224,6 +270,7 @@ struct JournalView: View {
     }
 }
 
+// New Journal Entry View
 struct NewJournalEntryView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var journalManager: JournalManager
@@ -289,6 +336,7 @@ struct NewJournalEntryView: View {
         }
     }
     
+    // Reuse mood icon and color helper methods from JournalView
     private func getMoodIcon(for mood: String) -> Image {
         switch mood.lowercased() {
         case "happy":

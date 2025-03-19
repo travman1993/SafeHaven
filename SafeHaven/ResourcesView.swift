@@ -29,92 +29,94 @@ struct ResourcesView: View {
     }
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Search and Filter Section
-                VStack(spacing: 12) {
-                    // Search Bar
-                    SearchBar(text: $searchText, placeholder: "Search resources...")
-                        .padding(.horizontal)
-                    
-                    // Category Scroll View
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(ResourceCategory.allCases) { category in
-                                CategoryChip(
-                                    title: category.rawValue,
-                                    icon: category.icon,
-                                    isSelected: selectedCategory == category,
-                                    color: category.color
-                                ) {
-                                    // Prevent multiple reloads when tapping the same category
-                                    if selectedCategory != category {
-                                        selectedCategory = category
-                                        
-                                        // Add debouncing for category changes
-                                        let now = Date()
-                                        if now.timeIntervalSince(lastLoadTime) > 0.5 {
-                                            lastLoadTime = now
-                                            loadResources()
+        GeometryReader { geometry in
+            NavigationView {
+                VStack(spacing: 0) {
+                    // Search and Filter Section
+                    VStack(spacing: ResponsiveLayout.padding(12)) {
+                        // Search Bar
+                        SearchBar(text: $searchText, placeholder: "Search resources...")
+                            .padding(.horizontal, ResponsiveLayout.padding())
+                        
+                        // Category Scroll View
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: ResponsiveLayout.padding(10)) {
+                                ForEach(ResourceCategory.allCases) { category in
+                                    CategoryChip(
+                                        title: category.rawValue,
+                                        icon: category.icon,
+                                        isSelected: selectedCategory == category,
+                                        color: category.color
+                                    ) {
+                                        // Prevent multiple reloads when tapping the same category
+                                        if selectedCategory != category {
+                                            selectedCategory = category
+                                            
+                                            // Add debouncing for category changes
+                                            let now = Date()
+                                            if now.timeIntervalSince(lastLoadTime) > 0.5 {
+                                                lastLoadTime = now
+                                                loadResources()
+                                            }
                                         }
                                     }
                                 }
                             }
+                            .padding(.horizontal, ResponsiveLayout.padding())
                         }
-                        .padding(.horizontal)
+                        
+                        // View Mode Toggle
+                        Picker("View Mode", selection: $viewMode) {
+                            Image(systemName: "list.bullet").tag(ViewMode.list)
+                            Image(systemName: "map").tag(ViewMode.map)
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding(.horizontal, ResponsiveLayout.padding())
                     }
+                    .padding(.vertical, ResponsiveLayout.padding())
+                    .background(Color(hex: "F5F7FA"))
                     
-                    // View Mode Toggle
-                    Picker("View Mode", selection: $viewMode) {
-                        Image(systemName: "list.bullet").tag(ViewMode.list)
-                        Image(systemName: "map").tag(ViewMode.map)
+                    // Content View
+                    ZStack {
+                        switch viewMode {
+                        case .map:
+                            // Use the new map component with anti-flickering measures
+                            SafeHavenResourceMapContainer(
+                                resources: filteredResources,
+                                userLocation: locationService.currentLocation?.coordinate,
+                                selectedResource: $selectedResource
+                            )
+                        case .list:
+                            ListContentView(
+                                resources: filteredResources,
+                                selectedResource: $selectedResource
+                            )
+                        }
+                        
+                        // Loading Indicator
+                        if isLoading {
+                            ProgressView()
+                                .scaleEffect(ResponsiveLayout.isIPad ? 2.0 : 1.5)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(Color.black.opacity(0.1))
+                        }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding(.horizontal)
                 }
-                .padding(.vertical)
-                .background(Color(hex: "F5F7FA"))
+                .navigationTitle("Resources")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+            .sheet(item: $selectedResource) { resource in
+                ResourceDetailView(resource: resource)
+            }
+            .onAppear {
+                // Only request permissions and load resources if we don't already have them
+                if locationService.authorizationStatus == .notDetermined {
+                    locationService.requestLocation()
+                }
                 
-                // Content View
-                ZStack {
-                    switch viewMode {
-                    case .map:
-                        // Use the new map component with anti-flickering measures
-                        SafeHavenResourceMapContainer(
-                            resources: filteredResources,
-                            userLocation: locationService.currentLocation?.coordinate,
-                            selectedResource: $selectedResource
-                        )
-                    case .list:
-                        ListContentView(
-                            resources: filteredResources,
-                            selectedResource: $selectedResource
-                        )
-                    }
-                    
-                    // Loading Indicator
-                    if isLoading {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color.black.opacity(0.1))
-                    }
+                if resourceService.resources.isEmpty {
+                    loadResources()
                 }
-            }
-            .navigationTitle("Resources")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .sheet(item: $selectedResource) { resource in
-            ResourceDetailView(resource: resource)
-        }
-        .onAppear {
-            // Only request permissions and load resources if we don't already have them
-            if locationService.authorizationStatus == .notDetermined {
-                locationService.requestLocation()
-            }
-            
-            if resourceService.resources.isEmpty {
-                loadResources()
             }
         }
     }

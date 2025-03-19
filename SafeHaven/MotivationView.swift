@@ -11,89 +11,104 @@ struct MotivationView: View {
     @State private var isAnimating: Bool = false
     
     var body: some View {
-        ZStack {
-            // Background gradient
-            LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.4)]),
-                          startPoint: .topLeading,
-                          endPoint: .bottomTrailing)
+        GeometryReader { geometry in
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.4)]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
                 .edgesIgnoringSafeArea(.all)
-            
-            VStack(spacing: 30) {
-                Spacer()
                 
-                // App title
-                Text("Daily Motivation")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                    .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 2)
-                
-                Spacer()
-                
-                // Quote display
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.white.opacity(0.9))
-                        .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+                VStack(spacing: ResponsiveLayout.padding(30)) {
+                    Spacer()
                     
-                    Text(currentQuote)
-                        .font(.system(size: 22, weight: .medium, design: .serif))
-                        .foregroundColor(.black.opacity(0.8))
-                        .multilineTextAlignment(.center)
-                        .padding(30)
-                        .opacity(isAnimating ? 1 : 0)
-                        .rotation3DEffect(
-                            Angle(degrees: isAnimating ? 0 : 90),
-                            axis: (x: 0.0, y: 1.0, z: 0.0)
-                        )
-                }
-                .frame(height: 300)
-                .padding(.horizontal, 25)
-                
-                Spacer()
-                
-                // Button to get a new quote
-                Button(action: {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        isAnimating = false
-                    }
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        currentQuote = getRandomMotivationalQuote()
-                        
-                        withAnimation(.easeIn(duration: 0.3)) {
-                            isAnimating = true
-                        }
-                    }
-                }) {
-                    Text("New Quote")
-                        .font(.headline)
+                    // App title
+                    Text("Daily Motivation")
+                        .font(.system(
+                            size: ResponsiveLayout.fontSize(32),
+                            weight: .bold,
+                            design: .rounded
+                        ))
                         .foregroundColor(.white)
-                        .padding(.vertical, 15)
-                        .padding(.horizontal, 40)
-                        .background(
-                            Capsule()
-                                .fill(LinearGradient(
-                                    gradient: Gradient(colors: [Color.blue, Color.purple]),
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                ))
-                        )
-                        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+                        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 2)
+                    
+                    Spacer()
+                    
+                    // Quote display
+                    ZStack {
+                        RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 30 : 20)
+                            .fill(Color.white.opacity(0.9))
+                            .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+                        
+                        Text(currentQuote)
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(22),
+                                weight: .medium,
+                                design: .serif
+                            ))
+                            .foregroundColor(.black.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(ResponsiveLayout.isIPad ? 40 : 30)
+                            .opacity(isAnimating ? 1 : 0)
+                            .rotation3DEffect(
+                                Angle(degrees: isAnimating ? 0 : 90),
+                                axis: (x: 0.0, y: 1.0, z: 0.0)
+                            )
+                    }
+                    .frame(height: ResponsiveLayout.isIPad ? 400 : 300)
+                    .padding(.horizontal, ResponsiveLayout.padding(25))
+                    
+                    Spacer()
+                    
+                    // Button to get a new quote
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            isAnimating = false
+                        }
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            currentQuote = getRandomMotivationalQuote()
+                            
+                            withAnimation(.easeIn(duration: 0.3)) {
+                                isAnimating = true
+                            }
+                        }
+                    }) {
+                        Text("New Quote")
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(16),
+                                weight: .semibold
+                            ))
+                            .foregroundColor(.white)
+                            .padding(.vertical, ResponsiveLayout.isIPad ? 18 : 15)
+                            .padding(.horizontal, ResponsiveLayout.isIPad ? 50 : 40)
+                            .background(
+                                Capsule()
+                                    .fill(LinearGradient(
+                                        gradient: Gradient(colors: [Color.blue, Color.purple]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    ))
+                            )
+                            .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+                    }
+                    
+                    Spacer()
                 }
-                
-                Spacer()
+                .padding()
             }
-            .padding()
-        }
-        .onAppear {
-            withAnimation(.easeIn(duration: 0.5)) {
-                isAnimating = true
+            .onAppear {
+                withAnimation(.easeIn(duration: 0.5)) {
+                    isAnimating = true
+                }
             }
         }
     }
 }
 
-// Array of motivational quotes
+// List of motivational quotes
 let motivationalQuotes = [
     // Classic motivational quotes
     "The only way to do great work is to love what you do. - Steve Jobs",
@@ -165,7 +180,7 @@ let motivationalQuotes = [
     "Don't wish it were easier. Wish you were better. - Jim Rohn",
     "Mental toughness is doing the right thing for the team when it's not the best thing for you. - Bill Belichick",
     
-    // Additions
+    // Additional quotes
     "The best way to predict the future is to create it. - Abraham Lincoln",
     "Every accomplishment starts with the decision to try. - John F. Kennedy",
     "Success is not in what you have, but who you are. - Bo Bennett",
@@ -182,46 +197,24 @@ let motivationalQuotes = [
     "It does not matter how slowly you go as long as you do not stop. - Confucius",
     "When everything seems to be going against you, remember that the airplane takes off against the wind, not with it. - Henry Ford",
     "You can't use up creativity. The more you use, the more you have. - Maya Angelou",
-    "Don't count the days, make the days count. - Muhammad Ali",
-    "The best time to plant a tree was 20 years ago. The second best time is now. - Chinese Proverb",
-    "The mind is everything. What you think you become. - Buddha",
-    "An unexamined life is not worth living. - Socrates",
-    "Be yourself; everyone else is already taken. - Oscar Wilde",
-    "To succeed in life, you need two things: ignorance and confidence. - Mark Twain",
-    "Believe you can and you're halfway there. - Theodore Roosevelt",
-    "Challenges are what make life interesting. Overcoming them is what makes life meaningful. - Joshua J. Marine",
-    "The only place where success comes before work is in the dictionary. - Vidal Sassoon",
-    "If you can dream it, you can achieve it. - Zig Ziglar",
-    "Your time is limited, don't waste it living someone else's life. - Steve Jobs",
-    "If you tell the truth, you don't have to remember anything. - Mark Twain",
-    "The purpose of our lives is to be happy. - Dalai Lama",
-    "If life were predictable it would cease to be life and be without flavor. - Eleanor Roosevelt",
-    "You only live once, but if you do it right, once is enough. - Mae West",
-    "Success is not how high you have climbed, but how you make a positive difference to the world. - Roy T. Bennett",
-    "Everything you can imagine is real. - Pablo Picasso",
-    "Life isn't about finding yourself. Life is about creating yourself. - George Bernard Shaw",
-    "The way to get started is to quit talking and begin doing. - Walt Disney",
-    "The secret of change is to focus all of your energy, not on fighting the old, but on building the new. - Socrates",
-    "The greatest glory in living lies not in never falling, but in rising every time we fall. - Nelson Mandela",
-    "You must be the change you wish to see in the world. - Mahatma Gandhi",
-    "Spread love everywhere you go. Let no one ever come to you without leaving happier. - Mother Teresa",
-    "Always remember that you are absolutely unique. Just like everyone else. - Margaret Mead",
-    "Don't judge each day by the harvest you reap but by the seeds that you plant. - Robert Louis Stevenson",
-    "The future belongs to those who prepare for it today. - Malcolm X",
-    "You will face many defeats in life, but never let yourself be defeated. - Maya Angelou",
-    "Life is never fair, and perhaps it is a good thing for most of us that it is not. - Oscar Wilde",
-    "In three words I can sum up everything I've learned about life: it goes on. - Robert Frost",
-    "Courage is resistance to fear, mastery of fear, not absence of fear. - Mark Twain",
-    "Believe in yourself, take on your challenges, dig deep within yourself to conquer fears. - Chantal Sutherland",
-    "What you get by achieving your goals is not as important as what you become by achieving your goals. - Zig Ziglar",
-    "Whatever the mind can conceive and believe, it can achieve. - Napoleon Hill",
-    "We may encounter many defeats but we must not be defeated. - Maya Angelou",
-    "The question isn't who is going to let me; it's who is going to stop me. - Ayn Rand"]
+    "Don't count the days, make the days count. - Muhammad Ali"
+]
 
 // Function to get a random quote
 func getRandomMotivationalQuote() -> String {
-    let randomIndex = Int.random(in: 0..<motivationalQuotes.count)
-    return motivationalQuotes[randomIndex]
+    // Use the current date to seed the random generator
+    let calendar = Calendar.current
+    let today = calendar.startOfDay(for: Date())
+    let dateComponents = calendar.dateComponents([.day, .month, .year], from: today)
+    
+    // Create a consistent seed value for the day
+    let seed = (dateComponents.day ?? 1) +
+               ((dateComponents.month ?? 1) * 31) +
+               ((dateComponents.year ?? 2025) * 366)
+    
+    // Use the seed to deterministically select a quote for the day
+    let quoteIndex = seed % motivationalQuotes.count
+    return motivationalQuotes[quoteIndex]
 }
 
 // Function to get multiple random quotes without repetition

@@ -15,77 +15,121 @@ struct EmergencyContactsView: View {
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Emergency Message")) {
-                    TextEditor(text: $customMessage)
-                        .frame(minHeight: 100)
-                        .foregroundColor(.primary)
-                        .background(Color(hex: "F5F7FA"))
-                        .cornerRadius(8)
-                }
-                
-                Section(header: Text("Your Emergency Contacts")) {
-                    if contacts.isEmpty {
-                        Text("No contacts added yet")
-                            .foregroundColor(.secondary)
-                            .italic()
-                    } else {
-                        ForEach(contacts) { contact in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(contact.name)
-                                    .font(.headline)
-                                Text(contact.phoneNumber)
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                                if !contact.relationship.isEmpty {
-                                    Text(contact.relationship)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        .onDelete(perform: deleteContact)
+        GeometryReader { geometry in
+            NavigationView {
+                Form {
+                    // Emergency Message Section
+                    Section(header: Text("Emergency Message")) {
+                        TextEditor(text: $customMessage)
+                            .frame(minHeight: ResponsiveLayout.isIPad ? 150 : 100)
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(16)
+                            ))
+                            .foregroundColor(.primary)
+                            .background(Color(hex: "F5F7FA"))
+                            .cornerRadius(8)
                     }
-                }
-                
-                Section(header: Text("Add New Contact")) {
-                    TextField("Name", text: $newName)
-                    TextField("Phone Number", text: $newPhone)
-                        .keyboardType(.phonePad)
-                    TextField("Relationship (optional)", text: $newRelationship)
                     
-                    Button(action: addContact) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Contact")
-                                .fontWeight(.medium)
+                    // Existing Contacts Section
+                    Section(header: Text("Your Emergency Contacts")) {
+                        if contacts.isEmpty {
+                            Text("No contacts added yet")
+                                .font(.system(
+                                    size: ResponsiveLayout.fontSize(14)
+                                ))
+                                .foregroundColor(.secondary)
+                                .italic()
+                        } else {
+                            ForEach(contacts) { contact in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(contact.name)
+                                        .font(.system(
+                                            size: ResponsiveLayout.fontSize(16),
+                                            weight: .semibold
+                                        ))
+                                    
+                                    Text(contact.phoneNumber)
+                                        .font(.system(
+                                            size: ResponsiveLayout.fontSize(14)
+                                        ))
+                                        .foregroundColor(.gray)
+                                    
+                                    if !contact.relationship.isEmpty {
+                                        Text(contact.relationship)
+                                            .font(.system(
+                                                size: ResponsiveLayout.fontSize(12)
+                                            ))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, ResponsiveLayout.padding(4))
+                            }
+                            .onDelete(perform: deleteContact)
                         }
-                        .foregroundColor(Color(hex: "6A89CC"))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 8)
                     }
-                    .disabled(newName.isEmpty || newPhone.isEmpty)
-                }
-                
-                Section(footer: Text("These contacts will receive your emergency text message with your location when you use the Emergency SOS feature.")) {
-                    // Information about how emergency contacts work
-                    HStack {
-                        Image(systemName: "info.circle")
-                            .foregroundColor(Color(hex: "6A89CC"))
-                        Text("Emergency contacts will receive a message with your location")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    
+                    // Add New Contact Section
+                    Section(header: Text("Add New Contact")) {
+                        TextField("Name", text: $newName)
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(16)
+                            ))
+                        
+                        TextField("Phone Number", text: $newPhone)
+                            .keyboardType(.phonePad)
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(16)
+                            ))
+                        
+                        TextField("Relationship (optional)", text: $newRelationship)
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(16)
+                            ))
+                        
+                        Button(action: addContact) {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                    .foregroundColor(Color(hex: "6A89CC"))
+                                
+                                Text("Add Contact")
+                                    .fontWeight(.medium)
+                                    .font(.system(
+                                        size: ResponsiveLayout.fontSize(16)
+                                    ))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, ResponsiveLayout.padding(8))
+                        }
+                        .disabled(newName.isEmpty || newPhone.isEmpty)
                     }
-                    .padding(.vertical, 4)
+                    
+                    // Footer Section with Information
+                    Section(footer:
+                        Text("These contacts will receive your emergency text message with your location when you use the Emergency SOS feature.")
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(12)
+                            ))
+                    ) {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundColor(Color(hex: "6A89CC"))
+                            
+                            Text("Emergency contacts will receive a message with your location")
+                                .font(.system(
+                                    size: ResponsiveLayout.fontSize(14)
+                                ))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, ResponsiveLayout.padding(4))
+                    }
                 }
+                .navigationTitle("Emergency Contacts")
+                .navigationBarTitleDisplayMode(.inline)
+                .navigationBarItems(trailing: Button("Done") {
+                    saveContacts()
+                    dismiss()
+                })
             }
-            .navigationTitle("Emergency Contacts")
-            .navigationBarItems(trailing: Button("Done") {
-                saveContacts()
-                dismiss()
-            })
         }
     }
     

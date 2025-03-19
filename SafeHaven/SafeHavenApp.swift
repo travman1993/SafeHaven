@@ -32,10 +32,14 @@ struct SafeHavenApp: App {
                     hasCompletedOnboarding = true
                 })
             } else {
-                // Main content
                 ContentView()
                     .environmentObject(locationService)
                     .environmentObject(weatherService)
+                    .onReceive(locationService.$currentLocation) { location in
+                        if let location = location {
+                            weatherService.fetchWeather(for: location)
+                        }
+                    }
             }
         }
     }

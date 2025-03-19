@@ -9,14 +9,28 @@ struct EmergencySlider: View {
     @State private var emergencyContacts: [EmergencyContact] = []
     @State private var customMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
     
-    let sliderWidth: CGFloat = UIScreen.main.bounds.width - 80
-    let sliderHeight: CGFloat = 64
-    let thumbSize: CGFloat = 64
+    let onEmergencyCall: () -> Void
     
-    var onEmergencyCall: () -> Void
+    // Dynamically calculated dimensions
+    private var sliderWidth: CGFloat
+    private var sliderHeight: CGFloat
+    private var thumbSize: CGFloat
+    
+    init(
+        onEmergencyCall: @escaping () -> Void,
+        sliderWidth: CGFloat
+    ) {
+        self.onEmergencyCall = onEmergencyCall
+        self.sliderWidth = sliderWidth
+        
+        // Responsive sizing based on device type
+        let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+        self.sliderHeight = isIPad ? 80 : 64
+        self.thumbSize = isIPad ? 80 : 64
+    }
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: ResponsiveLayout.padding(16)) {
             // Emergency slider
             ZStack(alignment: .leading) {
                 // Background track
@@ -27,7 +41,11 @@ struct EmergencySlider: View {
                         HStack {
                             Spacer()
                             Text("Slide to Call 911")
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .font(.system(
+                                    size: ResponsiveLayout.fontSize(18),
+                                    weight: .bold,
+                                    design: .rounded
+                                ))
                                 .foregroundColor(Color(hex: "E8505B"))
                                 .padding(.trailing, thumbSize)
                             Spacer()
@@ -46,7 +64,7 @@ struct EmergencySlider: View {
                     .frame(width: thumbSize, height: thumbSize)
                     .overlay(
                         Image(systemName: "phone.fill")
-                            .font(.system(size: 24))
+                            .font(.system(size: ResponsiveLayout.fontSize(24)))
                             .foregroundColor(.white)
                     )
                     .shadow(color: Color(hex: "E8505B").opacity(0.5), radius: 8, x: 0, y: 4)
@@ -84,12 +102,15 @@ struct EmergencySlider: View {
             }) {
                 HStack {
                     Image(systemName: "person.crop.circle.badge.plus")
-                        .font(.system(size: 16))
+                        .font(.system(size: ResponsiveLayout.fontSize(16)))
                     Text("Manage Emergency Contacts")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(
+                            size: ResponsiveLayout.fontSize(14),
+                            weight: .medium
+                        ))
                 }
                 .foregroundColor(Color(hex: "E8505B"))
-                .padding(.vertical, 6)
+                .padding(.vertical, ResponsiveLayout.padding(6))
             }
         }
         .sheet(isPresented: $showingContactsSheet) {

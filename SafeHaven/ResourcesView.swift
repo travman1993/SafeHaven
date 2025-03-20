@@ -20,12 +20,14 @@ struct ResourcesView: View {
     }
     
     var filteredResources: [ResourceLocation] {
-        resourceService.resources.filter { resource in
+        let filtered = resourceService.resources.filter { resource in
             (selectedCategory == .all || resource.category == selectedCategory) &&
             (searchText.isEmpty ||
              resource.name.localizedCaseInsensitiveContains(searchText) ||
              resource.category.rawValue.localizedCaseInsensitiveContains(searchText))
         }
+        print("Search text: \(searchText), Found \(filtered.count) resources out of \(resourceService.resources.count)")
+        return filtered
     }
 
     var body: some View {
@@ -34,8 +36,10 @@ struct ResourcesView: View {
             // Search and Filter Section
             VStack(spacing: ResponsiveLayout.padding(12)) {
                 // Search Bar
-                SearchBar(text: $searchText, placeholder: "Search resources...")
-                    .padding(.horizontal, ResponsiveLayout.padding())
+                SearchBar(text: $searchText, placeholder: "Search resources...", onSubmit: {
+                    performSearch()
+                })
+                .padding(.horizontal, ResponsiveLayout.padding())
                 
                 // Category Scroll View
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -114,6 +118,24 @@ struct ResourcesView: View {
             
             if resourceService.resources.isEmpty {
                 loadResources()
+            }
+        }
+    }
+    
+    private func performSearch() {
+        guard !searchText.isEmpty else { return }
+        isLoading = true
+        
+        if let location = locationService.currentLocation {
+            resourceService.searchAnyPlace(query: searchText, near: location) {
+                // Search completed
+                isLoading = false
+            }
+        } else {
+            // Use default location if user location isn't available
+            let defaultLocation = CLLocation(latitude: 37.7749, longitude: -122.4194)
+            resourceService.searchAnyPlace(query: searchText, near: defaultLocation) {
+                isLoading = false
             }
         }
     }

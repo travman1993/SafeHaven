@@ -8,57 +8,6 @@ import WeatherKit
 import CoreLocation
 import SwiftUI
 
-// Define the WeatherCondition enum that's used throughout the code
-enum WeatherCondition: String {
-    case clear, cloudy, fog, haze, rain, snow, thunderstorms, wind, breezy, hot, cold, unknown
-    
-    var iconName: String {
-        switch self {
-        case .clear: return "sun.max.fill"
-        case .cloudy: return "cloud.fill"
-        case .fog: return "cloud.fog.fill"
-        case .haze: return "sun.haze.fill"
-        case .rain: return "cloud.rain.fill"
-        case .snow: return "cloud.snow.fill"
-        case .thunderstorms: return "cloud.bolt.fill"
-        case .wind: return "wind"
-        case .breezy: return "wind.light"
-        case .hot: return "thermometer.sun.fill"
-        case .cold: return "thermometer.snowflake"
-        case .unknown: return "questionmark.diamond"
-        }
-    }
-    
-    var description: String {
-        return self.rawValue.capitalized
-    }
-}
-
-// Define the WeatherData struct referenced in the code
-struct WeatherData {
-    let condition: WeatherCondition
-    let temperature: Double
-    let feelsLike: Double
-    let humidity: Double
-    let windSpeed: Double
-    
-    var temperatureString: String {
-        return String(format: "%.1f°F", temperature)
-    }
-    
-    var feelsLikeString: String {
-        return String(format: "%.1f°F", feelsLike)
-    }
-    
-    var humidityString: String {
-        return String(format: "%.0f%%", humidity * 100)
-    }
-    
-    var windSpeedString: String {
-        return String(format: "%.1f mph", windSpeed)
-    }
-}
-
 class WeatherService: ObservableObject {
     static let shared = WeatherService()
     

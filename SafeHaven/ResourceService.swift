@@ -28,7 +28,7 @@ class ResourceService: ObservableObject {
         .education: "education assistance"
     ]
     
-    func fetchResources(category: ResourceCategory = .all, near location: CLLocation? = nil, radius: Double = 5000, completion: (() -> Void)? = nil) {
+    func fetchResources(category: ResourceCategory = .all, near location: CLLocation? = nil, radius: Double = 15000, completion: (() -> Void)? = nil) {
         isLoading = true
         resources = []
         
@@ -48,6 +48,62 @@ class ResourceService: ObservableObject {
             }
         } else {
             fetchSingleCategory(category: category, location: location, radius: radius) {
+                completion?()
+            }
+        }
+    }
+    
+    // New method for searching any place by text query
+    func searchAnyPlace(query: String, near location: CLLocation, radius: Double = 15000, completion: (() -> Void)? = nil) {
+        isLoading = true
+        resources = []
+        
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = query
+        request.region = MKCoordinateRegion(
+            center: location.coordinate,
+            latitudinalMeters: radius,
+            longitudinalMeters: radius
+        )
+        
+        let search = MKLocalSearch(request: request)
+        search.start { [weak self] response, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                
+                if let error = error {
+                    self?.errorMessage = error.localizedDescription
+                    print("Search error: \(error.localizedDescription)")
+                    completion?()
+                    return
+                }
+                
+                guard let response = response else {
+                    self?.errorMessage = "No results found"
+                    print("No results found for query: \(query)")
+                    completion?()
+                    return
+                }
+                
+                print("Found \(response.mapItems.count) results for query: \(query)")
+                
+                // Convert MKMapItems to ResourceLocation objects
+                self?.resources = response.mapItems.map { item in
+                    ResourceLocation(
+                        id: "search-\(item.placemark.coordinate.latitude)-\(item.placemark.coordinate.longitude)",
+                        name: item.name ?? "Unknown Location",
+                        category: .all, // Default category
+                        address: self?.formatAddress(item.placemark) ?? "No address",
+                        phoneNumber: item.phoneNumber ?? "No phone available",
+                        description: "Search result for '\(query)'",
+                        coordinate: item.placemark.coordinate,
+                        icon: "mappin.circle",
+                        website: item.url?.absoluteString,
+                        hours: nil,
+                        services: []
+                    )
+                }
+                
                 completion?()
             }
         }

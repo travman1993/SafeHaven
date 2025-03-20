@@ -1,9 +1,7 @@
 import Foundation
 import SwiftUI
-import CloudKit
 import WeatherKit
 import CoreLocation
-import AuthenticationServices
 
 // Reusable components that can be used across the app
 
@@ -94,6 +92,8 @@ struct InfoCard: View {
 struct SearchBar: View {
     @Binding var text: String
     var placeholder: String
+    var onSubmit: (() -> Void)? = nil
+    @FocusState private var isInputFocused: Bool
     
     var body: some View {
         HStack {
@@ -102,6 +102,13 @@ struct SearchBar: View {
             
             TextField(placeholder, text: $text)
                 .font(.system(size: 16))
+                .focused($isInputFocused)
+                .submitLabel(.search)
+                .onSubmit {
+                    print("Search submitted: \(text)")
+                    isInputFocused = false
+                    onSubmit?()
+                }
             
             if !text.isEmpty {
                 Button(action: {

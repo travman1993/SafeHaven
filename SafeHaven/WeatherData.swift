@@ -15,11 +15,11 @@ struct WeatherData {
     let windSpeed: Double
     
     var temperatureString: String {
-        return String(format: "%.1f°C", temperature)
+        return String(format: "%.1f°F", temperature)
     }
     
     var feelsLikeString: String {
-        return String(format: "%.1f°C", feelsLike)
+        return String(format: "%.1f°F", feelsLike)
     }
     
     var humidityString: String {
@@ -27,6 +27,6 @@ struct WeatherData {
     }
     
     var windSpeedString: String {
-        return String(format: "%.1f km/h", windSpeed)
+        return String(format: "%.1f mph", windSpeed)
     }
 }

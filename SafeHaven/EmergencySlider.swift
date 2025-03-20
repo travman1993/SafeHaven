@@ -8,6 +8,7 @@ struct EmergencySlider: View {
     @State private var showingEmergencyAlert = false
     @State private var emergencyContacts: [EmergencyContact] = []
     @State private var customMessage = "I need help. This is an emergency. My current location is [Location]. Please contact me or emergency services."
+    @State private var showingMessageCompose = false
     
     let onEmergencyCall: () -> Void
     
@@ -116,11 +117,17 @@ struct EmergencySlider: View {
         .sheet(isPresented: $showingContactsSheet) {
             EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
         }
+        .sheet(isPresented: $showingMessageCompose) {
+            MessageComposeView(recipients: emergencyContacts.map { $0.phoneNumber },
+                               body: customMessage.replacingOccurrences(of: "[Location]", with: EmergencyServices.getCurrentLocationString()))
+        }
         .alert(isPresented: $showingEmergencyAlert) {
             Alert(
                 title: Text("Emergency Call Initiated"),
                 message: Text("Calling 911 and sending emergency text messages to your \(emergencyContacts.count) emergency contacts."),
-                dismissButton: .default(Text("OK"))
+                dismissButton: .default(Text("OK")) {
+                    // Optional: Add any follow-up actions
+                }
             )
         }
         .onAppear {
@@ -148,7 +155,7 @@ struct EmergencySlider: View {
         
         // Send text messages to emergency contacts
         if !emergencyContacts.isEmpty {
-            sendEmergencyTexts()
+            showingMessageCompose = true
         }
         
         // Provide haptic feedback
@@ -162,17 +169,36 @@ struct EmergencySlider: View {
             }
         }
     }
+}
+
+// Add a custom MessageComposeView for sending SMS
+struct MessageComposeView: UIViewControllerRepresentable {
+    let recipients: [String]
+    let body: String
     
-    private func sendEmergencyTexts() {
-        // Get current location
-        let locationString = EmergencyServices.getCurrentLocationString()
+    func makeUIViewController(context: Context) -> MFMessageComposeViewController {
+        let controller = MFMessageComposeViewController()
+        controller.recipients = recipients
+        controller.body = body
+        controller.messageComposeDelegate = context.coordinator
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: MFMessageComposeViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MFMessageComposeViewControllerDelegate {
+        var parent: MessageComposeView
         
-        // Replace placeholder in message
-        let personalizedMessage = customMessage.replacingOccurrences(of: "[Location]", with: locationString)
+        init(_ parent: MessageComposeView) {
+            self.parent = parent
+        }
         
-        // Send to each contact
-        for contact in emergencyContacts {
-            EmergencyServices.sendTextMessage(to: contact.phoneNumber, message: personalizedMessage)
+        func messageComposeViewController(_ controller: MFMessageComposeViewController, didFinishWith result: MessageComposeResult) {
+            controller.dismiss(animated: true)
         }
     }
 }

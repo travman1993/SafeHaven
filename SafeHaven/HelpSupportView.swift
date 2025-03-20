@@ -7,8 +7,9 @@ import SwiftUI
 
 struct HelpSupportView: View {
     @State private var showingContactDialog = false
-    @State private var selectedCategory = SupportCategory.general
+    @State private var selectedCategory: SupportCategory = .general
     
+    // Define SupportCategory as a full type
     enum SupportCategory: String, CaseIterable, Identifiable {
         case general = "General Questions"
         case technical = "Technical Issues"
@@ -20,222 +21,126 @@ struct HelpSupportView: View {
         
         var icon: String {
             switch self {
-            case .general: return "questionmark.circle.fill"
-            case .technical: return "wrench.fill"
-            case .account: return "person.crop.circle.fill"
-            case .emergency: return "exclamationmark.shield.fill"
-            case .feedback: return "star.fill"
+            case .general: return "questionmark.circle"
+            case .technical: return "wrench"
+            case .account: return "person.crop.circle"
+            case .emergency: return "exclamationmark.shield"
+            case .feedback: return "star"
             }
         }
     }
     
     var body: some View {
         GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: ResponsiveLayout.padding(24)) {
-                    // Support header
-                    VStack(spacing: ResponsiveLayout.padding(12)) {
-                        Image(systemName: "lifepreserver.fill")
-                            .font(.system(
-                                size: ResponsiveLayout.fontSize(60)
-                            ))
-                            .foregroundColor(AppTheme.primary)
-                            .padding(.top, ResponsiveLayout.padding(20))
+            NavigationView {
+                ScrollView {
+                    VStack(spacing: ResponsiveLayout.padding(24)) {
+                        // Header section
+                        headerSection()
                         
-                        Text("How can we help?")
-                            .font(.system(
-                                size: ResponsiveLayout.fontSize(22),
-                                weight: .bold
-                            ))
+                        // FAQs section
+                        faqsSection()
                         
-                        Text("Find answers or reach out for support")
-                            .font(.system(
-                                size: ResponsiveLayout.fontSize(16)
-                            ))
-                            .foregroundColor(AppTheme.textSecondary)
+                        // Contact support section
+                        contactSupportSection()
+                        
+                        // Community resources section
+                        communityResourcesSection()
                     }
-                    .padding(.bottom, ResponsiveLayout.padding(10))
-                    
-                    // FAQs section
-                    VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
-                        Text("Frequently Asked Questions")
-                            .font(.system(
-                                size: ResponsiveLayout.fontSize(18),
-                                weight: .bold
-                            ))
-                            .padding(.horizontal, ResponsiveLayout.padding())
-                        
-                        VStack(spacing: ResponsiveLayout.padding(12)) {
-                            FAQItem(
-                                question: "How do I add emergency contacts?",
-                                answer: "To add emergency contacts, go to the Profile tab, select 'Emergency Contacts', then tap the '+' button to add a new contact. Enter their name, phone number, and relationship."
-                            )
-                            
-                            FAQItem(
-                                question: "What happens when I use the emergency slider?",
-                                answer: "When you use the emergency slider, the app will initiate a call to emergency services (911) and send text messages with your current location to your designated emergency contacts."
-                            )
-                            
-                            FAQItem(
-                                question: "How accurate are the resource locations?",
-                                answer: "Resource locations are regularly updated and verified. However, hours of operation and specific services may change. We recommend calling ahead to confirm details before visiting."
-                            )
-                            
-                            FAQItem(
-                                question: "Is my journal data private?",
-                                answer: "Yes, your journal entries are stored securely and privately. They are only accessible from your account and are not shared with anyone."
-                            )
-                            
-                            FAQItem(
-                                question: "How do I reset my password?",
-                                answer: "To reset your password, log out of the app, then tap 'Forgot Password' on the login screen. Follow the instructions sent to your registered email address."
-                            )
-                        }
-                    }
-                    
-                    // Contact support section
-                    VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
-                        Text("Contact Support")
-                            .font(.system(
-                                size: ResponsiveLayout.fontSize(18),
-                                weight: .bold
-                            ))
-                            .padding(.horizontal, ResponsiveLayout.padding())
-                        
-                        VStack(spacing: ResponsiveLayout.padding(16)) {
-                            Button(action: {
-                                showingContactDialog = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "envelope.fill")
-                                        .font(.system(
-                                            size: ResponsiveLayout.fontSize(18)
-                                        ))
-                                        .foregroundColor(.white)
-                                        .frame(
-                                            width: ResponsiveLayout.isIPad ? 44 : 36,
-                                            height: ResponsiveLayout.isIPad ? 44 : 36
-                                        )
-                                        .background(AppTheme.primary)
-                                        .clipShape(Circle())
-                                    
-                                    Text("Email Support")
-                                        .font(.system(
-                                            size: ResponsiveLayout.fontSize(16),
-                                            weight: .headline
-                                        ))
-                                        .foregroundColor(AppTheme.textPrimary)
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(Color(hex: "A0AEC0"))
-                                }
-                                .padding(ResponsiveLayout.padding())
-                                .background(Color.white)
-                                .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
-                                .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
-                                Text("Response Times")
-                                    .font(.system(
-                                        size: ResponsiveLayout.fontSize(16),
-                                        weight: .bold
-                                    ))
-                                
-                                Text("• General questions: 1-2 business days\n• Technical issues: 24-48 hours\n• Account support: 24-48 hours\n• Emergency features: Priority support")
-                                    .font(.system(
-                                        size: ResponsiveLayout.fontSize(14)
-                                    ))
-                                    .foregroundColor(AppTheme.textSecondary)
-                            }
-                            .padding(ResponsiveLayout.padding())
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
-                            .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
-                            .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-                        }
-                        .padding(.horizontal, ResponsiveLayout.padding())
-                    }
-                    
-                    // Community resources section
-                    VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
-                        Text("Community Resources")
-                            .font(.system(
-                                size: ResponsiveLayout.fontSize(18),
-                                weight: .bold
-                            ))
-                            .padding(.horizontal, ResponsiveLayout.padding())
-                        
-                        VStack(spacing: ResponsiveLayout.padding(16)) {
-                            LinkButton(
-                                icon: "books.vertical.fill",
-                                title: "Knowledge Base",
-                                description: "Browse our comprehensive guides and tutorials",
-                                action: {
-                                    if let url = URL(string: "https://safehaven.cc") {
-                                        UIApplication.shared.open(url)
-                                    }
-                                }
-                            )
-                            
-                            LinkButton(
-                                icon: "bubble.left.and.bubble.right.fill",
-                                title: "Community Forum",
-                                description: "Connect with other users and share experiences",
-                                action: {
-                                    if let url = URL(string: "https://safehaven.cc") {
-                                        UIApplication.shared.open(url)
-                                    }
-                                }
-                            )
-                            
-                            LinkButton(
-                                icon: "video.fill",
-                                title: "Video Tutorials",
-                                description: "Watch step-by-step guides for using the app",
-                                action: {
-                                    if let url = URL(string: "https://safehaven.cc") {
-                                        UIApplication.shared.open(url)
-                                    }
-                                }
-                            )
-                        }
-                        .padding(.horizontal, ResponsiveLayout.padding())
-                    }
-                    
-                    Spacer(minLength: ResponsiveLayout.padding(40))
+                    .padding(.horizontal, ResponsiveLayout.padding())
                 }
-                .padding(.horizontal, ResponsiveLayout.padding())
+                .background(AppTheme.background.ignoresSafeArea())
+                .navigationTitle("Help & Support")
+                .navigationBarTitleDisplayMode(.inline)
             }
-            .background(AppTheme.background.ignoresSafeArea())
-            .navigationTitle("Help & Support")
-            .navigationBarTitleDisplayMode(.inline)
+            .actionSheet(isPresented: $showingContactDialog) {
+                ActionSheet(
+                    title: Text("Contact Support"),
+                    message: Text("Please select a category for your support request"),
+                    buttons: SupportCategory.allCases.map { category in
+                        .default(Text(category.rawValue)) {
+                            sendEmail(category: category)
+                        }
+                    } + [.cancel()]
+                )
+            }
         }
-        .actionSheet(isPresented: $showingContactDialog) {
-            ActionSheet(
-                title: Text("Contact Support"),
-                message: Text("Please select a category for your support request"),
-                buttons: [
-                    .default(Text("General Questions")) {
-                        sendEmail(category: .general)
-                    },
-                    .default(Text("Technical Issues")) {
-                        sendEmail(category: .technical)
-                    },
-                    .default(Text("Account Support")) {
-                        sendEmail(category: .account)
-                    },
-                    .default(Text("Emergency Features")) {
-                        sendEmail(category: .emergency)
-                    },
-                    .default(Text("App Feedback")) {
-                        sendEmail(category: .feedback)
-                    },
-                    .cancel()
-                ]
-            )
+    }
+    
+    private func headerSection() -> some View {
+        VStack(spacing: ResponsiveLayout.padding(12)) {
+            Image(systemName: "lifepreserver.fill")
+                .font(.system(size: ResponsiveLayout.fontSize(60)))
+                .foregroundColor(AppTheme.primary)
+                .padding(.top, ResponsiveLayout.padding(20))
+            
+            Text("How can we help?")
+                .font(.system(
+                    size: ResponsiveLayout.fontSize(22),
+                    weight: .bold
+                ))
+            
+            Text("Find answers or reach out for support")
+                .font(.system(size: ResponsiveLayout.fontSize(16)))
+                .foregroundColor(AppTheme.textSecondary)
+        }
+        .padding(.bottom, ResponsiveLayout.padding(10))
+    }
+    
+    private func faqsSection() -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
+            Text("Frequently Asked Questions")
+                .font(.system(
+                    size: ResponsiveLayout.fontSize(18),
+                    weight: .bold
+                ))
+                .padding(.horizontal, ResponsiveLayout.padding())
+            
+            VStack(spacing: ResponsiveLayout.padding(12)) {
+                FAQItem(
+                    question: "How do I add emergency contacts?",
+                    answer: "To add emergency contacts, go to the Profile tab, select 'Emergency Contacts', then tap the '+' button to add a new contact. Enter their name, phone number, and relationship."
+                )
+                
+                FAQItem(
+                    question: "What happens when I use the emergency slider?",
+                    answer: "When you use the emergency slider, the app will initiate a call to emergency services (911) and send text messages with your current location to your designated emergency contacts."
+                )
+            }
+        }
+    }
+    
+    private func contactSupportSection() -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
+            Text("Contact Support")
+                .font(.system(
+                    size: ResponsiveLayout.fontSize(18),
+                    weight: .bold
+                ))
+                .padding(.horizontal, ResponsiveLayout.padding())
+            
+            Button(action: {
+                showingContactDialog = true
+            }) {
+                HStack {
+                    Image(systemName: "envelope.fill")
+                        .foregroundColor(AppTheme.primary)
+                    Text("Email Support")
+                }
+            }
+        }
+    }
+    
+    private func communityResourcesSection() -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
+            Text("Community Resources")
+                .font(.system(
+                    size: ResponsiveLayout.fontSize(18),
+                    weight: .bold
+                ))
+                .padding(.horizontal, ResponsiveLayout.padding())
+            
+            // Add community resources content
         }
     }
     
@@ -251,99 +156,24 @@ struct HelpSupportView: View {
     }
 }
 
+// FAQ Item View (you'll need to implement this separately)
 struct FAQItem: View {
     let question: String
     let answer: String
     @State private var isExpanded = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
-            Button(action: {
-                withAnimation {
-                    isExpanded.toggle()
-                }
-            }) {
-                HStack {
-                    Text(question)
-                        .font(.system(
-                            size: ResponsiveLayout.fontSize(16),
-                            weight: .semibold
-                        ))
-                        .foregroundColor(AppTheme.textPrimary)
-                        .multilineTextAlignment(.leading)
-                    
-                    Spacer()
-                    
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(AppTheme.primary)
-                        .animation(.spring(), value: isExpanded)
-                }
-            }
-            
+        VStack {
+            Text(question)
             if isExpanded {
                 Text(answer)
-                    .font(.system(
-                        size: ResponsiveLayout.fontSize(14)
-                    ))
-                    .foregroundColor(AppTheme.textSecondary)
-                    .padding(.top, ResponsiveLayout.padding(4))
-                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            Button(action: { isExpanded.toggle() }) {
+                Text(isExpanded ? "Hide" : "Show more")
             }
         }
-        .padding(ResponsiveLayout.padding())
+        .padding()
         .background(Color.white)
-        .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
-        .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-        .padding(.horizontal, ResponsiveLayout.padding())
-    }
-}
-
-struct LinkButton: View {
-    let icon: String
-    let title: String
-    let description: String
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: ResponsiveLayout.padding(16)) {
-                Image(systemName: icon)
-                    .font(.system(
-                        size: ResponsiveLayout.fontSize(18)
-                    ))
-                    .foregroundColor(.white)
-                    .frame(
-                        width: ResponsiveLayout.isIPad ? 44 : 36,
-                        height: ResponsiveLayout.isIPad ? 44 : 36
-                    )
-                    .background(AppTheme.primary)
-                    .clipShape(Circle())
-                
-                VStack(alignment: .leading, spacing: ResponsiveLayout.padding(4)) {
-                    Text(title)
-                        .font(.system(
-                            size: ResponsiveLayout.fontSize(16),
-                            weight: .headline
-                        ))
-                        .foregroundColor(AppTheme.textPrimary)
-                    
-                    Text(description)
-                        .font(.system(
-                            size: ResponsiveLayout.fontSize(12)
-                        ))
-                        .foregroundColor(AppTheme.textSecondary)
-                        .multilineTextAlignment(.leading)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "arrow.up.right")
-                    .foregroundColor(Color(hex: "A0AEC0"))
-            }
-            .padding(ResponsiveLayout.padding())
-            .background(Color.white)
-            .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
-            .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-        }
+        .cornerRadius(10)
     }
 }

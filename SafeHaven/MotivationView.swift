@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct MotivationView: View {
-    @State private var currentQuote: String = getRandomMotivationalQuote()
+    @State private var currentQuote: String = getRandomDailyQuote()
     @State private var isAnimating: Bool = false
     
     var body: some View {
@@ -69,7 +69,7 @@ struct MotivationView: View {
                         }
                         
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            currentQuote = getRandomMotivationalQuote()
+                            currentQuote = getRandomQuote()
                             
                             withAnimation(.easeIn(duration: 0.3)) {
                                 isAnimating = true
@@ -82,8 +82,8 @@ struct MotivationView: View {
                                 weight: .semibold
                             ))
                             .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
                             .padding(.vertical, ResponsiveLayout.isIPad ? 18 : 15)
-                            .padding(.horizontal, ResponsiveLayout.isIPad ? 50 : 40)
                             .background(
                                 Capsule()
                                     .fill(LinearGradient(
@@ -94,6 +94,7 @@ struct MotivationView: View {
                             )
                             .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
                     }
+                    .padding(.horizontal, ResponsiveLayout.padding(25))
                     
                     Spacer()
                 }
@@ -201,7 +202,12 @@ let motivationalQuotes = [
 ]
 
 // Function to get a random quote
-func getRandomMotivationalQuote() -> String {
+func getRandomQuote() -> String {
+    // Completely random quote selection
+    return motivationalQuotes.randomElement() ?? "Believe in yourself."
+}
+
+func getRandomDailyQuote() -> String {
     // Use the current date to seed the random generator
     let calendar = Calendar.current
     let today = calendar.startOfDay(for: Date())
@@ -215,23 +221,6 @@ func getRandomMotivationalQuote() -> String {
     // Use the seed to deterministically select a quote for the day
     let quoteIndex = seed % motivationalQuotes.count
     return motivationalQuotes[quoteIndex]
-}
-
-// Function to get multiple random quotes without repetition
-func getMultipleRandomQuotes(count: Int) -> [String] {
-    var quotes = motivationalQuotes
-    var selectedQuotes: [String] = []
-    
-    // Make sure we don't request more quotes than available
-    let requestCount = min(count, quotes.count)
-    
-    for _ in 0..<requestCount {
-        let randomIndex = Int.random(in: 0..<quotes.count)
-        selectedQuotes.append(quotes[randomIndex])
-        quotes.remove(at: randomIndex)
-    }
-    
-    return selectedQuotes
 }
 
 struct MotivationView_Previews: PreviewProvider {

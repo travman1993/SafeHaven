@@ -1,9 +1,3 @@
-//
-//  SettingsView.swift
-//  SafeHaven
-//
-//  Created by Travis Rodriguez on 3/19/25.
-//
 import SwiftUI
 
 // Separate the SettingsRow into its own view
@@ -65,35 +59,32 @@ struct SettingsView: View {
     ]
     
     var body: some View {
-        GeometryReader { geometry in
-            NavigationView {
-                ScrollView {
-                    VStack(spacing: ResponsiveLayout.padding(24)) {
-                        // App Appearance
-                        appearanceSection(in: geometry)
-                        
-                        // Notifications
-                        notificationsSection(in: geometry)
-                        
-                        // Data & Privacy
-                        privacySection(in: geometry)
-                        
-                        // About & Support
-                        aboutSupportSection(in: geometry)
-                        
-                        // App info
-                        appInfoSection(in: geometry)
-                    }
-                    .padding(.vertical, ResponsiveLayout.padding())
-                }
-                .background(AppTheme.background.ignoresSafeArea())
-                .navigationTitle("Settings")
-                .navigationBarTitleDisplayMode(.inline)
+        // Removed NavigationView to use full screen within TabView
+        ScrollView {
+            VStack(spacing: ResponsiveLayout.padding(24)) {
+                // App Appearance
+                appearanceSection()
+                
+                // Notifications
+                notificationsSection()
+                
+                // Data & Privacy
+                privacySection()
+                
+                // About & Support
+                aboutSupportSection()
+                
+                // App info
+                appInfoSection()
             }
+            .padding(.vertical, ResponsiveLayout.padding())
         }
+        .background(AppTheme.background.ignoresSafeArea())
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
     }
     
-    private func appearanceSection(in geometry: GeometryProxy) -> some View {
+    private func appearanceSection() -> some View {
         VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
             Text("App Appearance")
                 .font(.system(
@@ -175,7 +166,7 @@ struct SettingsView: View {
         }
     }
     
-    private func notificationsSection(in geometry: GeometryProxy) -> some View {
+    private func notificationsSection() -> some View {
         VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
             Text("Notifications")
                 .font(.system(
@@ -195,7 +186,7 @@ struct SettingsView: View {
         }
     }
     
-    private func privacySection(in geometry: GeometryProxy) -> some View {
+    private func privacySection() -> some View {
         VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
             Text("Data & Privacy")
                 .font(.system(
@@ -215,7 +206,7 @@ struct SettingsView: View {
         }
     }
     
-    private func aboutSupportSection(in geometry: GeometryProxy) -> some View {
+    private func aboutSupportSection() -> some View {
         VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
             Text("About & Support")
                 .font(.system(
@@ -293,7 +284,7 @@ struct SettingsView: View {
         .padding(ResponsiveLayout.padding())
     }
     
-    private func appInfoSection(in geometry: GeometryProxy) -> some View {
+    private func appInfoSection() -> some View {
         VStack {
             Image(systemName: "shield.fill")
                 .font(.system(

@@ -22,7 +22,8 @@ struct EmergencySlider: View {
         sliderWidth: CGFloat
     ) {
         self.onEmergencyCall = onEmergencyCall
-        self.sliderWidth = sliderWidth
+        // Make sure width is never negative
+        self.sliderWidth = max(sliderWidth, 0)
         
         // Responsive sizing based on device type
         let isIPad = UIDevice.current.userInterfaceIdiom == .pad
@@ -75,7 +76,7 @@ struct EmergencySlider: View {
                             .onChanged { value in
                                 isDragging = true
                                 let newOffset = value.translation.width
-                                sliderOffset = min(max(0, newOffset), sliderWidth - thumbSize)
+                                sliderOffset = min(max(0, newOffset), max(0, sliderWidth - thumbSize))
                             }
                             .onEnded { value in
                                 isDragging = false

@@ -9,6 +9,7 @@ import SwiftUI
 struct MotivationView: View {
     @State private var currentQuote: String = getRandomDailyQuote()
     @State private var isAnimating: Bool = false
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         GeometryReader { geometry in
@@ -22,9 +23,7 @@ struct MotivationView: View {
                 .edgesIgnoringSafeArea(.all)
                 
                 VStack(spacing: ResponsiveLayout.padding(30)) {
-                    Spacer()
-                    
-                    // App title
+                    // Title
                     Text("Daily Motivation")
                         .font(.system(
                             size: ResponsiveLayout.fontSize(32),
@@ -33,10 +32,11 @@ struct MotivationView: View {
                         ))
                         .foregroundColor(.white)
                         .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 2)
+                        .padding(.top, 40)
                     
                     Spacer()
                     
-                    // Quote display
+                    // Quote display - ENHANCED FOR BETTER VISIBILITY
                     ZStack {
                         RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 30 : 20)
                             .fill(Color.white.opacity(0.9))
@@ -51,18 +51,22 @@ struct MotivationView: View {
                             .foregroundColor(.black.opacity(0.8))
                             .multilineTextAlignment(.center)
                             .padding(ResponsiveLayout.isIPad ? 40 : 30)
+                            .fixedSize(horizontal: false, vertical: true) // Ensures text isn't truncated
                             .opacity(isAnimating ? 1 : 0)
                             .rotation3DEffect(
                                 Angle(degrees: isAnimating ? 0 : 90),
                                 axis: (x: 0.0, y: 1.0, z: 0.0)
                             )
                     }
-                    .frame(height: ResponsiveLayout.isIPad ? 400 : 300)
-                    .padding(.horizontal, ResponsiveLayout.padding(25))
+                    .frame(
+                        width: geometry.size.width * 0.85,
+                        height: max(geometry.size.height * 0.3, 200) // Use fixed or minimum height
+                    )
+                    .padding(.bottom, 30)
                     
                     Spacer()
                     
-                    // Button to get a new quote
+                    // Button for new quote
                     Button(action: {
                         withAnimation(.easeOut(duration: 0.3)) {
                             isAnimating = false
@@ -95,8 +99,20 @@ struct MotivationView: View {
                             .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
                     }
                     .padding(.horizontal, ResponsiveLayout.padding(25))
+                    .padding(.bottom, ResponsiveLayout.isIPad ? 60 : 40)
                     
-                    Spacer()
+                    // Close button
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Text("Close")
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(16),
+                                weight: .medium
+                            ))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding(.bottom, 20)
                 }
                 .padding()
             }

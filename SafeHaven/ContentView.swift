@@ -16,67 +16,12 @@ struct ContentView: View {
     // Navigation state
     @State private var selectedTab: Tab = .home
     
-    // Device type detection
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    
     // Tab enumeration
-    enum Tab {
+    enum Tab: Hashable {
         case home, resources, journal, settings
     }
     
     var body: some View {
-        Group {
-            if horizontalSizeClass == .regular {
-                // iPad Layout with Split View
-                NavigationView {
-                    sideSidebar
-                    defaultContentView
-                }
-            } else {
-                // iPhone Layout with TabView
-                tabBasedNavigation
-            }
-        }
-        .sheet(isPresented: $showingEmergencyContacts) {
-            EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
-        }
-        .sheet(isPresented: $showingMotivationView) {
-            MotivationView()
-        }
-        .sheet(isPresented: $showingSupportersView) {
-            SupportersView()
-        }
-        .onAppear {
-            loadEmergencyContacts()
-        }
-    }
-    
-    // MARK: - iPad Sidebar Navigation
-    private var sideSidebar: some View {
-        List {
-            NavigationLink(destination: homeView, tag: Tab.home, selection: $selectedTab) {
-                sidebarLabel("Home", systemImage: "house.fill")
-            }
-            
-            NavigationLink(destination: ResourcesView(), tag: Tab.resources, selection: $selectedTab) {
-                sidebarLabel("Resources", systemImage: "mappin.and.ellipse")
-            }
-            
-            NavigationLink(destination: JournalView(), tag: Tab.journal, selection: $selectedTab) {
-                sidebarLabel("Journal", systemImage: "book.fill")
-            }
-            
-            NavigationLink(destination: settingsView, tag: Tab.settings, selection: $selectedTab) {
-                sidebarLabel("Settings", systemImage: "gear")
-            }
-        }
-        .listStyle(SidebarListStyle())
-        .frame(minWidth: 250, maxWidth: 300)
-        .navigationTitle("SafeHaven")
-    }
-    
-    // MARK: - iPhone Tab-based Navigation
-    private var tabBasedNavigation: some View {
         TabView(selection: $selectedTab) {
             homeView
                 .tabItem {
@@ -103,16 +48,18 @@ struct ContentView: View {
                 .tag(Tab.settings)
         }
         .accentColor(AppTheme.primary)
-    }
-    
-    // MARK: - Sidebar Label Helper
-    private func sidebarLabel(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
-    }
-    
-    // MARK: - Default Content View (for iPad)
-    private var defaultContentView: some View {
-        homeView
+        .sheet(isPresented: $showingEmergencyContacts) {
+            EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
+        }
+        .sheet(isPresented: $showingMotivationView) {
+            MotivationView()
+        }
+        .sheet(isPresented: $showingSupportersView) {
+            SupportersView()
+        }
+        .onAppear {
+            loadEmergencyContacts()
+        }
     }
     
     // MARK: - Home View
@@ -200,7 +147,7 @@ struct ContentView: View {
             onEmergencyCall: {
                 EmergencyServices.callEmergency()
             },
-            sliderWidth: geometry.size.width - ResponsiveLayout.padding(40)
+            sliderWidth: max(geometry.size.width - ResponsiveLayout.padding(40), 0) // Ensure positive width
         )
     }
     
@@ -321,7 +268,7 @@ struct ContentView: View {
         }
     }
     
-    // Weather and Greeting Helpers (implement these methods as in the previous implementation)
+    // Weather and Greeting Helpers
     private func getTimeBasedGreeting() -> String {
         let hour = Calendar.current.component(.hour, from: Date())
         
@@ -334,118 +281,117 @@ struct ContentView: View {
             return "Good Evening"
         }
     }
-
+    
+    private func getRandomDailyQuote() -> String {
+        // Use the current date to seed the random generator
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let dateComponents = calendar.dateComponents([.day, .month, .year], from: today)
         
-        private func getRandomDailyQuote() -> String {
-            // Use the current date to seed the random generator
-            let calendar = Calendar.current
-            let today = calendar.startOfDay(for: Date())
-            let dateComponents = calendar.dateComponents([.day, .month, .year], from: today)
-            
-            // Create a consistent seed value for the day
-            let seed = (dateComponents.day ?? 1) +
-                       ((dateComponents.month ?? 1) * 31) +
-                       ((dateComponents.year ?? 2025) * 366)
-            
-            // Use the seed to deterministically select a quote for the day
-            let quoteIndex = seed % motivationalQuotes.count
-            return motivationalQuotes[quoteIndex]
-        }
+        // Create a consistent seed value for the day
+        let seed = (dateComponents.day ?? 1) +
+                ((dateComponents.month ?? 1) * 31) +
+                ((dateComponents.year ?? 2025) * 366)
         
-        private func getWeatherIcon(for condition: WeatherCondition) -> String {
-            switch condition {
-            case .clear:
-                return "sun.max.fill"
-            case .cloudy:
-                return "cloud.fill"
-            case .fog, .mist:
-                return "cloud.fog.fill"
-            case .haze:
-                return "sun.haze.fill"
-            case .rain:
-                return "cloud.rain.fill"
-            case .snow:
-                return "cloud.snow.fill"
-            case .thunderstorms:
-                return "cloud.bolt.fill"
-            case .wind, .breezy:
-                return "wind"
-            case .hot, .heat:
-                return "thermometer.sun.fill"
-            case .cold, .chilly:
-                return "thermometer.snowflake"
-            case .sunFlurries:
-                return "sun.snow.fill"
-            case .sunShowers:
-                return "sun.rain.fill"
-            case .sleet:
-                return "cloud.sleet.fill"
-            case .blowingSnow:
-                return "wind.snow"
-            case .blizzard:
-                return "snowflake"
-            default:
-                return "questionmark.circle"
-            }
-        }
-        
-        private func weatherConditionText(for condition: WeatherCondition) -> String {
-            switch condition {
-            case .clear:
-                return "Clear Sky"
-            case .cloudy:
-                return "Cloudy"
-            case .fog, .mist:
-                return "Foggy"
-            case .haze:
-                return "Hazy"
-            case .rain:
-                return "Rainy"
-            case .snow:
-                return "Snowy"
-            case .thunderstorms:
-                return "Thunderstorms"
-            case .wind, .breezy:
-                return "Windy"
-            case .hot, .heat:
-                return "Hot"
-            case .cold, .chilly:
-                return "Cold"
-            case .sunFlurries:
-                return "Sun & Snow"
-            case .sunShowers:
-                return "Sun & Rain"
-            case .sleet:
-                return "Sleet"
-            case .blowingSnow:
-                return "Blowing Snow"
-            case .blizzard:
-                return "Blizzard"
-            default:
-                return "Unknown"
-            }
-        }
-        
-        private func getWeatherSafetyTip(for condition: WeatherCondition) -> String {
-            switch condition {
-            case .clear:
-                return "Enjoy the good weather, but don't forget sunscreen if you're spending time outdoors."
-            case .hot, .heat:
-                return "Stay hydrated and seek shade during peak hours. Check on vulnerable people who may need assistance."
-            case .cold, .chilly:
-                return "Dress in layers and cover extremities. Keep emergency supplies in your vehicle if traveling."
-            case .rain:
-                return "Drive carefully on wet roads and watch for flash flooding in low-lying areas."
-            case .thunderstorms:
-                return "Stay indoors and away from windows. Avoid using electrical appliances if lightning is nearby."
-            case .snow, .blowingSnow, .blizzard:
-                return "Travel only if necessary. Keep emergency supplies and warm clothing accessible."
-            case .fog, .mist:
-                return "Use low beam headlights when driving and reduce speed. Allow extra distance between vehicles."
-            case .wind, .breezy:
-                return "Secure loose objects outdoors. Be cautious of falling branches and power lines."
-            default:
-                return "Stay updated on changing weather conditions and have emergency supplies ready."
-            }
+        // Use the seed to deterministically select a quote for the day
+        let quoteIndex = seed % motivationalQuotes.count
+        return motivationalQuotes[quoteIndex]
+    }
+    
+    private func getWeatherIcon(for condition: WeatherCondition) -> String {
+        switch condition {
+        case .clear:
+            return "sun.max.fill"
+        case .cloudy:
+            return "cloud.fill"
+        case .fog, .mist:
+            return "cloud.fog.fill"
+        case .haze:
+            return "sun.haze.fill"
+        case .rain:
+            return "cloud.rain.fill"
+        case .snow:
+            return "cloud.snow.fill"
+        case .thunderstorms:
+            return "cloud.bolt.fill"
+        case .wind, .breezy:
+            return "wind"
+        case .hot, .heat:
+            return "thermometer.sun.fill"
+        case .cold, .chilly:
+            return "thermometer.snowflake"
+        case .sunFlurries:
+            return "sun.snow.fill"
+        case .sunShowers:
+            return "sun.rain.fill"
+        case .sleet:
+            return "cloud.sleet.fill"
+        case .blowingSnow:
+            return "wind.snow"
+        case .blizzard:
+            return "snowflake"
+        default:
+            return "questionmark.circle"
         }
     }
+    
+    private func weatherConditionText(for condition: WeatherCondition) -> String {
+        switch condition {
+        case .clear:
+            return "Clear Sky"
+        case .cloudy:
+            return "Cloudy"
+        case .fog, .mist:
+            return "Foggy"
+        case .haze:
+            return "Hazy"
+        case .rain:
+            return "Rainy"
+        case .snow:
+            return "Snowy"
+        case .thunderstorms:
+            return "Thunderstorms"
+        case .wind, .breezy:
+            return "Windy"
+        case .hot, .heat:
+            return "Hot"
+        case .cold, .chilly:
+            return "Cold"
+        case .sunFlurries:
+            return "Sun & Snow"
+        case .sunShowers:
+            return "Sun & Rain"
+        case .sleet:
+            return "Sleet"
+        case .blowingSnow:
+            return "Blowing Snow"
+        case .blizzard:
+            return "Blizzard"
+        default:
+            return "Unknown"
+        }
+    }
+    
+    private func getWeatherSafetyTip(for condition: WeatherCondition) -> String {
+        switch condition {
+        case .clear:
+            return "Enjoy the good weather, but don't forget sunscreen if you're spending time outdoors."
+        case .hot, .heat:
+            return "Stay hydrated and seek shade during peak hours. Check on vulnerable people who may need assistance."
+        case .cold, .chilly:
+            return "Dress in layers and cover extremities. Keep emergency supplies in your vehicle if traveling."
+        case .rain:
+            return "Drive carefully on wet roads and watch for flash flooding in low-lying areas."
+        case .thunderstorms:
+            return "Stay indoors and away from windows. Avoid using electrical appliances if lightning is nearby."
+        case .snow, .blowingSnow, .blizzard:
+            return "Travel only if necessary. Keep emergency supplies and warm clothing accessible."
+        case .fog, .mist:
+            return "Use low beam headlights when driving and reduce speed. Allow extra distance between vehicles."
+        case .wind, .breezy:
+            return "Secure loose objects outdoors. Be cautious of falling branches and power lines."
+        default:
+            return "Stay updated on changing weather conditions and have emergency supplies ready."
+        }
+    }
+}

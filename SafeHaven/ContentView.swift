@@ -22,32 +22,34 @@ struct ContentView: View {
     }
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-            homeView
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(Tab.home)
-            
-            ResourcesView()
-                .tabItem {
-                    Label("Resources", systemImage: "mappin.and.ellipse")
-                }
-                .tag(Tab.resources)
-            
-            JournalView()
-                .tabItem {
-                    Label("Journal", systemImage: "book.fill")
-                }
-                .tag(Tab.journal)
-            
-            settingsView
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
-                .tag(Tab.settings)
+        NavigationStack {
+            TabView(selection: $selectedTab) {
+                homeView
+                    .tabItem {
+                        Label("Home", systemImage: "house.fill")
+                    }
+                    .tag(Tab.home)
+                
+                ResourcesView()
+                    .tabItem {
+                        Label("Resources", systemImage: "mappin.and.ellipse")
+                    }
+                    .tag(Tab.resources)
+                
+                JournalView()
+                    .tabItem {
+                        Label("Journal", systemImage: "book.fill")
+                    }
+                    .tag(Tab.journal)
+                
+                settingsView
+                    .tabItem {
+                        Label("Settings", systemImage: "gear")
+                    }
+                    .tag(Tab.settings)
+            }
+            .accentColor(AppTheme.primary)
         }
-        .accentColor(AppTheme.primary)
         .sheet(isPresented: $showingEmergencyContacts) {
             EmergencyContactsView(contacts: $emergencyContacts, customMessage: $customMessage)
         }

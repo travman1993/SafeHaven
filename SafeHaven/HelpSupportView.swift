@@ -8,8 +8,8 @@ import SwiftUI
 struct HelpSupportView: View {
     @State private var showingContactDialog = false
     @State private var selectedCategory: SupportCategory = .general
+    @Environment(\.dismiss) var dismiss
     
-    // Define SupportCategory as a full type
     enum SupportCategory: String, CaseIterable, Identifiable {
         case general = "General Questions"
         case technical = "Technical Issues"
@@ -32,68 +32,58 @@ struct HelpSupportView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            NavigationView {
-                ScrollView {
-                    VStack(spacing: ResponsiveLayout.padding(24)) {
-                        // Header section
-                        headerSection()
-                        
-                        // FAQs section
-                        faqsSection()
-                        
-                        // Contact support section
-                        contactSupportSection()
-                        
-                        // Community resources section
-                        communityResourcesSection()
-                    }
-                    .padding(.horizontal, ResponsiveLayout.padding())
+            ScrollView {
+                VStack(spacing: ResponsiveLayout.padding(20)) {
+                    headerSection()
+                    
+                    Spacer(minLength: ResponsiveLayout.padding(7))
+                    
+                    faqsSection()
+                    
+                    Spacer(minLength: ResponsiveLayout.padding(7))
+                    
+                    contactSupportSection()
+                    
+                    Spacer(minLength: ResponsiveLayout.padding(7))
+                    
+                    communityResourcesSection()
                 }
-                .background(AppTheme.background.ignoresSafeArea())
-                .navigationTitle("Help & Support")
-                .navigationBarTitleDisplayMode(.inline)
-            }
-            .actionSheet(isPresented: $showingContactDialog) {
-                ActionSheet(
-                    title: Text("Contact Support"),
-                    message: Text("Please select a category for your support request"),
-                    buttons: SupportCategory.allCases.map { category in
-                        .default(Text(category.rawValue)) {
-                            sendEmail(category: category)
-                        }
-                    } + [.cancel()]
+                .frame(
+                    maxWidth: geometry.size.width > 600 ? 600 : geometry.size.width * 0.9,
+                    alignment: .center
                 )
+                .padding(.horizontal, ResponsiveLayout.padding())
+                .padding(.top, ResponsiveLayout.padding(30))
+                .frame(maxWidth: .infinity)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(AppTheme.background.ignoresSafeArea())
         }
+        .navigationTitle("Help & Support")
+        .navigationBarTitleDisplayMode(.inline)
     }
-    
+
     private func headerSection() -> some View {
-        VStack(spacing: ResponsiveLayout.padding(12)) {
+        VStack(spacing: ResponsiveLayout.padding(10)) {
             Image(systemName: "lifepreserver.fill")
-                .font(.system(size: ResponsiveLayout.fontSize(60)))
+                .font(.system(size: ResponsiveLayout.fontSize(55)))
                 .foregroundColor(AppTheme.primary)
-                .padding(.top, ResponsiveLayout.padding(20))
+                .padding(.top, ResponsiveLayout.padding(15))
             
             Text("How can we help?")
-                .font(.system(
-                    size: ResponsiveLayout.fontSize(22),
-                    weight: .bold
-                ))
+                .font(.system(size: ResponsiveLayout.fontSize(22), weight: .bold))
             
             Text("Find answers or reach out for support")
                 .font(.system(size: ResponsiveLayout.fontSize(16)))
                 .foregroundColor(AppTheme.textSecondary)
         }
-        .padding(.bottom, ResponsiveLayout.padding(10))
+        .padding(.bottom, ResponsiveLayout.padding(8))
     }
     
     private func faqsSection() -> some View {
-        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(15)) {
             Text("Frequently Asked Questions")
-                .font(.system(
-                    size: ResponsiveLayout.fontSize(18),
-                    weight: .bold
-                ))
+                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .bold))
                 .padding(.horizontal, ResponsiveLayout.padding())
             
             VStack(spacing: ResponsiveLayout.padding(12)) {
@@ -107,16 +97,14 @@ struct HelpSupportView: View {
                     answer: "When you use the emergency slider, the app will initiate a call to emergency services (911) and send text messages with your current location to your designated emergency contacts."
                 )
             }
+            .frame(maxWidth: 600) // Ensures consistent width
         }
     }
-    
+
     private func contactSupportSection() -> some View {
-        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
+        VStack(alignment: .center, spacing: ResponsiveLayout.padding(15)) {
             Text("Contact Support")
-                .font(.system(
-                    size: ResponsiveLayout.fontSize(18),
-                    weight: .bold
-                ))
+                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .bold))
                 .padding(.horizontal, ResponsiveLayout.padding())
             
             Button(action: {
@@ -129,34 +117,46 @@ struct HelpSupportView: View {
                 }
             }
         }
+        .frame(maxWidth: 600) // Ensures consistent width
+        .frame(maxWidth: .infinity, alignment: .center)
     }
-    
+
     private func communityResourcesSection() -> some View {
-        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(16)) {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(15)) {
             Text("Community Resources")
-                .font(.system(
-                    size: ResponsiveLayout.fontSize(18),
-                    weight: .bold
-                ))
+                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .bold))
                 .padding(.horizontal, ResponsiveLayout.padding())
-            
-            // Add community resources content
+
+            VStack(spacing: ResponsiveLayout.padding(12)) {
+                CommunityResourceItem(
+                    title: "Find Local Shelters",
+                    description: "Browse a list of nearby shelters and safe spaces available in your area.",
+                    icon: "house.fill",
+                    url: "https://www.homelessshelterdirectory.org/"
+                )
+
+                CommunityResourceItem(
+                    title: "Food Assistance Programs",
+                    description: "Find food banks and meal programs to help with daily nutrition.",
+                    icon: "cart.fill",
+                    url: "https://www.feedingamerica.org/find-your-local-foodbank"
+                )
+
+                CommunityResourceItem(
+                    title: "Mental Health Support",
+                    description: "Get access to mental health resources, including crisis hotlines and counseling services.",
+                    icon: "brain.head.profile",
+                    url: "https://www.nami.org/help"
+                )
+            }
+            .frame(maxWidth: 600) // Ensures uniform width
+            .padding(.horizontal, ResponsiveLayout.padding())
         }
-    }
-    
-    private func sendEmail(category: SupportCategory) {
-        let subject = "SafeHaven Support - \(category.rawValue)"
-        let body = "Please describe your issue or question below:\n\n"
-        let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        
-        if let url = URL(string: "mailto:support@safehaven-app.com?subject=\(encodedSubject)&body=\(encodedBody)") {
-            UIApplication.shared.open(url)
-        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-// FAQ Item View (you'll need to implement this separately)
+// FAQ Item View
 struct FAQItem: View {
     let question: String
     let answer: String
@@ -173,7 +173,48 @@ struct FAQItem: View {
             }
         }
         .padding()
+        .frame(maxWidth: 600) // Ensures uniform width
         .background(Color.white)
         .cornerRadius(10)
+    }
+}
+
+// Community Resource Item View
+struct CommunityResourceItem: View {
+    let title: String
+    let description: String
+    let icon: String
+    let url: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(6)) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(AppTheme.primary)
+                    .font(.system(size: 22))
+                
+                Text(title)
+                    .font(.system(size: ResponsiveLayout.fontSize(15), weight: .bold))
+            }
+
+            Text(description)
+                .font(.system(size: ResponsiveLayout.fontSize(13)))
+                .foregroundColor(AppTheme.textSecondary)
+
+            Button(action: {
+                if let link = URL(string: url) {
+                    UIApplication.shared.open(link)
+                }
+            }) {
+                Text("Visit Website")
+                    .font(.system(size: ResponsiveLayout.fontSize(13), weight: .medium))
+                    .foregroundColor(.blue)
+            }
+        }
+        .padding()
+        .frame(maxWidth: 600) // Ensures uniform width
+        .background(Color.white)
+        .cornerRadius(10)
+        .shadow(radius: 3)
     }
 }

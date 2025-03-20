@@ -14,6 +14,9 @@ struct SafeHavenApp: App {
     // First launch detection for onboarding
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
+    // Add a state variable to track if the app is loaded
+    @State private var isLoaded = false
+    
     init() {
         // Check if this is the first launch ever
         if !UserDefaults.standard.bool(forKey: "hasLaunchedBefore") {
@@ -25,7 +28,18 @@ struct SafeHavenApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if !hasCompletedOnboarding {
+            if !isLoaded {
+                // Show your existing launch screen while loading
+                LaunchScreen()
+                    .onAppear {
+                        // Simulate a delay to show the launch screen
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            withAnimation(.easeInOut(duration: 0.7)) {
+                                isLoaded = true
+                            }
+                        }
+                    }
+            } else if !hasCompletedOnboarding {
                 // Show onboarding on first launch
                 OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding, onComplete: {
                     // Save that onboarding is complete and proceed to main content

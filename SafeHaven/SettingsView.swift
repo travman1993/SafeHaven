@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Separate the SettingsRow into its own view
+// Define SettingsRow as a separate view
 struct SettingsRow: View {
     let icon: String
     let title: String
@@ -43,6 +43,7 @@ struct SettingsRow: View {
     }
 }
 
+// Then define your SettingsView
 struct SettingsView: View {
     @Binding var showingSupportersView: Bool
     @AppStorage("accentColorString") private var accentColorString = "4A76D4"
@@ -59,29 +60,31 @@ struct SettingsView: View {
     ]
     
     var body: some View {
-        // Removed NavigationView to use full screen within TabView
-        ScrollView {
-            VStack(spacing: ResponsiveLayout.padding(24)) {
-                // App Appearance
-                appearanceSection()
-                
-                // Notifications
-                notificationsSection()
-                
-                // Data & Privacy
-                privacySection()
-                
-                // About & Support
-                aboutSupportSection()
-                
-                // App info
-                appInfoSection()
+        // Add NavigationStack here to enable navigation
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: ResponsiveLayout.padding(24)) {
+                    // App Appearance
+                    appearanceSection()
+                    
+                    // Notifications
+                    notificationsSection()
+                    
+                    // Data & Privacy
+                    privacySection()
+                    
+                    // About & Support
+                    aboutSupportSection()
+                    
+                    // App info
+                    appInfoSection()
+                }
+                .padding(.vertical, ResponsiveLayout.padding())
             }
-            .padding(.vertical, ResponsiveLayout.padding())
+            .background(AppTheme.background.ignoresSafeArea())
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .background(AppTheme.background.ignoresSafeArea())
-        .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.inline)
     }
     
     private func appearanceSection() -> some View {

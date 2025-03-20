@@ -8,16 +8,10 @@
 	</array>
 	<key>NSWeatherKitUsageDescription</key>
 	<string>SafeHaven uses weather data to provide safety recommendations</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>SafeHaven needs your location to show nearby resources and provide weather information</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tel</string>
 	</array>
-	<key>om.apple.developer.in-app-payments</key>
-	<string>merchant.com.rodriguez.travis.safehaven</string>
-	<key>NSApplePayMerchantIdentifierUsageDescription</key>
-	<string>SafeHaven uses Apple Pay to process subscription payments securely.</string>
 	<key>CFBundleIdentifier</key>
 	<string>rodriguez.travis.SafeHaven</string>
 	<key>CFBundleName</key>
@@ -54,17 +48,9 @@
 			</array>
 		</dict>
 	</dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>SafeHaven needs your location to provide relevant safety and weather information</string>
 	<key>NSWeatherUsageDescription</key>
 	<string>SafeHaven uses weather information to provide local safety alerts and relevant weather-based safety recommendations.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>SafeHaven uses the camera to scan QR codes for emergency resources</string>
-	<key>NSContactsUsageDescription</key>
-	<string>SafeHaven allows you to add emergency contacts from your address book</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>SafeHaven allows you to upload photos for emergency documentation</string>
 </dict>
 </plist>

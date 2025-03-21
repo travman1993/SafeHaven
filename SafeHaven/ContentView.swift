@@ -84,6 +84,11 @@ struct ContentView: View {
                     // Weather Information
                     weatherCard(for: geometry)
                     
+                    //Weather Forecast section
+                    if !weatherService.forecastDates.isEmpty {
+                        forecastSection(in: geometry)
+                    }
+                    
                     // Quick Access Sections
                     quickAccessGrid(for: geometry)
                     
@@ -120,7 +125,7 @@ struct ContentView: View {
             
             // Weather Summary - Updated for new WeatherService
             if let temp = weatherService.currentTemperature {
-                VStack(alignment: .trailing) {
+                VStack(alignment: .trailing, spacing: 2) {
                     HStack(spacing: 4) {
                         Text(weatherService.temperatureString(temp))
                             .font(.system(size: ResponsiveLayout.fontSize(20), weight: .semibold))
@@ -133,6 +138,17 @@ struct ContentView: View {
                     Text(weatherService.currentCondition)
                         .font(.system(size: ResponsiveLayout.fontSize(14)))
                         .foregroundColor(AppTheme.textSecondary)
+                    
+                    // Apple Weather attribution
+                    HStack(spacing: 2) {
+                        Text("Weather")
+                            .font(.system(size: ResponsiveLayout.fontSize(8)))
+                            .foregroundColor(AppTheme.textSecondary)
+                        
+                        Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
+                            .font(.system(size: ResponsiveLayout.fontSize(8)))
+                            .foregroundColor(AppTheme.primary)
+                    }
                 }
             } else {
                 ProgressView()
@@ -178,7 +194,7 @@ struct ContentView: View {
     private func weatherCard(for geometry: GeometryProxy) -> some View {
         Group {
             if let temp = weatherService.currentTemperature {
-                VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: ResponsiveLayout.padding(8)) {
                     HStack {
                         Image(systemName: getWeatherIcon(for: weatherService.currentCondition))
                             .font(.system(size: ResponsiveLayout.fontSize(24)))
@@ -194,6 +210,18 @@ struct ContentView: View {
                     Text(getWeatherSafetyTip(for: weatherService.currentCondition))
                         .font(.system(size: ResponsiveLayout.fontSize(12)))
                         .foregroundColor(AppTheme.textSecondary)
+                    
+                    // Add Apple Weather attribution
+                    HStack(spacing: 4) {
+                        Text("Weather")
+                            .font(.system(size: ResponsiveLayout.fontSize(10)))
+                            .foregroundColor(AppTheme.textSecondary)
+                        
+                        Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
+                            .font(.system(size: ResponsiveLayout.fontSize(10)))
+                            .foregroundColor(AppTheme.primary)
+                    }
+                    .padding(.top, 4)
                 }
                 .padding()
                 .background(Color.white)
@@ -203,6 +231,62 @@ struct ContentView: View {
                 ProgressView()
             }
         }
+    }
+    
+    private func forecastSection(in geometry: GeometryProxy) -> some View {
+        VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
+            Text("5-Day Forecast")
+                .font(.system(size: ResponsiveLayout.fontSize(16), weight: .semibold))
+                .padding(.horizontal, ResponsiveLayout.padding())
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: ResponsiveLayout.padding(16)) {
+                    ForEach(0..<min(5, weatherService.forecastDates.count), id: \.self) { index in
+                        VStack(spacing: ResponsiveLayout.padding(8)) {
+                            Text(formatDate(weatherService.forecastDates[index]))
+                                .font(.system(size: ResponsiveLayout.fontSize(14), weight: .medium))
+                            
+                            Image(systemName: getWeatherIcon(for: weatherService.forecastConditions[index]))
+                                .font(.system(size: ResponsiveLayout.fontSize(22)))
+                                .foregroundColor(AppTheme.primary)
+                            
+                            Text(weatherService.temperatureString(weatherService.forecastHighs[index]))
+                                .font(.system(size: ResponsiveLayout.fontSize(14), weight: .semibold))
+                            
+                            Text(weatherService.temperatureString(weatherService.forecastLows[index]))
+                                .font(.system(size: ResponsiveLayout.fontSize(12)))
+                                .foregroundColor(AppTheme.textSecondary)
+                        }
+                        .padding(ResponsiveLayout.padding())
+                        .background(Color.white)
+                        .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
+                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        .frame(minWidth: 100)
+                    }
+                }
+                .padding(.horizontal, ResponsiveLayout.padding())
+            }
+            
+            // Apple Weather attribution - must include this here too
+            HStack(spacing: 4) {
+                Text("Weather")
+                    .font(.system(size: ResponsiveLayout.fontSize(10)))
+                    .foregroundColor(AppTheme.textSecondary)
+                
+                Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
+                    .font(.system(size: ResponsiveLayout.fontSize(10)))
+                    .foregroundColor(AppTheme.primary)
+            }
+            .padding(.horizontal, ResponsiveLayout.padding())
+            .padding(.bottom, ResponsiveLayout.padding(8))
+        }
+    }
+
+    // Helper function to format the date
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE"  // This will give you short day name like "Mon"
+        return formatter.string(from: date)
     }
     
     private func quickAccessGrid(for geometry: GeometryProxy) -> some View {

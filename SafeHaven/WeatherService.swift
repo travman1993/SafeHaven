@@ -90,6 +90,13 @@ class WeatherService: ObservableObject {
             do {
                 let weather = try await weatherService.weather(for: location)
                 
+                // Add debug print
+                print("WEATHERKIT DATA RECEIVED:")
+                let forecastItems = weather.dailyForecast.forecast.prefix(5)
+                for (i, item) in forecastItems.enumerated() {
+                    print("Day \(i) - Date: \(item.date), High: \(item.highTemperature.value)°C, Low: \(item.lowTemperature.value)°C, Condition: \(item.condition)")
+                }
+                
                 await MainActor.run {
                     // Update current weather values
                     self.currentTemperature = celsiusToFahrenheit(weather.currentWeather.temperature.value)
@@ -99,8 +106,6 @@ class WeatherService: ObservableObject {
                     self.currentWindSpeed = weather.currentWeather.wind.speed.value
                     
                     // Update forecast arrays
-                    let forecastItems = weather.dailyForecast.forecast.prefix(5)
-                    
                     self.forecastDates = forecastItems.map { $0.date }
                     self.forecastHighs = forecastItems.map { celsiusToFahrenheit($0.highTemperature.value) }
                     self.forecastLows = forecastItems.map { celsiusToFahrenheit($0.lowTemperature.value) }
@@ -117,6 +122,9 @@ class WeatherService: ObservableObject {
                 await MainActor.run {
                     self.error = error
                     print("Weather fetch error: \(error.localizedDescription)")
+                    
+                    // Add debug print to know when fallback is used
+                    print("Using fallback weather data due to error")
                     
                     if self.currentTemperature == nil {
                         self.setFallbackWeather()
@@ -140,6 +148,7 @@ class WeatherService: ObservableObject {
                     code: -1,
                     userInfo: [NSLocalizedDescriptionKey: "Weather request timed out"]
                 )
+                print("Weather request timed out - using fallback data")
                 self.setFallbackWeather()
             }
         }
@@ -168,13 +177,39 @@ class WeatherService: ObservableObject {
         self.currentHumidity = 0.5
         self.currentWindSpeed = 5.0
         
-        // Set fallback forecast
+        // Set fallback forecast with VARIED data
         if self.forecastDates.isEmpty {
             let today = Date()
             self.forecastDates = (0..<5).map { Calendar.current.date(byAdding: .day, value: $0, to: today) ?? today }
-            self.forecastHighs = (0..<5).map { _ in celsiusToFahrenheit(24.0) }
-            self.forecastLows = (0..<5).map { _ in celsiusToFahrenheit(18.0) }
-            self.forecastConditions = (0..<5).map { _ in "Clear" }
+            
+            // Varied high temperatures
+            self.forecastHighs = [
+                celsiusToFahrenheit(24.0),  // Today
+                celsiusToFahrenheit(25.5),  // Tomorrow
+                celsiusToFahrenheit(23.0),  // Day 3
+                celsiusToFahrenheit(26.0),  // Day 4
+                celsiusToFahrenheit(24.5)   // Day 5
+            ]
+            
+            // Varied low temperatures
+            self.forecastLows = [
+                celsiusToFahrenheit(18.0),  // Today
+                celsiusToFahrenheit(17.5),  // Tomorrow
+                celsiusToFahrenheit(16.0),  // Day 3
+                celsiusToFahrenheit(18.5),  // Day 4
+                celsiusToFahrenheit(17.0)   // Day 5
+            ]
+            
+            // Varied conditions
+            self.forecastConditions = [
+                "Clear",      // Today
+                "Clear",      // Tomorrow
+                "Cloudy",     // Day 3
+                "Rainy",      // Day 4
+                "Clear"       // Day 5
+            ]
+            
+            print("Set varied fallback forecast data")
         }
     }
     

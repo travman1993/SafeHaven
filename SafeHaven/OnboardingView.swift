@@ -203,7 +203,7 @@ struct OnboardingView: View {
                         }) {
                             HStack {
                                 Image(systemName: "location.fill")
-                                Text("Allow Location Access")
+                                Text("Continue")
                             }
                             .font(.system(
                                 size: ResponsiveLayout.fontSize(16),

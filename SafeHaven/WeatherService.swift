@@ -8,11 +8,23 @@ import WeatherKit
 import CoreLocation
 import SwiftUI
 
+// A completely standalone weather service implementation
 class WeatherService: ObservableObject {
     static let shared = WeatherService()
     
-    @Published var currentWeather: WeatherData?
-    @Published var dailyForecast: [DailyWeatherData] = []
+    // Simply provide the raw data that views can use
+    @Published var currentTemperature: Double?
+    @Published var currentFeelsLike: Double?
+    @Published var currentCondition: String = ""
+    @Published var currentHumidity: Double?
+    @Published var currentWindSpeed: Double?
+    
+    // Forecast as simple data arrays
+    @Published var forecastDates: [Date] = []
+    @Published var forecastHighs: [Double] = []
+    @Published var forecastLows: [Double] = []
+    @Published var forecastConditions: [String] = []
+    
     @Published var error: Error?
     @Published var isLoading = false
     
@@ -20,76 +32,109 @@ class WeatherService: ObservableObject {
     private var lastFetchLocation: CLLocation?
     private var lastFetchTimestamp: Date?
     
-    private init() {} // Private initializer to enforce singleton
-    
+    private var isFetchingWeather = false
     private var fetchDebounceWorkItem: DispatchWorkItem?
-
+    
+    private init() {}
+    
+    // Returns a formatted temperature string
+    func temperatureString(_ temp: Double?) -> String {
+        guard let temp = temp else { return "N/A" }
+        return String(format: "%.1f°F", temp)
+    }
+    
+    // Returns a formatted humidity string
+    func humidityString(_ humidity: Double?) -> String {
+        guard let humidity = humidity else { return "N/A" }
+        return String(format: "%.0f%%", humidity * 100)
+    }
+    
+    // Returns a formatted wind speed string
+    func windSpeedString(_ windSpeed: Double?) -> String {
+        guard let windSpeed = windSpeed else { return "N/A" }
+        return String(format: "%.1f mph", windSpeed)
+    }
+    
+    // Returns a day of week string for a date
+    func dayOfWeek(for date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "EEEE"
+        return dateFormatter.string(from: date)
+    }
+    
     func fetchWeather(for location: CLLocation) {
-        fetchDebounceWorkItem?.cancel() // Cancel any previous fetch request
+        fetchDebounceWorkItem?.cancel()
         
         let workItem = DispatchWorkItem { [weak self] in
-            self?.performFetchWeather(for: location)
+            guard let self = self, !self.isFetchingWeather else { return }
+            self.performFetchWeather(for: location)
         }
         
         fetchDebounceWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: workItem) // Delay fetch by 2 seconds
+        
+        if !isLoading {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+        }
     }
-
+    
     private func performFetchWeather(for location: CLLocation) {
-        guard shouldFetchWeather(for: location) else {
-            print("Skipping fetch: Recent data exists.")
+        guard shouldFetchWeather(for: location), !isFetchingWeather else {
+            print("Skipping fetch: Recent data exists or already fetching.")
             return
         }
         
         isLoading = true
-        currentWeather = nil
-        dailyForecast = []
-        error = nil
-
+        isFetchingWeather = true
+        
         Task {
             do {
                 let weather = try await weatherService.weather(for: location)
                 
                 await MainActor.run {
-                    let weatherData = WeatherData(
-                        condition: getCondition(from: weather.currentWeather.condition),
-                        temperature: celsiusToFahrenheit(weather.currentWeather.temperature.value),
-                        feelsLike: celsiusToFahrenheit(weather.currentWeather.apparentTemperature.value),
-                        humidity: weather.currentWeather.humidity,
-                        windSpeed: weather.currentWeather.wind.speed.value
-                    )
+                    // Update current weather values
+                    self.currentTemperature = celsiusToFahrenheit(weather.currentWeather.temperature.value)
+                    self.currentFeelsLike = celsiusToFahrenheit(weather.currentWeather.apparentTemperature.value)
+                    self.currentCondition = mapConditionToString(weather.currentWeather.condition)
+                    self.currentHumidity = weather.currentWeather.humidity
+                    self.currentWindSpeed = weather.currentWeather.wind.speed.value
                     
-                    let forecast = weather.dailyForecast.forecast.prefix(5).map { dailyForecast in
-                        DailyWeatherData(
-                            date: dailyForecast.date,
-                            condition: getCondition(from: dailyForecast.condition),
-                            highTemperature: celsiusToFahrenheit(dailyForecast.highTemperature.value),
-                            lowTemperature: celsiusToFahrenheit(dailyForecast.lowTemperature.value)
-                        )
-                    }
+                    // Update forecast arrays
+                    let forecastItems = weather.dailyForecast.forecast.prefix(5)
                     
-                    self.currentWeather = weatherData
-                    self.dailyForecast = forecast
+                    self.forecastDates = forecastItems.map { $0.date }
+                    self.forecastHighs = forecastItems.map { celsiusToFahrenheit($0.highTemperature.value) }
+                    self.forecastLows = forecastItems.map { celsiusToFahrenheit($0.lowTemperature.value) }
+                    self.forecastConditions = forecastItems.map { mapConditionToString($0.condition) }
+                    
                     self.lastFetchLocation = location
                     self.lastFetchTimestamp = Date()
-                    self.isLoading = false
                     self.error = nil
+                    
+                    self.isLoading = false
+                    self.isFetchingWeather = false
                 }
             } catch {
                 await MainActor.run {
                     self.error = error
-                    self.isLoading = false
                     print("Weather fetch error: \(error.localizedDescription)")
-                    self.setFallbackWeather()
+                    
+                    if self.currentTemperature == nil {
+                        self.setFallbackWeather()
+                    }
+                    
+                    self.isLoading = false
+                    self.isFetchingWeather = false
                 }
             }
         }
         
-        // Add a timeout to ensure we don't get stuck loading
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
-            guard let self = self else { return }
-            if self.isLoading {
-                self.isLoading = false
+            guard let self = self, self.isFetchingWeather else { return }
+            
+            self.isLoading = false
+            self.isFetchingWeather = false
+            
+            if self.currentTemperature == nil {
                 self.error = NSError(
                     domain: "WeatherService",
                     code: -1,
@@ -106,8 +151,8 @@ class WeatherService: ObservableObject {
             return true
         }
         
-        let distanceThreshold: CLLocationDistance = 1000 // 1 km
-        let timeThreshold: TimeInterval = 3600 // 1 hour
+        let distanceThreshold: CLLocationDistance = 5000 // 5 km
+        let timeThreshold: TimeInterval = 7200 // 2 hours
         
         let distance = location.distance(from: lastLocation)
         let timeSinceLastFetch = Date().timeIntervalSince(lastFetchTime)
@@ -116,82 +161,55 @@ class WeatherService: ObservableObject {
     }
     
     private func setFallbackWeather() {
-        // Predefined fallback weather data
-        self.currentWeather = WeatherData(
-            condition: .clear,
-            temperature: celsiusToFahrenheit(21.0),
-            feelsLike: celsiusToFahrenheit(21.0),
-            humidity: 0.5,
-            windSpeed: 5.0
-        )
+        // Set fallback weather data
+        self.currentTemperature = celsiusToFahrenheit(21.0)
+        self.currentFeelsLike = celsiusToFahrenheit(21.0)
+        self.currentCondition = "Clear"
+        self.currentHumidity = 0.5
+        self.currentWindSpeed = 5.0
         
-        // Generate fallback daily forecast
-        let today = Date()
-        self.dailyForecast = (0..<5).map { offset in
-            let date = Calendar.current.date(byAdding: .day, value: offset, to: today) ?? today
-            return DailyWeatherData(
-                date: date,
-                condition: .clear,
-                highTemperature: celsiusToFahrenheit(24.0),
-                lowTemperature: celsiusToFahrenheit(18.0)
-            )
+        // Set fallback forecast
+        if self.forecastDates.isEmpty {
+            let today = Date()
+            self.forecastDates = (0..<5).map { Calendar.current.date(byAdding: .day, value: $0, to: today) ?? today }
+            self.forecastHighs = (0..<5).map { _ in celsiusToFahrenheit(24.0) }
+            self.forecastLows = (0..<5).map { _ in celsiusToFahrenheit(18.0) }
+            self.forecastConditions = (0..<5).map { _ in "Clear" }
         }
     }
-
+    
     // Convert Celsius to Fahrenheit
     private func celsiusToFahrenheit(_ celsius: Double) -> Double {
         return (celsius * 9/5) + 32
     }
     
-    // Convert from WeatherKit condition to our custom condition
-    private func getCondition(from weatherKitCondition: WeatherKit.WeatherCondition) -> WeatherCondition {
-        switch weatherKitCondition {
+    // Maps WeatherKit condition to a simple string
+    private func mapConditionToString(_ condition: WeatherKit.WeatherCondition) -> String {
+        switch condition {
         case .clear:
-            return .clear
+            return "Clear"
         case .cloudy, .mostlyCloudy, .partlyCloudy:
-            return .cloudy
+            return "Cloudy"
         case .foggy:
-            return .fog
+            return "Foggy"
         case .haze:
-            return .haze
+            return "Hazy"
         case .rain, .drizzle, .heavyRain, .isolatedThunderstorms:
-            return .rain
+            return "Rainy"
         case .snow, .flurries, .heavySnow:
-            return .snow
+            return "Snowy"
         case .thunderstorms:
-            return .thunderstorms
+            return "Thunderstorms"
         case .windy:
-            return .wind
+            return "Windy"
         case .breezy:
-            return .breezy
+            return "Breezy"
         case .hot:
-            return .hot
+            return "Hot"
         case .frigid, .blizzard:
-            return .cold
+            return "Cold"
         default:
-            return .unknown
+            return "Unknown"
         }
-    }
-}
-
-// Daily forecast data structure
-struct DailyWeatherData {
-    let date: Date
-    let condition: WeatherCondition
-    let highTemperature: Double
-    let lowTemperature: Double
-    
-    var highTemperatureString: String {
-        return String(format: "%.1f°F", highTemperature)
-    }
-    
-    var lowTemperatureString: String {
-        return String(format: "%.1f°F", lowTemperature)
-    }
-    
-    var dayOfWeek: String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "EEEE"
-        return dateFormatter.string(from: date)
     }
 }

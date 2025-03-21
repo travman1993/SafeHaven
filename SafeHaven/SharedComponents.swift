@@ -89,6 +89,7 @@ struct InfoCard: View {
     }
 }
 
+// In ResourcesView.swift or SharedComponents.swift
 struct SearchBar: View {
     @Binding var text: String
     var placeholder: String
@@ -107,9 +108,22 @@ struct SearchBar: View {
                 .onSubmit {
                     print("Search submitted: \(text)")
                     isInputFocused = false
-                    onSubmit?()
+                    onSubmit?() // This is where the search function is called
                 }
             
+            // Add a dedicated search button for clarity
+            if !text.isEmpty {
+                Button(action: {
+                    isInputFocused = false
+                    onSubmit?() // Explicitly call search function
+                }) {
+                    Text("Search")
+                        .foregroundColor(Color(hex: "6A89CC"))
+                        .padding(.horizontal, 10)
+                }
+            }
+            
+            // Clear button
             if !text.isEmpty {
                 Button(action: {
                     text = ""

@@ -14,18 +14,13 @@ class ResourceService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    // Dictionary mapping resource categories to search queries
+    // Only include categories we're sure exist in your project
     private let categoryQueries: [ResourceCategory: String] = [
-        .shelter: "homeless shelter",
-        .food: "food bank",
-        .healthcare: "health clinic hospital",
-        .mentalHealth: "mental health services counseling",
-        .addiction: "addiction recovery",
-        .legal: "legal aid",
-        .employment: "employment center",
-        .transportation: "public transportation",
-        .family: "family support services",
-        .education: "education assistance"
+        .all: "help assistance services support",
+        .shelter: "homeless shelter housing emergency",
+        .food: "food bank pantry meals soup kitchen",
+        .healthcare: "clinic hospital medical health doctor urgent care",
+        .transportation: "transportation bus fare ride transit"
     ]
     
     func fetchResources(category: ResourceCategory = .all, near location: CLLocation? = nil, radius: Double = 15000, completion: (() -> Void)? = nil) {
@@ -33,7 +28,6 @@ class ResourceService: ObservableObject {
         resources = []
         
         guard let location = location else {
-            // If no location is provided, use a default location or show an error
             self.isLoading = false
             self.errorMessage = "Location not available"
             completion?()
@@ -42,7 +36,7 @@ class ResourceService: ObservableObject {
         
         // If "all" category is selected, fetch multiple categories in sequence
         if category == .all {
-            let categoriesToFetch = Array(categoryQueries.keys.prefix(5)) // Limit to 5 categories
+            let categoriesToFetch = Array(categoryQueries.keys.filter { $0 != .all })
             fetchNextCategory(categories: categoriesToFetch, location: location, radius: radius) {
                 completion?()
             }
@@ -53,13 +47,16 @@ class ResourceService: ObservableObject {
         }
     }
     
-    // New method for searching any place by text query
-    func searchAnyPlace(query: String, near location: CLLocation, radius: Double = 15000, completion: (() -> Void)? = nil) {
+    // Enhanced search function with broader results
+    func searchAnyPlace(query: String, near location: CLLocation, radius: Double = 25000, completion: (() -> Void)? = nil) {
         isLoading = true
         resources = []
         
+        // Enhance search query for better results
+        let enhancedQuery = query + " assistance services support help"
+        
         let request = MKLocalSearch.Request()
-        request.naturalLanguageQuery = query
+        request.naturalLanguageQuery = enhancedQuery
         request.region = MKCoordinateRegion(
             center: location.coordinate,
             latitudinalMeters: radius,
@@ -69,31 +66,33 @@ class ResourceService: ObservableObject {
         let search = MKLocalSearch(request: request)
         search.start { [weak self] response, error in
             DispatchQueue.main.async {
-                self?.isLoading = false
+                guard let self = self else { return }
+                
+                self.isLoading = false
                 
                 if let error = error {
-                    self?.errorMessage = error.localizedDescription
+                    self.errorMessage = error.localizedDescription
                     print("Search error: \(error.localizedDescription)")
                     completion?()
                     return
                 }
                 
                 guard let response = response else {
-                    self?.errorMessage = "No results found"
+                    self.errorMessage = "No results found"
                     print("No results found for query: \(query)")
                     completion?()
                     return
                 }
                 
-                print("Found \(response.mapItems.count) results for query: \(query)")
+                print("Found \(response.mapItems.count) results for query: \(enhancedQuery)")
                 
                 // Convert MKMapItems to ResourceLocation objects
-                self?.resources = response.mapItems.map { item in
+                self.resources = response.mapItems.map { item in
                     ResourceLocation(
                         id: "search-\(item.placemark.coordinate.latitude)-\(item.placemark.coordinate.longitude)",
                         name: item.name ?? "Unknown Location",
-                        category: .all, // Default category
-                        address: self?.formatAddress(item.placemark) ?? "No address",
+                        category: .all, // Default to "all" category for search results
+                        address: self.formatAddress(item.placemark),
                         phoneNumber: item.phoneNumber ?? "No phone available",
                         description: "Search result for '\(query)'",
                         coordinate: item.placemark.coordinate,
@@ -110,7 +109,6 @@ class ResourceService: ObservableObject {
     }
     
     private func fetchNextCategory(categories: [ResourceCategory], location: CLLocation, radius: Double, index: Int = 0, completion: @escaping () -> Void) {
-        // Base case: if we've processed all categories, stop
         if index >= categories.count {
             DispatchQueue.main.async {
                 self.isLoading = false
@@ -121,7 +119,6 @@ class ResourceService: ObservableObject {
         
         let category = categories[index]
         
-        // Create a search request for the current category
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = categoryQueries[category] ?? category.rawValue
         request.region = MKCoordinateRegion(
@@ -130,7 +127,6 @@ class ResourceService: ObservableObject {
             longitudinalMeters: radius
         )
         
-        // Perform the search
         let search = MKLocalSearch(request: request)
         search.start { [weak self] response, error in
             guard let self = self else {
@@ -143,7 +139,6 @@ class ResourceService: ObservableObject {
             }
             
             if let response = response {
-                // Convert MKMapItems to ResourceLocation objects and add to our resources
                 let newResources = response.mapItems.map { item in
                     ResourceLocation(
                         id: "\(category.rawValue)-\(item.placemark.coordinate.latitude)-\(item.placemark.coordinate.longitude)",
@@ -165,15 +160,13 @@ class ResourceService: ObservableObject {
                 }
             }
             
-            // Continue with the next category
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { // Small delay to avoid rate limiting
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 self.fetchNextCategory(categories: categories, location: location, radius: radius, index: index + 1, completion: completion)
             }
         }
     }
     
     private func fetchSingleCategory(category: ResourceCategory, location: CLLocation, radius: Double, completion: @escaping () -> Void) {
-        // Create a search request for the specified category
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = categoryQueries[category] ?? category.rawValue
         request.region = MKCoordinateRegion(
@@ -182,7 +175,6 @@ class ResourceService: ObservableObject {
             longitudinalMeters: radius
         )
         
-        // Perform the search
         let search = MKLocalSearch(request: request)
         search.start { [weak self] response, error in
             DispatchQueue.main.async {
@@ -200,7 +192,6 @@ class ResourceService: ObservableObject {
                     return
                 }
                 
-                // Convert MKMapItems to ResourceLocation objects
                 self?.resources = response.mapItems.map { item in
                     ResourceLocation(
                         id: "\(category.rawValue)-\(item.placemark.coordinate.latitude)-\(item.placemark.coordinate.longitude)",

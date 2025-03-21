@@ -118,19 +118,19 @@ struct ContentView: View {
             
             Spacer()
             
-            // Weather Summary
-            if let currentWeather = weatherService.currentWeather {
+            // Weather Summary - Updated for new WeatherService
+            if let temp = weatherService.currentTemperature {
                 VStack(alignment: .trailing) {
                     HStack(spacing: 4) {
-                        Text(currentWeather.temperatureString)
+                        Text(weatherService.temperatureString(temp))
                             .font(.system(size: ResponsiveLayout.fontSize(20), weight: .semibold))
                         
-                        Image(systemName: getWeatherIcon(for: currentWeather.condition))
+                        Image(systemName: getWeatherIcon(for: weatherService.currentCondition))
                             .font(.system(size: ResponsiveLayout.fontSize(20)))
                     }
                     .foregroundColor(AppTheme.textPrimary)
                     
-                    Text(weatherConditionText(for: currentWeather.condition))
+                    Text(weatherService.currentCondition)
                         .font(.system(size: ResponsiveLayout.fontSize(14)))
                         .foregroundColor(AppTheme.textSecondary)
                 }
@@ -177,19 +177,21 @@ struct ContentView: View {
     
     private func weatherCard(for geometry: GeometryProxy) -> some View {
         Group {
-            if let weather = weatherService.currentWeather {
+            if let temp = weatherService.currentTemperature {
                 VStack(alignment: .leading) {
                     HStack {
-                        Image(systemName: getWeatherIcon(for: weather.condition))
+                        Image(systemName: getWeatherIcon(for: weatherService.currentCondition))
                             .font(.system(size: ResponsiveLayout.fontSize(24)))
-                        Text(weather.temperatureString)
+                        Text(weatherService.temperatureString(temp))
                             .font(.system(size: ResponsiveLayout.fontSize(22), weight: .semibold))
                     }
                     
-                    Text("Feels like \(weather.feelsLikeString)")
-                        .font(.system(size: ResponsiveLayout.fontSize(14)))
+                    if let feelsLike = weatherService.currentFeelsLike {
+                        Text("Feels like \(weatherService.temperatureString(feelsLike))")
+                            .font(.system(size: ResponsiveLayout.fontSize(14)))
+                    }
                     
-                    Text(getWeatherSafetyTip(for: weather.condition))
+                    Text(getWeatherSafetyTip(for: weatherService.currentCondition))
                         .font(.system(size: ResponsiveLayout.fontSize(12)))
                         .foregroundColor(AppTheme.textSecondary)
                 }
@@ -300,97 +302,52 @@ struct ContentView: View {
         return motivationalQuotes[quoteIndex]
     }
     
-    private func getWeatherIcon(for condition: WeatherCondition) -> String {
-        switch condition {
-        case .clear:
+    // Updated to use condition strings instead of enum
+    private func getWeatherIcon(for conditionString: String) -> String {
+        switch conditionString {
+        case "Clear":
             return "sun.max.fill"
-        case .cloudy:
+        case "Cloudy":
             return "cloud.fill"
-        case .fog, .mist:
+        case "Foggy":
             return "cloud.fog.fill"
-        case .haze:
+        case "Hazy":
             return "sun.haze.fill"
-        case .rain:
+        case "Rainy":
             return "cloud.rain.fill"
-        case .snow:
+        case "Snowy":
             return "cloud.snow.fill"
-        case .thunderstorms:
+        case "Thunderstorms":
             return "cloud.bolt.fill"
-        case .wind, .breezy:
+        case "Windy", "Breezy":
             return "wind"
-        case .hot, .heat:
+        case "Hot":
             return "thermometer.sun.fill"
-        case .cold, .chilly:
+        case "Cold":
             return "thermometer.snowflake"
-        case .sunFlurries:
-            return "sun.snow.fill"
-        case .sunShowers:
-            return "sun.rain.fill"
-        case .sleet:
-            return "cloud.sleet.fill"
-        case .blowingSnow:
-            return "wind.snow"
-        case .blizzard:
-            return "snowflake"
         default:
             return "questionmark.circle"
         }
     }
     
-    private func weatherConditionText(for condition: WeatherCondition) -> String {
-        switch condition {
-        case .clear:
-            return "Clear Sky"
-        case .cloudy:
-            return "Cloudy"
-        case .fog, .mist:
-            return "Foggy"
-        case .haze:
-            return "Hazy"
-        case .rain:
-            return "Rainy"
-        case .snow:
-            return "Snowy"
-        case .thunderstorms:
-            return "Thunderstorms"
-        case .wind, .breezy:
-            return "Windy"
-        case .hot, .heat:
-            return "Hot"
-        case .cold, .chilly:
-            return "Cold"
-        case .sunFlurries:
-            return "Sun & Snow"
-        case .sunShowers:
-            return "Sun & Rain"
-        case .sleet:
-            return "Sleet"
-        case .blowingSnow:
-            return "Blowing Snow"
-        case .blizzard:
-            return "Blizzard"
-        default:
-            return "Unknown"
-        }
-    }
-    
-    private func getWeatherSafetyTip(for condition: WeatherCondition) -> String {
-        switch condition {
-        case .clear:
+    // Updated to use condition strings instead of enum
+    private func getWeatherSafetyTip(for conditionString: String) -> String {
+        switch conditionString {
+        case "Clear":
             return "Enjoy the good weather, but don't forget sunscreen if you're spending time outdoors."
-        case .hot, .heat:
+        case "Hot":
             return "Stay hydrated and seek shade during peak hours. Check on vulnerable people who may need assistance."
-        case .cold, .chilly:
+        case "Cold":
             return "Dress in layers and cover extremities. Keep emergency supplies in your vehicle if traveling."
-        case .rain:
+        case "Rainy":
             return "Drive carefully on wet roads and watch for flash flooding in low-lying areas."
-        case .thunderstorms:
+        case "Thunderstorms":
             return "Stay indoors and away from windows. Avoid using electrical appliances if lightning is nearby."
-        case .snow, .blowingSnow, .blizzard:
+        case "Snowy":
             return "Travel only if necessary. Keep emergency supplies and warm clothing accessible."
-        case .fog, .mist:
+        case "Foggy":
             return "Use low beam headlights when driving and reduce speed. Allow extra distance between vehicles."
-        case .wind, .breezy:
+        case "Windy", "Breezy":
             return "Secure loose objects outdoors. Be cautious of falling branches and power lines."
         default:
             return "Stay updated on changing weather conditions and have emergency supplies ready."

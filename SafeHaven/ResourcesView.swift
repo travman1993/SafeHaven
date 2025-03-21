@@ -51,16 +51,9 @@ struct ResourcesView: View {
                                 isSelected: selectedCategory == category,
                                 color: category.color
                             ) {
-                                // Prevent multiple reloads when tapping the same category
                                 if selectedCategory != category {
                                     selectedCategory = category
-                                    
-                                    // Add debouncing for category changes
-                                    let now = Date()
-                                    if now.timeIntervalSince(lastLoadTime) > 0.5 {
-                                        lastLoadTime = now
-                                        loadResources()
-                                    }
+                                    loadResources()
                                 }
                             }
                         }
@@ -122,20 +115,28 @@ struct ResourcesView: View {
         }
     }
     
+    // In ResourcesView.swift - performSearch function
     private func performSearch() {
         guard !searchText.isEmpty else { return }
         isLoading = true
         
+        // Explicitly update UI to show loading state
+        withAnimation {
+            // This will force UI update
+            resourceService.resources = []
+        }
+        
         if let location = locationService.currentLocation {
-            resourceService.searchAnyPlace(query: searchText, near: location) {
+            // Use a broader search with multiple terms and categories
+            resourceService.searchAnyPlace(query: searchText, near: location, radius: 25000) {
                 // Search completed
-                isLoading = false
+                self.isLoading = false
             }
         } else {
             // Use default location if user location isn't available
             let defaultLocation = CLLocation(latitude: 37.7749, longitude: -122.4194)
-            resourceService.searchAnyPlace(query: searchText, near: defaultLocation) {
-                isLoading = false
+            resourceService.searchAnyPlace(query: searchText, near: defaultLocation, radius: 25000) {
+                self.isLoading = false
             }
         }
     }

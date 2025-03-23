@@ -141,13 +141,17 @@ struct ContentView: View {
                     
                     // Apple Weather attribution
                     HStack(spacing: 2) {
-                        Text("Weather")
-                            .font(.system(size: ResponsiveLayout.fontSize(8)))
-                            .foregroundColor(AppTheme.textSecondary)
-                        
-                        Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
-                            .font(.system(size: ResponsiveLayout.fontSize(8)))
-                            .foregroundColor(AppTheme.primary)
+                        Image(systemName: "apple.logo")
+                                .font(.system(size: ResponsiveLayout.fontSize(8)))
+                                .foregroundColor(AppTheme.textSecondary)
+                            
+                            Text("Weather")
+                                .font(.system(size: ResponsiveLayout.fontSize(8)))
+                                .foregroundColor(AppTheme.textSecondary)
+                            
+                            Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
+                                .font(.system(size: ResponsiveLayout.fontSize(8)))
+                                .foregroundColor(AppTheme.primary)
                     }
                 }
             } else {
@@ -213,13 +217,17 @@ struct ContentView: View {
                     
                     // Add Apple Weather attribution
                     HStack(spacing: 4) {
+                        Image(systemName: "apple.logo")
+                                .font(.system(size: ResponsiveLayout.fontSize(10)))
+                                .foregroundColor(AppTheme.textSecondary)
+                            
                         Text("Weather")
-                            .font(.system(size: ResponsiveLayout.fontSize(10)))
-                            .foregroundColor(AppTheme.textSecondary)
-                        
+                                .font(.system(size: ResponsiveLayout.fontSize(10)))
+                                .foregroundColor(AppTheme.textSecondary)
+                            
                         Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
-                            .font(.system(size: ResponsiveLayout.fontSize(10)))
-                            .foregroundColor(AppTheme.primary)
+                                .font(.system(size: ResponsiveLayout.fontSize(10)))
+                                .foregroundColor(AppTheme.primary)
                     }
                     .padding(.top, 4)
                 }
@@ -269,13 +277,17 @@ struct ContentView: View {
             
             // Apple Weather attribution - must include this here too
             HStack(spacing: 4) {
+                Image(systemName: "apple.logo")
+                        .font(.system(size: ResponsiveLayout.fontSize(10)))
+                        .foregroundColor(AppTheme.textSecondary)
+                    
                 Text("Weather")
-                    .font(.system(size: ResponsiveLayout.fontSize(10)))
-                    .foregroundColor(AppTheme.textSecondary)
-                
+                        .font(.system(size: ResponsiveLayout.fontSize(10)))
+                        .foregroundColor(AppTheme.textSecondary)
+                    
                 Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
-                    .font(.system(size: ResponsiveLayout.fontSize(10)))
-                    .foregroundColor(AppTheme.primary)
+                        .font(.system(size: ResponsiveLayout.fontSize(10)))
+                        .foregroundColor(AppTheme.primary)
             }
             .padding(.horizontal, ResponsiveLayout.padding())
             .padding(.bottom, ResponsiveLayout.padding(8))

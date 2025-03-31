@@ -19,25 +19,27 @@ struct EmergencyContactsView: View {
             NavigationView {
                 Form {
                     // Emergency Message Section
-                    Section(header: Text("Emergency Message")) {
+                    Section(header: Text("Emergency Message")
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)) {
                         TextEditor(text: $customMessage)
                             .frame(minHeight: ResponsiveLayout.isIPad ? 150 : 100)
                             .font(.system(
                                 size: ResponsiveLayout.fontSize(16)
                             ))
-                            .foregroundColor(.primary)
-                            .background(Color(hex: "F5F7FA"))
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
+                            .background(AppTheme.adaptiveBackground.opacity(0.5))
                             .cornerRadius(8)
                     }
                     
                     // Existing Contacts Section
-                    Section(header: Text("Your Emergency Contacts")) {
+                    Section(header: Text("Your Emergency Contacts")
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)) {
                         if contacts.isEmpty {
                             Text("No contacts added yet")
                                 .font(.system(
                                     size: ResponsiveLayout.fontSize(14)
                                 ))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppTheme.adaptiveTextSecondary)
                                 .italic()
                         } else {
                             ForEach(contacts) { contact in
@@ -47,19 +49,20 @@ struct EmergencyContactsView: View {
                                             size: ResponsiveLayout.fontSize(16),
                                             weight: .semibold
                                         ))
+                                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                                     
                                     Text(contact.phoneNumber)
                                         .font(.system(
                                             size: ResponsiveLayout.fontSize(14)
                                         ))
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(AppTheme.adaptiveTextSecondary)
                                     
                                     if !contact.relationship.isEmpty {
                                         Text(contact.relationship)
                                             .font(.system(
                                                 size: ResponsiveLayout.fontSize(12)
                                             ))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                                     }
                                 }
                                 .padding(.vertical, ResponsiveLayout.padding(4))
@@ -69,33 +72,38 @@ struct EmergencyContactsView: View {
                     }
                     
                     // Add New Contact Section
-                    Section(header: Text("Add New Contact")) {
+                    Section(header: Text("Add New Contact")
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)) {
                         TextField("Name", text: $newName)
                             .font(.system(
                                 size: ResponsiveLayout.fontSize(16)
                             ))
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
                         
                         TextField("Phone Number", text: $newPhone)
                             .keyboardType(.phonePad)
                             .font(.system(
                                 size: ResponsiveLayout.fontSize(16)
                             ))
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
                         
                         TextField("Relationship (optional)", text: $newRelationship)
                             .font(.system(
                                 size: ResponsiveLayout.fontSize(16)
                             ))
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
                         
                         Button(action: addContact) {
                             HStack {
                                 Image(systemName: "plus.circle.fill")
-                                    .foregroundColor(Color(hex: "6A89CC"))
+                                    .foregroundColor(AppTheme.primary)
                                 
                                 Text("Add Contact")
                                     .fontWeight(.medium)
                                     .font(.system(
                                         size: ResponsiveLayout.fontSize(16)
                                     ))
+                                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                             }
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, ResponsiveLayout.padding(8))
@@ -109,16 +117,17 @@ struct EmergencyContactsView: View {
                             .font(.system(
                                 size: ResponsiveLayout.fontSize(12)
                             ))
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                     ) {
                         HStack {
                             Image(systemName: "info.circle")
-                                .foregroundColor(Color(hex: "6A89CC"))
+                                .foregroundColor(AppTheme.primary)
                             
                             Text("Emergency contacts will receive a message with your location")
                                 .font(.system(
                                     size: ResponsiveLayout.fontSize(14)
                                 ))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppTheme.adaptiveTextSecondary)
                         }
                         .padding(.vertical, ResponsiveLayout.padding(4))
                     }

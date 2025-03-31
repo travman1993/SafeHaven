@@ -17,13 +17,15 @@ struct PrivacySettingsView: View {
     
     var body: some View {
         Form {
-            Section(header: Text("Location Sharing")) {
+            Section(header: Text("Location Sharing")
+                .foregroundColor(AppTheme.adaptiveTextPrimary)) {
                 Toggle("Weather Information", isOn: $shareLocationForWeather)
                     .onChange(of: shareLocationForWeather) { _, newValue in
                         if newValue {
                             checkLocationPermission()
                         }
                     }
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
 
                 Toggle("Find Resources Nearby", isOn: $shareLocationForResources)
                     .onChange(of: shareLocationForResources) { _, newValue in
@@ -31,6 +33,7 @@ struct PrivacySettingsView: View {
                             checkLocationPermission()
                         }
                     }
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
 
                 Toggle("Emergency Services", isOn: $shareLocationForEmergencies)
                     .onChange(of: shareLocationForEmergencies) { _, newValue in
@@ -38,15 +41,23 @@ struct PrivacySettingsView: View {
                             checkLocationPermission()
                         }
                     }
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
             }
             
-            Section(header: Text("Data Usage"), footer: Text("We use anonymized analytics to improve the app and help more people.")) {
+            Section(
+                header: Text("Data Usage")
+                    .foregroundColor(AppTheme.adaptiveTextPrimary),
+                footer: Text("We use anonymized analytics to improve the app and help more people.")
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
+            ) {
                 Toggle("Anonymous Usage Analytics", isOn: $analyticsOptIn)
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
                 
                 Button(action: {
                     showingDataStorageDetails = true
                 }) {
                     Text("Data Storage & Security")
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                 }
                 .sheet(isPresented: $showingDataStorageDetails) {
                     NavigationView {
@@ -54,28 +65,32 @@ struct PrivacySettingsView: View {
                             VStack(alignment: .leading, spacing: 16) {
                                 Text("Your data is stored securely and encrypted. We never sell your data to third parties.")
                                     .font(.body)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                                 
                                 Text("Security Measures:")
                                     .font(.headline)
+                                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                                     .padding(.top)
                                 
                                 HStack(spacing: 12) {
                                     Image(systemName: "lock.shield.fill")
                                         .foregroundColor(AppTheme.primary)
                                     Text("End-to-end encryption")
+                                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                                 }
                                 
                                 HStack(spacing: 12) {
                                     Image(systemName: "cloud.fill")
                                         .foregroundColor(AppTheme.primary)
                                     Text("Secure cloud storage")
+                                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                                 }
                                 
                                 HStack(spacing: 12) {
                                     Image(systemName: "hand.raised.fill")
                                         .foregroundColor(AppTheme.primary)
                                     Text("Strict privacy controls")
+                                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                                 }
                             }
                             .padding()
@@ -85,24 +100,29 @@ struct PrivacySettingsView: View {
                                 showingDataStorageDetails = false
                             })
                         }
+                        .background(AppTheme.adaptiveBackground)
                     }
                 }
             }
             
-            Section(header: Text("Account")) {
+            Section(header: Text("Account")
+                .foregroundColor(AppTheme.adaptiveTextPrimary)) {
                 NavigationLink(destination: DeleteAccountView()) {
                     Text("Delete My Account Data")
                         .foregroundColor(.red)
                 }
             }
             
-            Section(header: Text("Legal")) {
+            Section(header: Text("Legal")
+                .foregroundColor(AppTheme.adaptiveTextPrimary)) {
                 NavigationLink(destination: PrivacyPolicyView()) {
                     Text("Privacy Policy")
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                 }
                 
                 NavigationLink(destination: TermsOfServiceView()) {
                     Text("Terms of Service")
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                 }
             }
         }
@@ -136,10 +156,17 @@ struct DeleteAccountView: View {
     
     var body: some View {
         Form {
-            Section(header: Text("Delete Account"), footer: Text("Deleting your account will permanently remove all your data including emergency contacts, journal entries, and saved resources. This action cannot be undone.")) {
+            Section(
+                header: Text("Delete Account")
+                    .foregroundColor(AppTheme.adaptiveTextPrimary),
+                footer: Text("Deleting your account will permanently remove all your data including emergency contacts, journal entries, and saved resources. This action cannot be undone.")
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
+            ) {
                 SecureField("Enter your password", text: $password)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 
                 TextField("Type 'DELETE' to confirm", text: $confirmationText)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 
                 Button("Delete My Account") {
                     if confirmationText == "DELETE" && !password.isEmpty {

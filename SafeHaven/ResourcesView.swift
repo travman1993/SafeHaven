@@ -42,7 +42,6 @@ struct ResourcesView: View {
     }
 
     var body: some View {
-        // Removed the NavigationView to use full screen
         VStack(spacing: 0) {
             // Search and Filter Section
             VStack(spacing: ResponsiveLayout.padding(12)) {
@@ -60,13 +59,14 @@ struct ResourcesView: View {
                                 title: category.rawValue,
                                 icon: category.icon,
                                 isSelected: selectedCategory == category,
-                                color: category.color
-                            ) {
-                                if selectedCategory != category {
-                                    selectedCategory = category
-                                    loadResources()
+                                color: category.color,
+                                action: {
+                                    if selectedCategory != category {
+                                        selectedCategory = category
+                                        loadResources()
+                                    }
                                 }
-                            }
+                            )
                         }
                     }
                     .padding(.horizontal, ResponsiveLayout.padding())
@@ -94,7 +94,7 @@ struct ResourcesView: View {
                         selectedResource: $selectedResource
                     )
                 case .list:
-                    ListContentView(
+                    ResourceListContentView(
                         resources: filteredResources,
                         selectedResource: $selectedResource
                     )
@@ -202,7 +202,6 @@ struct ResourcesView: View {
     }
 }
 
-// In ResourcesView.swift or SharedComponents.swift
 struct SearchBar: View {
     @Binding var text: String
     var placeholder: String
@@ -254,34 +253,7 @@ struct SearchBar: View {
     }
 }
 
-struct CategoryChip: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 12))
-                
-                Text(title)
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? color : color.opacity(0.1))
-            )
-            .foregroundColor(isSelected ? .white : color)
-        }
-    }
-}
-
-struct ListContentView: View {
+struct ResourceListContentView: View {
     let resources: [ResourceLocation]
     @Binding var selectedResource: ResourceLocation?
     

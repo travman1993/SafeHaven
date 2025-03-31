@@ -11,6 +11,11 @@ struct AppTheme {
     static var textSecondary = Color(hex: "718096")
     static var textLight = Color.white
     
+    // Adaptive text colors that work in both light and dark modes
+    static var adaptiveTextLight: Color {
+        Color("adaptiveTextLight")
+    }
+    
     // Updated adaptive properties to use @Environment colorScheme
     static var adaptiveBackground: Color {
         Color("backgroundAdaptive")

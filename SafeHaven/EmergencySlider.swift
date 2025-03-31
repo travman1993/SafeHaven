@@ -37,7 +37,7 @@ struct EmergencySlider: View {
             ZStack(alignment: .leading) {
                 // Background track
                 RoundedRectangle(cornerRadius: sliderHeight / 2)
-                    .fill(Color(hex: "E8505B").opacity(0.2))
+                    .fill(Color(hex: "E8505B").opacity(isDragging ? 0.3 : 0.2))
                     .frame(width: sliderWidth, height: sliderHeight)
                     .overlay(
                         HStack {
@@ -48,7 +48,7 @@ struct EmergencySlider: View {
                                     weight: .bold,
                                     design: .rounded
                                 ))
-                                .foregroundColor(Color(hex: "E8505B"))
+                                .foregroundColor(AppTheme.adaptiveTextPrimary.opacity(0.6))
                                 .padding(.trailing, thumbSize)
                             Spacer()
                         }
@@ -58,7 +58,10 @@ struct EmergencySlider: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            gradient: Gradient(colors: [Color(hex: "E8505B"), Color(hex: "F47C7C")]),
+                            gradient: Gradient(colors: [
+                                Color(hex: "E8505B"),
+                                Color(hex: "F47C7C")
+                            ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -105,13 +108,14 @@ struct EmergencySlider: View {
                 HStack {
                     Image(systemName: "person.crop.circle.badge.plus")
                         .font(.system(size: ResponsiveLayout.fontSize(16)))
+                        .foregroundColor(AppTheme.primary)
                     Text("Manage Emergency Contacts")
                         .font(.system(
                             size: ResponsiveLayout.fontSize(14),
                             weight: .medium
                         ))
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                 }
-                .foregroundColor(Color(hex: "E8505B"))
                 .padding(.vertical, ResponsiveLayout.padding(6))
             }
         }
@@ -172,7 +176,7 @@ struct EmergencySlider: View {
     }
 }
 
-// Add a custom MessageComposeView for sending SMS
+// Existing MessageComposeView remains the same
 struct MessageComposeView: UIViewControllerRepresentable {
     let recipients: [String]
     let body: String

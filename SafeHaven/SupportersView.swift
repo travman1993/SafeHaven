@@ -24,10 +24,11 @@ struct SupportersView: View {
                                 size: ResponsiveLayout.fontSize(32),
                                 weight: .bold
                             ))
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
                         
                         Text("Help us continue developing and improving SafeHaven")
                             .font(.system(size: ResponsiveLayout.fontSize(16)))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, ResponsiveLayout.padding(30))
                         
@@ -43,7 +44,7 @@ struct SupportersView: View {
                         Spacer(minLength: ResponsiveLayout.padding(40))
                     }
                 }
-                .background(AppTheme.background.ignoresSafeArea())
+                .background(AppTheme.adaptiveBackground.ignoresSafeArea())
                 .navigationTitle("Supporters")
                 .navigationBarTitleDisplayMode(.inline)
                 .navigationBarItems(trailing: Button("Close") {
@@ -60,20 +61,21 @@ struct SupportersView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             VStack(spacing: ResponsiveLayout.padding(12)) {
                 Text("SafeHaven was created to provide essential resources to those in need. We believe that everyone deserves access to safety information and support services when they need it most.")
                     .font(.system(size: ResponsiveLayout.fontSize(16)))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Text("As an independent developer project, we rely on community support to keep improving and adding new features.")
                     .font(.system(size: ResponsiveLayout.fontSize(16)))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(ResponsiveLayout.padding())
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             .padding(.horizontal, ResponsiveLayout.padding())
@@ -87,11 +89,12 @@ struct SupportersView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             VStack(spacing: ResponsiveLayout.padding(12)) {
                 Text("Are you an organization that provides services to people in need? Partner with SafeHaven to reach those who need your help.")
                     .font(.system(size: ResponsiveLayout.fontSize(16)))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Button(action: {
@@ -113,7 +116,7 @@ struct SupportersView: View {
                 }
             }
             .padding(ResponsiveLayout.padding())
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             .padding(.horizontal, ResponsiveLayout.padding())
@@ -127,33 +130,33 @@ struct SupportersView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             VStack(spacing: ResponsiveLayout.padding(12)) {
                 Text("We'll be launching our official partner program soon. Check back to see organizations who are supporting our mission.")
                     .font(.system(size: ResponsiveLayout.fontSize(16)))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 // Placeholder for future sponsorships
                 ZStack {
                     RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 16 : 12)
-                        .fill(Color(hex: "F5F7FA"))
+                        .fill(AppTheme.adaptiveBackground)
                         .frame(height: ResponsiveLayout.isIPad ? 150 : 100)
                     
                     Text("Your organization could be featured here")
                         .font(.system(size: ResponsiveLayout.fontSize(14)))
-                        .foregroundColor(AppTheme.textSecondary)
+                        .foregroundColor(AppTheme.adaptiveTextSecondary)
                 }
             }
             .padding(ResponsiveLayout.padding())
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             .padding(.horizontal, ResponsiveLayout.padding())
         }
     }
 }
-
 #Preview {
     SupportersView()
 }

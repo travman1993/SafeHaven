@@ -25,7 +25,7 @@ struct DeveloperStoryView: View {
                 }
                 .padding(ResponsiveLayout.padding())
             }
-            .background(Color(hex: "F5F7FA").ignoresSafeArea())
+            .background(AppTheme.adaptiveBackground.ignoresSafeArea())
         }
         .navigationTitle("Developer Story")
         .navigationBarTitleDisplayMode(.inline)
@@ -36,7 +36,7 @@ struct DeveloperStoryView: View {
             ZStack {
                 Circle()
                     .fill(LinearGradient(
-                        gradient: Gradient(colors: [Color(hex: "6A89CC"), Color(hex: "41B3A3")]),
+                        gradient: Gradient(colors: [AppTheme.primary, AppTheme.secondary]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ))
@@ -64,7 +64,7 @@ struct DeveloperStoryView: View {
                     weight: .bold,
                     design: .rounded
                 ))
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.bottom, ResponsiveLayout.padding(4))
             
             Text("Travis Rodriguez")
@@ -73,7 +73,7 @@ struct DeveloperStoryView: View {
                     weight: .semibold,
                     design: .rounded
                 ))
-                .foregroundColor(Color(hex: "6A89CC"))
+                .foregroundColor(AppTheme.primary)
                 .padding(.bottom, ResponsiveLayout.padding(20))
         }
         .frame(maxWidth: .infinity)
@@ -105,7 +105,7 @@ struct DeveloperStoryView: View {
                     size: ResponsiveLayout.fontSize(20),
                     weight: .bold
                 ))
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.bottom, ResponsiveLayout.padding(8))
             
             VStack(spacing: ResponsiveLayout.padding(16)) {
@@ -134,11 +134,9 @@ struct DeveloperStoryView: View {
                 )
             }
             .padding(ResponsiveLayout.padding())
-            .background(
-                RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 20 : 16)
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-            )
+            .background(AppTheme.adaptiveCardBackground)
+            .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
         }
     }
     
@@ -149,11 +147,11 @@ struct DeveloperStoryView: View {
                     size: ResponsiveLayout.fontSize(20),
                     weight: .bold
                 ))
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             Text("Your support means more than just funding app development. It represents belief in the mission of SafeHaven and in my journey as a developer striving to make a difference. Every contribution helps build a better future for this platform and ultimately for the people it will serve. Thank you for being part of this journey.")
                 .font(.system(size: ResponsiveLayout.fontSize(16)))
-                .foregroundColor(Color(hex: "4A5568"))
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .padding(.horizontal)
@@ -172,18 +170,16 @@ struct DeveloperStoryView: View {
                     .foregroundColor(.white)
                     .padding(.vertical, ResponsiveLayout.isIPad ? 18 : 14)
                     .padding(.horizontal, ResponsiveLayout.isIPad ? 32 : 24)
-                    .background(Color(hex: "41B3A3"))
+                    .background(AppTheme.secondary)
                     .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
-                    .shadow(color: Color(hex: "41B3A3").opacity(0.4), radius: 4, x: 0, y: 2)
+                    .shadow(color: AppTheme.secondary.opacity(0.4), radius: 4, x: 0, y: 2)
             }
             .padding(.top, ResponsiveLayout.padding(8))
         }
         .padding(ResponsiveLayout.padding())
-        .background(
-            RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 20 : 16)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-        )
+        .background(AppTheme.adaptiveCardBackground)
+        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
         .padding(.vertical, ResponsiveLayout.padding(10))
     }
     
@@ -195,19 +191,17 @@ struct DeveloperStoryView: View {
                     size: ResponsiveLayout.fontSize(20),
                     weight: .bold
                 ))
-                .foregroundColor(Color(hex: "2D3748"))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             Text(content)
                 .font(.system(size: ResponsiveLayout.fontSize(16)))
-                .foregroundColor(Color(hex: "4A5568"))
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
                 .lineSpacing(4)
         }
         .padding(ResponsiveLayout.padding())
-        .background(
-            RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 20 : 16)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-        )
+        .background(AppTheme.adaptiveCardBackground)
+        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
     
     private func milestoneCard(title: String, date: String, description: String) -> some View {
@@ -216,7 +210,7 @@ struct DeveloperStoryView: View {
             VStack {
                 ZStack {
                     Circle()
-                        .fill(Color(hex: "6A89CC").opacity(0.2))
+                        .fill(AppTheme.primary.opacity(0.2))
                         .frame(
                             width: ResponsiveLayout.isIPad ? 54 : 45,
                             height: ResponsiveLayout.isIPad ? 54 : 45
@@ -227,12 +221,12 @@ struct DeveloperStoryView: View {
                             size: ResponsiveLayout.fontSize(12),
                             weight: .bold
                         ))
-                        .foregroundColor(Color(hex: "6A89CC"))
+                        .foregroundColor(AppTheme.primary)
                 }
                 
                 if description != "" {
                     Rectangle()
-                        .fill(Color(hex: "E2E8F0"))
+                        .fill(AppTheme.adaptiveTextSecondary.opacity(0.2))
                         .frame(width: 2, height: ResponsiveLayout.isIPad ? 60 : 40)
                 }
             }
@@ -243,11 +237,11 @@ struct DeveloperStoryView: View {
                         size: ResponsiveLayout.fontSize(16),
                         weight: .semibold
                     ))
-                    .foregroundColor(Color(hex: "2D3748"))
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 
                 Text(description)
                     .font(.system(size: ResponsiveLayout.fontSize(14)))
-                    .foregroundColor(Color(hex: "718096"))
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                     .lineSpacing(3)
             }
         }

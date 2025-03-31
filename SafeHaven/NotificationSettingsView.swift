@@ -14,13 +14,17 @@ struct NotificationSettingsView: View {
     @AppStorage("resourceUpdateNotificationsEnabled") private var resourceUpdateNotificationsEnabled = false
     @AppStorage("weatherWarningsEnabled") private var weatherWarningsEnabled = false
     @AppStorage("locationBasedAlertsEnabled") private var locationBasedAlertsEnabled = false
+    
     @State private var selectedDate = Date()
     @State private var showingAuthAlert = false
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
         Form {
-            Section(header: Text("Daily Motivation")) {
+            Section(
+                header: Text("Daily Motivation")
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
+            ) {
                 Toggle("Enable Daily Notifications", isOn: $notificationsEnabled)
                     .onChange(of: notificationsEnabled) { oldValue, newValue in
                         if newValue {
@@ -29,6 +33,7 @@ struct NotificationSettingsView: View {
                             updateNotificationSettings()
                         }
                     }
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
 
                 if notificationsEnabled {
                     DatePicker("Notification Time", selection: $selectedDate, displayedComponents: .hourAndMinute)
@@ -40,7 +45,6 @@ struct NotificationSettingsView: View {
                                 updateNotificationSettings()
                             }
                         }
-                        
                         .onAppear {
                             // Set the date picker to show the stored time
                             var components = DateComponents()
@@ -50,26 +54,41 @@ struct NotificationSettingsView: View {
                                 selectedDate = date
                             }
                         }
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                     
                     Button(action: {
                         // Schedule a test notification for 5 seconds from now
                         scheduleTestNotification()
                     }) {
                         Text("Send Test Notification")
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
                     }
                 }
             }
             
-            Section(header: Text("Emergency Alerts")) {
+            Section(
+                header: Text("Emergency Alerts")
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
+            ) {
                 Toggle("Resource Updates", isOn: $resourceUpdateNotificationsEnabled)
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
+                
                 Toggle("Weather Warnings", isOn: $weatherWarningsEnabled)
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
+                
                 Toggle("Location-based Alerts", isOn: $locationBasedAlertsEnabled)
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
             }
             
-            Section(header: Text("About"), footer: Text("Notifications deliver daily motivation quotes and important safety alerts to help you stay informed and inspired.")) {
+            Section(
+                header: Text("About")
+                    .foregroundColor(AppTheme.adaptiveTextPrimary),
+                footer: Text("Notifications deliver daily motivation quotes and important safety alerts to help you stay informed and inspired.")
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
+            ) {
                 Text("You'll receive motivational quotes daily at your preferred time.")
                     .font(.subheadline)
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
             }
         }
         .navigationTitle("Notification Settings")

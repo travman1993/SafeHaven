@@ -22,7 +22,7 @@ struct TodoView: View {
                             size: ResponsiveLayout.fontSize(22),
                             weight: .medium
                         ))
-                        .foregroundColor(Color(hex: "6A89CC"))
+                        .foregroundColor(AppTheme.primary)
                     
                     Text("Daily Tasks")
                         .font(.system(
@@ -30,7 +30,7 @@ struct TodoView: View {
                             weight: .semibold,
                             design: .rounded
                         ))
-                        .foregroundColor(Color(hex: "333333"))
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                 }
                 
                 Spacer()
@@ -42,13 +42,13 @@ struct TodoView: View {
                 }) {
                     Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
                         .font(.system(size: ResponsiveLayout.fontSize(22)))
-                        .foregroundColor(Color(hex: "6A89CC"))
+                        .foregroundColor(AppTheme.primary)
                         .contentTransition(.symbolEffect(.automatic))
                 }
             }
             .padding(.horizontal, ResponsiveLayout.padding(20))
             .padding(.vertical, ResponsiveLayout.padding(16))
-            .background(Color(hex: "F8F9FA"))
+            .background(AppTheme.adaptiveCardBackground)
             
             if isExpanded {
                 Divider()
@@ -63,7 +63,7 @@ struct TodoView: View {
                         ))
                         .padding(.horizontal, ResponsiveLayout.padding(16))
                         .padding(.vertical, ResponsiveLayout.padding(12))
-                        .background(Color(hex: "F2F3F5"))
+                        .background(AppTheme.adaptiveBackground.opacity(0.5))
                         .cornerRadius(10)
                         .focused($isInputFocused)
                         .submitLabel(.done)
@@ -84,8 +84,8 @@ struct TodoView: View {
                             )
                             .background(
                                 newTodoTitle.isEmpty ?
-                                Color(hex: "6A89CC").opacity(0.5) :
-                                Color(hex: "6A89CC")
+                                AppTheme.primary.opacity(0.5) :
+                                AppTheme.primary
                             )
                             .clipShape(Circle())
                     }
@@ -100,7 +100,7 @@ struct TodoView: View {
                     VStack(spacing: ResponsiveLayout.padding(8)) {
                         Image(systemName: "checkmark.circle")
                             .font(.system(size: ResponsiveLayout.fontSize(36)))
-                            .foregroundColor(Color(hex: "CCCCCC"))
+                            .foregroundColor(AppTheme.adaptiveTextSecondary.opacity(0.5))
                             .padding(.top, ResponsiveLayout.padding(16))
                         
                         Text("No tasks yet")
@@ -109,91 +109,91 @@ struct TodoView: View {
                                 weight: .medium,
                                 design: .rounded
                             ))
-                            .foregroundColor(Color(hex: "999999"))
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                         
                         Text("Add a task to get started")
                             .font(.system(
                                 size: ResponsiveLayout.fontSize(14),
                                 design: .rounded
                             ))
-                            .foregroundColor(Color(hex: "AAAAAA"))
+                            .foregroundColor(AppTheme.adaptiveTextSecondary.opacity(0.8))
                             .padding(.bottom, ResponsiveLayout.padding(16))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, ResponsiveLayout.padding(20))
                     .transition(.opacity)
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: ResponsiveLayout.padding(8)) {
-                            ForEach(todoManager.items) { item in
-                                HStack(spacing: ResponsiveLayout.padding(16)) {
-                                    Button(action: {
-                                        withAnimation {
-                                            todoManager.toggleTodo(item)
+                                    } else {
+                                        ScrollView {
+                                            LazyVStack(spacing: ResponsiveLayout.padding(8)) {
+                                                ForEach(todoManager.items) { item in
+                                                    HStack(spacing: ResponsiveLayout.padding(16)) {
+                                                        Button(action: {
+                                                            withAnimation {
+                                                                todoManager.toggleTodo(item)
+                                                            }
+                                                        }) {
+                                                            Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                                                                .font(.system(size: ResponsiveLayout.fontSize(22)))
+                                                                .foregroundColor(item.isCompleted ? AppTheme.secondary : AppTheme.adaptiveTextSecondary)
+                                                                .contentTransition(.symbolEffect(.automatic))
+                                                        }
+                                                        
+                                                        Text(item.title)
+                                                            .font(.system(
+                                                                size: ResponsiveLayout.fontSize(16),
+                                                                design: .rounded
+                                                            ))
+                                                            .foregroundColor(item.isCompleted ? AppTheme.adaptiveTextSecondary : AppTheme.adaptiveTextPrimary)
+                                                            .strikethrough(item.isCompleted)
+                                                            .animation(.easeOut, value: item.isCompleted)
+                                                        
+                                                        Spacer()
+                                                        
+                                                        Button(action: {
+                                                            withAnimation {
+                                                                todoManager.removeTodo(item)
+                                                            }
+                                                        }) {
+                                                            Image(systemName: "trash")
+                                                                .font(.system(size: ResponsiveLayout.fontSize(14)))
+                                                                .foregroundColor(Color(hex: "E8505B").opacity(0.7))
+                                                                .frame(width: ResponsiveLayout.isIPad ? 40 : 30, height: ResponsiveLayout.isIPad ? 40 : 30)
+                                                                .contentShape(Rectangle())
+                                                        }
+                                                    }
+                                                    .padding(.horizontal, ResponsiveLayout.padding(20))
+                                                    .padding(.vertical, ResponsiveLayout.padding(10))
+                                                    .background(
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .fill(AppTheme.adaptiveCardBackground)
+                                                            .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
+                                                    )
+                                                    .padding(.horizontal, ResponsiveLayout.padding(20))
+                                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                                                }
+                                            }
+                                            .padding(.vertical, ResponsiveLayout.padding(12))
                                         }
-                                    }) {
-                                        Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                                            .font(.system(size: ResponsiveLayout.fontSize(22)))
-                                            .foregroundColor(item.isCompleted ? Color(hex: "41B3A3") : Color(hex: "CCCCCC"))
-                                            .contentTransition(.symbolEffect(.automatic))
-                                    }
-                                    
-                                    Text(item.title)
-                                        .font(.system(
-                                            size: ResponsiveLayout.fontSize(16),
-                                            design: .rounded
-                                        ))
-                                        .foregroundColor(item.isCompleted ? Color(hex: "AAAAAA") : Color(hex: "333333"))
-                                        .strikethrough(item.isCompleted)
-                                        .animation(.easeOut, value: item.isCompleted)
-                                    
-                                    Spacer()
-                                    
-                                    Button(action: {
-                                        withAnimation {
-                                            todoManager.removeTodo(item)
-                                        }
-                                    }) {
-                                        Image(systemName: "trash")
-                                            .font(.system(size: ResponsiveLayout.fontSize(14)))
-                                            .foregroundColor(Color(hex: "E8505B").opacity(0.7))
-                                            .frame(width: ResponsiveLayout.isIPad ? 40 : 30, height: ResponsiveLayout.isIPad ? 40 : 30)
-                                            .contentShape(Rectangle())
+                                        .frame(maxHeight: ResponsiveLayout.isIPad ? 350 : 250)
                                     }
                                 }
-                                .padding(.horizontal, ResponsiveLayout.padding(20))
-                                .padding(.vertical, ResponsiveLayout.padding(10))
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.white)
-                                        .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
-                                )
-                                .padding(.horizontal, ResponsiveLayout.padding(20))
-                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+                            .background(AppTheme.adaptiveCardBackground)
+                            .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
+                            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 20 : 16)
+                                    .stroke(AppTheme.adaptiveBackground, lineWidth: 1)
+                            )
+                        }
+                        
+                        private func addTodo() {
+                            if !newTodoTitle.isEmpty {
+                                withAnimation {
+                                    todoManager.addTodo(newTodoTitle)
+                                    newTodoTitle = ""
+                                }
+                                isInputFocused = false
                             }
                         }
-                        .padding(.vertical, ResponsiveLayout.padding(12))
                     }
-                    .frame(maxHeight: ResponsiveLayout.isIPad ? 350 : 250)
-                }
-            }
-        }
-        .background(Color.white)
-        .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
-        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
-        .overlay(
-            RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 20 : 16)
-                .stroke(Color(hex: "EEEEEE"), lineWidth: 1)
-        )
-    }
-    
-    private func addTodo() {
-        if !newTodoTitle.isEmpty {
-            withAnimation {
-                todoManager.addTodo(newTodoTitle)
-                newTodoTitle = ""
-            }
-            isInputFocused = false
-        }
-    }
-}

@@ -32,7 +32,7 @@ struct AboutSafeHavenView: View {
                 }
                 .padding(ResponsiveLayout.padding())
             }
-            .background(AppTheme.background.ignoresSafeArea())
+            .background(AppTheme.adaptiveBackground.ignoresSafeArea())
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
@@ -52,16 +52,17 @@ struct AboutSafeHavenView: View {
                     size: ResponsiveLayout.fontSize(24),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             Text("Version \(appVersion)")
                 .font(.system(
                     size: ResponsiveLayout.fontSize(14)
                 ))
-                .foregroundColor(AppTheme.textSecondary)
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(ResponsiveLayout.padding())
-        .background(Color.white)
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
     }
     
@@ -72,6 +73,7 @@ struct AboutSafeHavenView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.horizontal, ResponsiveLayout.padding())
             
             Text("SafeHaven is designed to help individuals quickly find resources and emergency assistance when they need them most. Our mission is to provide a safe, accessible platform that connects people with vital services during challenging times.")
@@ -79,8 +81,9 @@ struct AboutSafeHavenView: View {
                     size: ResponsiveLayout.fontSize(16),
                     weight: .regular
                 ))
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
                 .padding(ResponsiveLayout.padding())
-                .background(Color.white)
+                .background(AppTheme.adaptiveCardBackground)
                 .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         }
     }
@@ -92,6 +95,7 @@ struct AboutSafeHavenView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.horizontal, ResponsiveLayout.padding())
             
             VStack(spacing: ResponsiveLayout.padding(16)) {
@@ -126,7 +130,7 @@ struct AboutSafeHavenView: View {
                 )
             }
             .padding(ResponsiveLayout.padding())
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         }
     }
@@ -138,6 +142,7 @@ struct AboutSafeHavenView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.horizontal, ResponsiveLayout.padding())
             
             VStack(spacing: 0) {
@@ -156,7 +161,7 @@ struct AboutSafeHavenView: View {
                     urlString: "https://safehaven.cc"
                 )
             }
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         }
     }
@@ -168,6 +173,7 @@ struct AboutSafeHavenView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.horizontal, ResponsiveLayout.padding())
             
             VStack(spacing: 0) {
@@ -188,7 +194,7 @@ struct AboutSafeHavenView: View {
                     )
                 }
             }
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         }
     }
@@ -198,7 +204,7 @@ struct AboutSafeHavenView: View {
             .font(.system(
                 size: ResponsiveLayout.fontSize(12)
             ))
-            .foregroundColor(AppTheme.textSecondary)
+            .foregroundColor(AppTheme.adaptiveTextSecondary)
             .padding(.top, ResponsiveLayout.padding(10))
             .padding(.bottom, ResponsiveLayout.padding(40))
     }
@@ -219,14 +225,14 @@ struct AboutSafeHavenView: View {
                         size: ResponsiveLayout.fontSize(16),
                         weight: .semibold
                     ))
-                    .foregroundColor(AppTheme.textPrimary)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 
                 Text(description)
                     .font(.system(
                         size: ResponsiveLayout.fontSize(14),
                         weight: .regular
                     ))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -242,11 +248,11 @@ struct AboutSafeHavenView: View {
                 Image(systemName: icon)
                     .foregroundColor(AppTheme.primary)
                 Text(title)
-                    .foregroundColor(.primary)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: ResponsiveLayout.fontSize(14)))
-                    .foregroundColor(Color(hex: "A0AEC0"))
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
             }
             .padding(ResponsiveLayout.padding())
         }
@@ -257,11 +263,11 @@ struct AboutSafeHavenView: View {
             Image(systemName: icon)
                 .foregroundColor(AppTheme.primary)
             Text(title)
-                .foregroundColor(.primary)
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.system(size: ResponsiveLayout.fontSize(14)))
-                .foregroundColor(Color(hex: "A0AEC0"))
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
         }
         .padding(ResponsiveLayout.padding())
     }

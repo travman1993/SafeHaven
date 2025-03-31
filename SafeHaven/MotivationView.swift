@@ -14,9 +14,12 @@ struct MotivationView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Background gradient
+                // Background gradient with adaptive dark mode support
                 LinearGradient(
-                    gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.4)]),
+                    gradient: Gradient(colors: [
+                        AppTheme.primary.opacity(0.6),
+                        AppTheme.secondary.opacity(0.4)
+                    ]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -30,7 +33,7 @@ struct MotivationView: View {
                             weight: .bold,
                             design: .rounded
                         ))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppTheme.adaptiveTextLight)
                         .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 2)
                         .padding(.top, 40)
                     
@@ -39,7 +42,7 @@ struct MotivationView: View {
                     // Quote display - ENHANCED FOR BETTER VISIBILITY
                     ZStack {
                         RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 30 : 20)
-                            .fill(Color.white.opacity(0.9))
+                            .fill(AppTheme.adaptiveCardBackground.opacity(0.9))
                             .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
                         
                         Text(currentQuote)
@@ -48,7 +51,7 @@ struct MotivationView: View {
                                 weight: .medium,
                                 design: .serif
                             ))
-                            .foregroundColor(.black.opacity(0.8))
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
                             .multilineTextAlignment(.center)
                             .padding(ResponsiveLayout.isIPad ? 40 : 30)
                             .fixedSize(horizontal: false, vertical: true) // Ensures text isn't truncated
@@ -90,11 +93,13 @@ struct MotivationView: View {
                             .padding(.vertical, ResponsiveLayout.isIPad ? 18 : 15)
                             .background(
                                 Capsule()
-                                    .fill(LinearGradient(
-                                        gradient: Gradient(colors: [Color.blue, Color.purple]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    ))
+                                    .fill(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [AppTheme.primary, AppTheme.secondary]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
                             )
                             .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
                     }
@@ -110,7 +115,7 @@ struct MotivationView: View {
                                 size: ResponsiveLayout.fontSize(16),
                                 weight: .medium
                             ))
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(AppTheme.adaptiveTextLight.opacity(0.8))
                     }
                     .padding(.bottom, 20)
                 }

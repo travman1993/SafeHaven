@@ -47,7 +47,7 @@ struct ResourceDetailView: View {
                 }
                 .padding(ResponsiveLayout.padding())
             }
-            .background(Color(hex: "F5F7FA"))
+            .background(AppTheme.adaptiveBackground)
         }
         .navigationTitle("Resource Details")
         .navigationBarTitleDisplayMode(.inline)
@@ -56,7 +56,7 @@ struct ResourceDetailView: View {
         }) {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: ResponsiveLayout.fontSize(20)))
-                .foregroundColor(Color(hex: "718096"))
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
         })
     }
     
@@ -83,7 +83,7 @@ struct ResourceDetailView: View {
                         size: ResponsiveLayout.fontSize(22),
                         weight: .bold
                     ))
-                    .foregroundColor(.primary)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 
                 Text(resource.category.rawValue)
                     .font(.system(
@@ -99,7 +99,7 @@ struct ResourceDetailView: View {
             }
         }
         .padding(ResponsiveLayout.padding())
-        .background(Color.white)
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
     }
     
@@ -110,44 +110,47 @@ struct ResourceDetailView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             HStack {
                 Image(systemName: "mappin.circle.fill")
-                    .foregroundColor(.blue)
+                    .foregroundColor(AppTheme.primary)
                     .font(.system(size: ResponsiveLayout.fontSize(20)))
                 Text(resource.address)
                     .font(.system(size: ResponsiveLayout.fontSize(16)))
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
             }
             
             HStack {
                 Image(systemName: "phone.circle.fill")
-                    .foregroundColor(.green)
+                    .foregroundColor(AppTheme.secondary)
                     .font(.system(size: ResponsiveLayout.fontSize(20)))
                 Button(action: {
                     makePhoneCall(resource.phoneNumber)
                 }) {
                     Text(resource.phoneNumber)
                         .font(.system(size: ResponsiveLayout.fontSize(16)))
-                        .foregroundColor(.blue)
+                        .foregroundColor(AppTheme.primary)
                         .underline()
                 }
             }
         }
         .padding(ResponsiveLayout.padding())
-        .background(Color.white)
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
     }
     
     private func hoursSection(hours: String, in geometry: GeometryProxy) -> some View {
         HStack {
             Image(systemName: "clock.fill")
-                .foregroundColor(.orange)
+                .foregroundColor(AppTheme.primary)
                 .font(.system(size: ResponsiveLayout.fontSize(20)))
             Text("Hours: \(hours)")
                 .font(.system(size: ResponsiveLayout.fontSize(16)))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
         }
         .padding(ResponsiveLayout.padding())
-        .background(Color.white)
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
     }
     
@@ -158,13 +161,14 @@ struct ResourceDetailView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             Text(resource.description)
                 .font(.system(size: ResponsiveLayout.fontSize(16)))
-                .foregroundColor(.secondary)
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
         }
         .padding(ResponsiveLayout.padding())
-        .background(Color.white)
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
     }
     

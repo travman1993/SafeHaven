@@ -90,7 +90,7 @@ struct InfoCard: View {
 }
 
 // In ResourcesView.swift or SharedComponents.swift
-struct SearchBar: View {
+struct GenericSearchBar: View {
     @Binding var text: String
     var placeholder: String
     var onSubmit: (() -> Void)? = nil

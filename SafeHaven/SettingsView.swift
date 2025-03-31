@@ -1,49 +1,5 @@
 import SwiftUI
 
-// Define SettingsRow as a separate view
-struct SettingsRow: View {
-    let icon: String
-    let title: String
-    let description: String
-    
-    var body: some View {
-        HStack(spacing: ResponsiveLayout.padding(16)) {
-            Image(systemName: icon)
-                .font(.system(size: ResponsiveLayout.fontSize(20)))
-                .foregroundColor(AppTheme.primary)
-                .frame(width: ResponsiveLayout.isIPad ? 36 : 24,
-                       height: ResponsiveLayout.isIPad ? 36 : 24)
-                .background(AppTheme.primary.opacity(0.1))
-                .clipShape(Circle())
-            
-            VStack(alignment: .leading, spacing: ResponsiveLayout.padding(4)) {
-                Text(title)
-                    .font(.system(
-                        size: ResponsiveLayout.fontSize(16)
-                    ))
-                    .foregroundColor(AppTheme.textPrimary)
-                
-                Text(description)
-                    .font(.system(
-                        size: ResponsiveLayout.fontSize(14)
-                    ))
-                    .foregroundColor(AppTheme.textSecondary)
-            }
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .foregroundColor(Color(hex: "A0AEC0"))
-                .font(.system(size: ResponsiveLayout.fontSize(14)))
-        }
-        .padding(ResponsiveLayout.padding())
-        .background(Color.white)
-        .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
-        .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
-    }
-}
-
-// Then define your SettingsView
 struct SettingsView: View {
     @Binding var showingSupportersView: Bool
     @AppStorage("accentColorString") private var accentColorString = "4A76D4"
@@ -60,7 +16,6 @@ struct SettingsView: View {
     ]
     
     var body: some View {
-        // Add NavigationStack here to enable navigation
         NavigationStack {
             ScrollView {
                 VStack(spacing: ResponsiveLayout.padding(24)) {
@@ -81,7 +36,7 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, ResponsiveLayout.padding())
             }
-            .background(AppTheme.background.ignoresSafeArea())
+            .background(AppTheme.adaptiveBackground)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -95,6 +50,7 @@ struct SettingsView: View {
                     weight: .bold
                 ))
                 .padding(.horizontal, ResponsiveLayout.padding())
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             VStack(spacing: ResponsiveLayout.padding(16)) {
                 // Theme Colors
@@ -102,7 +58,7 @@ struct SettingsView: View {
                     .font(.system(
                         size: ResponsiveLayout.fontSize(14)
                     ))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, ResponsiveLayout.padding())
                 
@@ -137,7 +93,7 @@ struct SettingsView: View {
                                     .font(.system(
                                         size: ResponsiveLayout.fontSize(12)
                                     ))
-                                    .foregroundColor(AppTheme.textPrimary)
+                                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                             }
                         }
                     }
@@ -149,7 +105,7 @@ struct SettingsView: View {
                     .font(.system(
                         size: ResponsiveLayout.fontSize(14)
                     ))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, ResponsiveLayout.padding())
                     .padding(.top, ResponsiveLayout.padding(8))
@@ -161,7 +117,7 @@ struct SettingsView: View {
                     SettingsToggle(title: "Bold Text", isOn: $boldText)
                 }
                 .padding(.horizontal, ResponsiveLayout.padding())
-                .background(Color.white)
+                .background(AppTheme.adaptiveCardBackground)
                 .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
                 .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
                 .padding(.horizontal, ResponsiveLayout.padding())
@@ -177,12 +133,12 @@ struct SettingsView: View {
                     weight: .bold
                 ))
                 .padding(.horizontal, ResponsiveLayout.padding())
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             NavigationLink(destination: NotificationSettingsView()) {
-                SettingsRow(
+                settingsRowContent(
                     icon: "bell.badge",
-                    title: "Notification Settings",
-                    description: "Configure notification preferences"
+                    title: "Notification Settings"
                 )
             }
             .padding(.horizontal, ResponsiveLayout.padding())
@@ -197,12 +153,12 @@ struct SettingsView: View {
                     weight: .bold
                 ))
                 .padding(.horizontal, ResponsiveLayout.padding())
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             NavigationLink(destination: PrivacySettingsView()) {
-                SettingsRow(
+                settingsRowContent(
                     icon: "lock.shield",
-                    title: "Privacy Settings",
-                    description: "Manage location data and privacy options"
+                    title: "Privacy Settings"
                 )
             }
             .padding(.horizontal, ResponsiveLayout.padding())
@@ -217,6 +173,7 @@ struct SettingsView: View {
                     weight: .bold
                 ))
                 .padding(.horizontal, ResponsiveLayout.padding())
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             VStack(spacing: 0) {
                 NavigationLink(destination: AboutSafeHavenView()) {
@@ -258,7 +215,7 @@ struct SettingsView: View {
                     )
                 }
             }
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
             .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
             .padding(.horizontal, ResponsiveLayout.padding())
@@ -276,12 +233,12 @@ struct SettingsView: View {
                 .font(.system(
                     size: ResponsiveLayout.fontSize(16)
                 ))
-                .foregroundColor(AppTheme.textPrimary)
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             Spacer()
             
             Image(systemName: "chevron.right")
-                .foregroundColor(Color(hex: "A0AEC0"))
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
                 .font(.system(size: ResponsiveLayout.fontSize(14)))
         }
         .padding(ResponsiveLayout.padding())
@@ -301,19 +258,20 @@ struct SettingsView: View {
                     size: ResponsiveLayout.fontSize(18),
                     weight: .bold
                 ))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
             Text("Version \(version)")
                 .font(.system(
                     size: ResponsiveLayout.fontSize(14)
                 ))
-                .foregroundColor(AppTheme.textSecondary)
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
             
             Text("© 2025 SafeHaven")
                 .font(.system(
                     size: ResponsiveLayout.fontSize(12)
                 ))
-                .foregroundColor(AppTheme.textSecondary)
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
                 .padding(.top, ResponsiveLayout.padding(4))
                 .padding(.bottom, ResponsiveLayout.padding(20))
         }
@@ -323,5 +281,18 @@ struct SettingsView: View {
     
     private func updateAppAccentColor(_ hexColor: String) {
         AppTheme.primary = Color(hex: hexColor)
+    }
+}
+
+// Separate SettingsToggle struct
+struct SettingsToggle: View {
+    var title: String
+    @Binding var isOn: Bool
+    
+    var body: some View {
+        Toggle(title, isOn: $isOn)
+            .foregroundColor(AppTheme.adaptiveTextPrimary)
+            .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
+            .padding(ResponsiveLayout.padding())
     }
 }

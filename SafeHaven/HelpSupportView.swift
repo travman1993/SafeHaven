@@ -56,8 +56,7 @@ struct HelpSupportView: View {
                 .padding(.top, ResponsiveLayout.padding(30))
                 .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(AppTheme.background.ignoresSafeArea())
+            .background(AppTheme.adaptiveBackground)
         }
         .navigationTitle("Help & Support")
         .navigationBarTitleDisplayMode(.inline)
@@ -72,10 +71,11 @@ struct HelpSupportView: View {
             
             Text("How can we help?")
                 .font(.system(size: ResponsiveLayout.fontSize(22), weight: .bold))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             Text("Find answers or reach out for support")
                 .font(.system(size: ResponsiveLayout.fontSize(16)))
-                .foregroundColor(AppTheme.textSecondary)
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
         }
         .padding(.bottom, ResponsiveLayout.padding(8))
     }
@@ -84,6 +84,7 @@ struct HelpSupportView: View {
         VStack(alignment: .leading, spacing: ResponsiveLayout.padding(15)) {
             Text("Frequently Asked Questions")
                 .font(.system(size: ResponsiveLayout.fontSize(18), weight: .bold))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.horizontal, ResponsiveLayout.padding())
             
             VStack(spacing: ResponsiveLayout.padding(12)) {
@@ -98,6 +99,10 @@ struct HelpSupportView: View {
                 )
             }
             .frame(maxWidth: 600) // Ensures consistent width
+            .background(AppTheme.adaptiveCardBackground)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
+            .padding(.horizontal, ResponsiveLayout.padding())
         }
     }
 
@@ -105,6 +110,7 @@ struct HelpSupportView: View {
         VStack(alignment: .center, spacing: ResponsiveLayout.padding(15)) {
             Text("Contact Support")
                 .font(.system(size: ResponsiveLayout.fontSize(18), weight: .bold))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.horizontal, ResponsiveLayout.padding())
             
             Button(action: {
@@ -114,7 +120,12 @@ struct HelpSupportView: View {
                     Image(systemName: "envelope.fill")
                         .foregroundColor(AppTheme.primary)
                     Text("Email Support")
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                 }
+                .padding()
+                .background(AppTheme.adaptiveCardBackground)
+                .cornerRadius(12)
+                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
             }
         }
         .frame(maxWidth: 600) // Ensures consistent width
@@ -125,6 +136,7 @@ struct HelpSupportView: View {
         VStack(alignment: .leading, spacing: ResponsiveLayout.padding(15)) {
             Text("Community Resources")
                 .font(.system(size: ResponsiveLayout.fontSize(18), weight: .bold))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
                 .padding(.horizontal, ResponsiveLayout.padding())
 
             VStack(spacing: ResponsiveLayout.padding(12)) {
@@ -150,6 +162,9 @@ struct HelpSupportView: View {
                 )
             }
             .frame(maxWidth: 600) // Ensures uniform width
+            .background(AppTheme.adaptiveCardBackground)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 3)
             .padding(.horizontal, ResponsiveLayout.padding())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -163,19 +178,24 @@ struct FAQItem: View {
     @State private var isExpanded = false
     
     var body: some View {
-        VStack {
+        VStack(alignment: .leading, spacing: 8) {
             Text(question)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
+            
             if isExpanded {
                 Text(answer)
+                    .font(.system(size: 14))
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
             }
+            
             Button(action: { isExpanded.toggle() }) {
                 Text(isExpanded ? "Hide" : "Show more")
+                    .font(.system(size: 14))
+                    .foregroundColor(AppTheme.primary)
             }
         }
         .padding()
-        .frame(maxWidth: 600) // Ensures uniform width
-        .background(Color.white)
-        .cornerRadius(10)
     }
 }
 
@@ -195,11 +215,12 @@ struct CommunityResourceItem: View {
                 
                 Text(title)
                     .font(.system(size: ResponsiveLayout.fontSize(15), weight: .bold))
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
             }
 
             Text(description)
                 .font(.system(size: ResponsiveLayout.fontSize(13)))
-                .foregroundColor(AppTheme.textSecondary)
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
 
             Button(action: {
                 if let link = URL(string: url) {
@@ -208,13 +229,8 @@ struct CommunityResourceItem: View {
             }) {
                 Text("Visit Website")
                     .font(.system(size: ResponsiveLayout.fontSize(13), weight: .medium))
-                    .foregroundColor(.blue)
+                    .foregroundColor(AppTheme.primary)
             }
         }
-        .padding()
-        .frame(maxWidth: 600) // Ensures uniform width
-        .background(Color.white)
-        .cornerRadius(10)
-        .shadow(radius: 3)
     }
 }

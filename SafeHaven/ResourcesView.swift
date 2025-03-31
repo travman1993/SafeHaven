@@ -20,15 +20,26 @@ struct ResourcesView: View {
     }
     
     var filteredResources: [ResourceLocation] {
-        let filtered = resourceService.resources.filter { resource in
-            (selectedCategory == .all || resource.category == selectedCategory) &&
-            (searchText.isEmpty ||
-             resource.name.localizedCaseInsensitiveContains(searchText) ||
-             resource.category.rawValue.localizedCaseInsensitiveContains(searchText))
+            // When doing a search, don't filter by category
+            if !searchText.isEmpty {
+                let searchFiltered = resourceService.resources.filter { resource in
+                    resource.name.localizedCaseInsensitiveContains(searchText) ||
+                    resource.category.rawValue.localizedCaseInsensitiveContains(searchText) ||
+                    resource.address.localizedCaseInsensitiveContains(searchText) ||
+                    resource.description.localizedCaseInsensitiveContains(searchText)
+                }
+                print("Search filter: \(searchText), Found \(searchFiltered.count) resources out of \(resourceService.resources.count)")
+                return searchFiltered
+            }
+            
+            // When not searching, filter by selected category
+            let categoryFiltered = selectedCategory == .all ?
+                resourceService.resources :
+                resourceService.resources.filter { $0.category == selectedCategory }
+                
+            print("Category filter: \(selectedCategory.rawValue), Found \(categoryFiltered.count) resources out of \(resourceService.resources.count)")
+            return categoryFiltered
         }
-        print("Search text: \(searchText), Found \(filtered.count) resources out of \(resourceService.resources.count)")
-        return filtered
-    }
 
     var body: some View {
         // Removed the NavigationView to use full screen
@@ -117,29 +128,35 @@ struct ResourcesView: View {
     
     // In ResourcesView.swift - performSearch function
     private func performSearch() {
-        guard !searchText.isEmpty else { return }
-        isLoading = true
-        
-        // Explicitly update UI to show loading state
-        withAnimation {
-            // This will force UI update
-            resourceService.resources = []
-        }
-        
-        if let location = locationService.currentLocation {
-            // Use a broader search with multiple terms and categories
-            resourceService.searchAnyPlace(query: searchText, near: location, radius: 25000) {
-                // Search completed
-                self.isLoading = false
+            guard !searchText.isEmpty else { return }
+            isLoading = true
+            
+            // Explicitly update UI to show loading state
+            withAnimation {
+                // This will force UI update
+                resourceService.resources = []
             }
-        } else {
-            // Use default location if user location isn't available
-            let defaultLocation = CLLocation(latitude: 37.7749, longitude: -122.4194)
-            resourceService.searchAnyPlace(query: searchText, near: defaultLocation, radius: 25000) {
-                self.isLoading = false
+            
+            print("Searching for: \(searchText)")
+            
+            if let location = locationService.currentLocation {
+                print("Using current location for search")
+                // Use a broader search with multiple terms and categories
+                resourceService.searchAnyPlace(query: searchText, near: location, radius: 25000) {
+                    // Search completed
+                    self.isLoading = false
+                    print("Search completed, found \(self.resourceService.resources.count) results")
+                }
+            } else {
+                print("Using default location for search")
+                // Use default location if user location isn't available
+                let defaultLocation = CLLocation(latitude: 37.7749, longitude: -122.4194)
+                resourceService.searchAnyPlace(query: searchText, near: defaultLocation, radius: 25000) {
+                    self.isLoading = false
+                    print("Search completed, found \(self.resourceService.resources.count) results")
+                }
             }
         }
-    }
     
     private func loadResources() {
         guard !isLoading else { return } // Prevent multiple simultaneous loads

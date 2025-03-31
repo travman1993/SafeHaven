@@ -63,96 +63,107 @@ class WeatherService: ObservableObject {
     }
     
     func fetchWeather(for location: CLLocation) {
-        fetchDebounceWorkItem?.cancel()
-        
-        let workItem = DispatchWorkItem { [weak self] in
-            guard let self = self, !self.isFetchingWeather else { return }
-            self.performFetchWeather(for: location)
+            // Cancel any pending debounce work
+            fetchDebounceWorkItem?.cancel()
+            
+            print("Weather fetch requested for location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+            
+            // Create a new work item with a shorter delay
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self = self, !self.isFetchingWeather else { return }
+                self.performFetchWeather(for: location)
+            }
+            
+            fetchDebounceWorkItem = workItem
+            
+            // Reduced debounce time and more immediate fetch
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: workItem)
         }
-        
-        fetchDebounceWorkItem = workItem
-        
-        if !isLoading {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
-        }
-    }
     
     private func performFetchWeather(for location: CLLocation) {
-        guard shouldFetchWeather(for: location), !isFetchingWeather else {
-            print("Skipping fetch: Recent data exists or already fetching.")
-            return
-        }
-        
-        isLoading = true
-        isFetchingWeather = true
-        
-        Task {
-            do {
-                let weather = try await weatherService.weather(for: location)
-                
-                // Add debug print
-                print("WEATHERKIT DATA RECEIVED:")
-                let forecastItems = weather.dailyForecast.forecast.prefix(5)
-                for (i, item) in forecastItems.enumerated() {
-                    print("Day \(i) - Date: \(item.date), High: \(item.highTemperature.value)°C, Low: \(item.lowTemperature.value)°C, Condition: \(item.condition)")
-                }
-                
-                await MainActor.run {
-                    // Update current weather values
-                    self.currentTemperature = celsiusToFahrenheit(weather.currentWeather.temperature.value)
-                    self.currentFeelsLike = celsiusToFahrenheit(weather.currentWeather.apparentTemperature.value)
-                    self.currentCondition = mapConditionToString(weather.currentWeather.condition)
-                    self.currentHumidity = weather.currentWeather.humidity
-                    self.currentWindSpeed = weather.currentWeather.wind.speed.value
-                    
-                    // Update forecast arrays
-                    self.forecastDates = forecastItems.map { $0.date }
-                    self.forecastHighs = forecastItems.map { celsiusToFahrenheit($0.highTemperature.value) }
-                    self.forecastLows = forecastItems.map { celsiusToFahrenheit($0.lowTemperature.value) }
-                    self.forecastConditions = forecastItems.map { mapConditionToString($0.condition) }
-                    
-                    self.lastFetchLocation = location
-                    self.lastFetchTimestamp = Date()
-                    self.error = nil
-                    
+            // Always attempt to fetch fresh data when explicitly requested
+            print("Performing weather fetch for location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+            
+            isLoading = true
+            isFetchingWeather = true
+            
+            // Force a refresh by setting a shorter timeout
+            let weatherTimeout = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
+                if self.isFetchingWeather {
+                    print("Weather fetch timed out, using fallback data")
                     self.isLoading = false
                     self.isFetchingWeather = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.error = error
-                    print("Weather fetch error: \(error.localizedDescription)")
-                    
-                    // Add debug print to know when fallback is used
-                    print("Using fallback weather data due to error")
                     
                     if self.currentTemperature == nil {
+                        self.error = NSError(
+                            domain: "WeatherService",
+                            code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: "Weather request timed out"]
+                        )
                         self.setFallbackWeather()
                     }
+                }
+            }
+            
+            // Set a 5-second timeout
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: weatherTimeout)
+            
+            Task {
+                do {
+                    print("Requesting weather data from WeatherKit...")
+                    let weather = try await weatherService.weather(for: location)
                     
-                    self.isLoading = false
-                    self.isFetchingWeather = false
+                    // Add debug print
+                    print("WEATHERKIT DATA RECEIVED!")
+                    let forecastItems = weather.dailyForecast.forecast.prefix(5)
+                    for (i, item) in forecastItems.enumerated() {
+                        print("Day \(i) - Date: \(item.date), High: \(item.highTemperature.value)°C, Low: \(item.lowTemperature.value)°C, Condition: \(item.condition)")
+                    }
+                    
+                    await MainActor.run {
+                        // Update current weather values
+                        self.currentTemperature = celsiusToFahrenheit(weather.currentWeather.temperature.value)
+                        self.currentFeelsLike = celsiusToFahrenheit(weather.currentWeather.apparentTemperature.value)
+                        self.currentCondition = mapConditionToString(weather.currentWeather.condition)
+                        self.currentHumidity = weather.currentWeather.humidity
+                        self.currentWindSpeed = weather.currentWeather.wind.speed.value
+                        
+                        // Update forecast arrays
+                        self.forecastDates = forecastItems.map { $0.date }
+                        self.forecastHighs = forecastItems.map { celsiusToFahrenheit($0.highTemperature.value) }
+                        self.forecastLows = forecastItems.map { celsiusToFahrenheit($0.lowTemperature.value) }
+                        self.forecastConditions = forecastItems.map { mapConditionToString($0.condition) }
+                        
+                        self.lastFetchLocation = location
+                        self.lastFetchTimestamp = Date()
+                        self.error = nil
+                        
+                        print("Weather data successfully updated")
+                        weatherTimeout.cancel() // Cancel the timeout since we got data
+                        
+                        self.isLoading = false
+                        self.isFetchingWeather = false
+                    }
+                } catch {
+                    print("Weather fetch error: \(error.localizedDescription)")
+                    weatherTimeout.cancel() // Cancel the timeout since we got an error
+                    
+                    await MainActor.run {
+                        self.error = error
+                        
+                        // Only use fallback if we don't already have data
+                        if self.currentTemperature == nil {
+                            print("Using fallback weather data due to error")
+                            self.setFallbackWeather()
+                        }
+                        
+                        self.isLoading = false
+                        self.isFetchingWeather = false
+                    }
                 }
             }
         }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
-            guard let self = self, self.isFetchingWeather else { return }
-            
-            self.isLoading = false
-            self.isFetchingWeather = false
-            
-            if self.currentTemperature == nil {
-                self.error = NSError(
-                    domain: "WeatherService",
-                    code: -1,
-                    userInfo: [NSLocalizedDescriptionKey: "Weather request timed out"]
-                )
-                print("Weather request timed out - using fallback data")
-                self.setFallbackWeather()
-            }
-        }
-    }
     
     private func shouldFetchWeather(for location: CLLocation) -> Bool {
         guard let lastLocation = lastFetchLocation,

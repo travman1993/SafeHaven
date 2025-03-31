@@ -32,12 +32,30 @@ class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func requestLocation() {
-        if locationManager.authorizationStatus == .notDetermined {
-            locationManager.requestWhenInUseAuthorization()
-        } else {
-            locationManager.requestLocation()
+            print("Location request initiated")
+            
+            if locationManager.authorizationStatus == .notDetermined {
+                print("Requesting location authorization")
+                locationManager.requestWhenInUseAuthorization()
+            } else if locationManager.authorizationStatus == .authorizedWhenInUse ||
+                      locationManager.authorizationStatus == .authorizedAlways {
+                print("Authorization already granted, requesting location")
+                locationManager.requestLocation()
+                
+                // Also start continuous updates to ensure we get frequent location data
+                locationManager.startUpdatingLocation()
+                
+                // If we already have a location stored, use it immediately
+                if let existingLocation = currentLocation {
+                    print("Using existing location while waiting for update")
+                    NotificationCenter.default.post(name: NSNotification.Name("LocationDidUpdate"), object: nil)
+                }
+            } else {
+                print("Location authorization denied: \(locationManager.authorizationStatus.rawValue)")
+                // Handle denied case by notifying observers anyway
+                NotificationCenter.default.post(name: NSNotification.Name("LocationAuthorizationDenied"), object: nil)
+            }
         }
-    }
     
     // MARK: - CLLocationManagerDelegate
     

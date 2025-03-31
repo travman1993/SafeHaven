@@ -11,6 +11,7 @@ import MapKit
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     
+    @Published var currentLocation: CLLocation?
     @Published var userLocation: CLLocationCoordinate2D?
     @Published var authorizationStatus: CLAuthorizationStatus
     @Published var locationError: Error?
@@ -19,7 +20,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     override init() {
         self.authorizationStatus = .notDetermined
         super.init()
-        
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         
@@ -31,6 +31,11 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
            locationManager.authorizationStatus == .authorizedAlways {
             locationManager.startUpdatingLocation()
         }
+    }
+    
+    func requestLocation() {
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.requestLocation()
     }
 
     func requestWhenInUseAuthorization() {
@@ -48,88 +53,75 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - CLLocationManagerDelegate
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-        
-        // Only publish significant location changes (> 50 meters)
-        if let lastLocation = userLocation {
-            let lastCLLocation = CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude)
-            if lastCLLocation.distance(from: location) < 50 && isLocationAvailable {
-                return
-            }
-        }
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.userLocation = location.coordinate
-            self.isLocationAvailable = true
-        }
-        
-        // Notify observers that location updated
-        NotificationCenter.default.post(name: NSNotification.Name("LocationDidUpdate"), object: nil)
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.locationError = error
-            if let error = error as? CLError {
-                switch error.code {
-                case .denied, .regionMonitoringDenied:
-                    // Handle denied access
-                    print("Location access denied")
-                    // Don't update isLocationAvailable - it should remain as is
-                default:
-                    // For transient errors, keep the current location status
-                    if !self.isLocationAvailable {
-                        self.isLocationAvailable = false
-                    }
-                }
-            } else {
-                // Generic errors
-                if !self.isLocationAvailable {
-                    self.isLocationAvailable = false
+            if let location = locations.last {
+                print("Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
+                
+                DispatchQueue.main.async { [weak self] in
+                    self?.currentLocation = location
+                    
+                    // Notify observers that location updated
+                    NotificationCenter.default.post(name: NSNotification.Name("LocationDidUpdate"), object: nil)
                 }
             }
-            print("Location Manager Error: \(error.localizedDescription)")
         }
-    }
-    
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.authorizationStatus = manager.authorizationStatus
+        
+        func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+            print("Location error: \(error.localizedDescription)")
             
-            switch manager.authorizationStatus {
-            case .authorizedWhenInUse, .authorizedAlways:
-                manager.startUpdatingLocation()
+            DispatchQueue.main.async { [weak self] in
+                self?.locationError = error
                 
-                // If we don't get a location update within 2 seconds, try requestLocation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-                    if self?.userLocation == nil {
-                        manager.requestLocation()
+                // Some location errors are expected and can be ignored (like when updates are temporarily unavailable)
+                if let clError = error as? CLError {
+                    switch clError.code {
+                    case .locationUnknown, .network, .denied:
+                        // These are more serious errors that we should handle
+                        print("Significant location error: \(clError.code)")
+                    default:
+                        // These can often be ignored as they're temporary
+                        print("Minor location error: \(clError.code)")
+                        return
                     }
                 }
                 
-            case .denied, .restricted:
-                // Handle location access denied/restricted
-                DispatchQueue.main.async {
-                    self.isLocationAvailable = false
+                // For significant errors, notify observers
+                NotificationCenter.default.post(name: NSNotification.Name("LocationError"), object: error)
+            }
+        }
+        
+        func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+            let status = manager.authorizationStatus
+            print("Location authorization changed: \(status.rawValue)")
+            
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.authorizationStatus = status
+                
+                switch status {
+                case .authorizedWhenInUse, .authorizedAlways:
+                    print("Location authorization granted, requesting location")
+                    manager.requestLocation()
+                    manager.startUpdatingLocation()
+                    
+                case .denied, .restricted:
+                    print("Location access denied/restricted")
                     self.locationError = NSError(
                         domain: "LocationServiceError",
                         code: 1,
                         userInfo: [NSLocalizedDescriptionKey: "Location access denied"]
                     )
+                    
+                    // Notify observers of authorization change
+                    NotificationCenter.default.post(name: NSNotification.Name("LocationAuthorizationDenied"), object: nil)
+                    
+                case .notDetermined:
+                    print("Location authorization not determined yet")
+                    
+                @unknown default:
+                    print("Unknown location authorization status")
                 }
-                
-            case .notDetermined:
-                // Wait for user to make a choice
-                break
-                
-            @unknown default:
-                break
             }
         }
-    }
     
     // Helper function to get user's current location
     func getCurrentLocation() -> CLLocation? {

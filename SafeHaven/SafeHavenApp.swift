@@ -16,6 +16,7 @@ struct SafeHavenApp: App {
     
     // Add a state variable to track if the app is loaded
     @State private var isLoaded = false
+    @State private var hasRequestedLocationPermission = false
     
     init() {
         // Check if this is the first launch ever
@@ -49,9 +50,16 @@ struct SafeHavenApp: App {
                 ContentView()
                     .environmentObject(locationService)
                     .environmentObject(weatherService)
+                    .onAppear {
+                        // Request location immediately when app appears
+                        locationService.requestLocation()
+                    }
                     .onReceive(locationService.$currentLocation) { location in
                         if let location = location {
+                            print("Location updated, fetching weather: \(location.coordinate.latitude), \(location.coordinate.longitude)")
                             weatherService.fetchWeather(for: location)
+                        } else {
+                            print("Location unavailable, cannot fetch weather")
                         }
                     }
             }

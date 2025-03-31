@@ -5,40 +5,39 @@ struct AppTheme {
     static var primary = Color(hex: "4A76D4")  // More vibrant blue
     static var secondary = Color(hex: "36A599")  // Richer teal
     static var accent = Color(hex: "FF5062")  // Brighter accent
-    static var background = Color(hex: "F0F2F6")  // Slightly cooler background
+    static var background = Color(hex: "F5F7FA")  // Slightly cooler background
 
     static var textPrimary = Color(hex: "2D3748")
     static var textSecondary = Color(hex: "718096")
     static var textLight = Color.white
     
-    // New adaptive properties
-    static func adaptiveColor(light: String, dark: String) -> Color {
-        let isDarkMode = UITraitCollection.current.userInterfaceStyle == .dark
-        return isDarkMode ? Color(hex: dark) : Color(hex: light)
-    }
-    
+    // Updated adaptive properties to use @Environment colorScheme
     static var adaptiveBackground: Color {
-        return adaptiveColor(light: "F0F2F6", dark: "1A202C")
+        Color("backgroundAdaptive")
     }
     
     static var adaptiveTextPrimary: Color {
-        return adaptiveColor(light: "2D3748", dark: "F7FAFC")
+        Color("textPrimaryAdaptive")
     }
     
     static var adaptiveTextSecondary: Color {
-        return adaptiveColor(light: "718096", dark: "CBD5E0")
+        Color("textSecondaryAdaptive")
     }
     
     static var adaptivePrimary: Color {
-        return adaptiveColor(light: "4A76D4", dark: "5A85E0")
+        Color("primaryAdaptive")
     }
     
     static var adaptiveSecondary: Color {
-        return adaptiveColor(light: "36A599", dark: "3CBFB0")
+        Color("secondaryAdaptive")
     }
     
     static var adaptiveAccent: Color {
-        return adaptiveColor(light: "FF5062", dark: "FF6B7D")
+        Color("accentAdaptive")
+    }
+    
+    static var adaptiveCardBackground: Color {
+        Color("cardBackgroundAdaptive")
     }
     
     // Original methods
@@ -76,16 +75,14 @@ struct AppTheme {
     }
 }
 
-// Helper method to determine if the device is in dark mode
+// Helper extension to use adaptive colors based on color scheme
 extension View {
-    func isDarkMode() -> Bool {
-        @Environment(\.colorScheme) var colorScheme
-        return colorScheme == .dark
-    }
-    
-    // New modifier to apply adaptive styling
     func adaptiveBackground() -> some View {
         self.background(AppTheme.adaptiveBackground)
+    }
+    
+    func adaptiveCardBackground() -> some View {
+        self.background(AppTheme.adaptiveCardBackground)
     }
     
     func adaptiveTextColor(_ isPrimary: Bool = true) -> some View {

@@ -79,7 +79,7 @@ struct JournalView: View {
                                 weight: .semibold,
                                 design: .rounded
                             ))
-                            .foregroundColor(Color(hex: "333333"))
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
                     }
                     
                     Spacer()
@@ -94,7 +94,7 @@ struct JournalView: View {
                 }
                 .padding(.horizontal, ResponsiveLayout.padding(20))
                 .padding(.vertical, ResponsiveLayout.padding(16))
-                .background(Color(hex: "F8F9FA"))
+                .background(AppTheme.adaptiveCardBackground)
                 
                 Divider()
                     .padding(.horizontal, ResponsiveLayout.padding(20))
@@ -106,12 +106,12 @@ struct JournalView: View {
                     entriesListView(in: geometry)
                 }
             }
-            .background(Color(hex: "F9FAFB"))
+            .background(AppTheme.adaptiveBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
             .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
             .overlay(
                 RoundedRectangle(cornerRadius: ResponsiveLayout.isIPad ? 20 : 16)
-                    .stroke(Color(hex: "EEEEEE"), lineWidth: 1)
+                    .stroke(Color(hex: "EEEEEE").opacity(0.5), lineWidth: 1)
             )
             .sheet(isPresented: $showingNewEntryView) {
                 NewJournalEntryView(journalManager: journalManager)
@@ -123,7 +123,7 @@ struct JournalView: View {
         VStack(spacing: ResponsiveLayout.padding(12)) {
             Image(systemName: "book")
                 .font(.system(size: ResponsiveLayout.fontSize(36)))
-                .foregroundColor(Color(hex: "CCCCCC"))
+                .foregroundColor(Color(hex: "CCCCCC").opacity(0.7))
                 .padding(.top, ResponsiveLayout.padding(30))
             
             Text("Your journal is empty")
@@ -132,14 +132,14 @@ struct JournalView: View {
                     weight: .medium,
                     design: .rounded
                 ))
-                .foregroundColor(Color(hex: "999999"))
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
             
             Text("Start writing to track your journey")
                 .font(.system(
                     size: ResponsiveLayout.fontSize(14),
                     design: .rounded
                 ))
-                .foregroundColor(Color(hex: "AAAAAA"))
+                .foregroundColor(AppTheme.adaptiveTextSecondary.opacity(0.8))
             
             Button(action: {
                 showingNewEntryView = true
@@ -182,7 +182,7 @@ struct JournalView: View {
                         weight: .semibold,
                         design: .rounded
                     ))
-                    .foregroundColor(Color(hex: "333333"))
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 
                 Spacer()
                 
@@ -191,7 +191,7 @@ struct JournalView: View {
                         size: ResponsiveLayout.fontSize(14),
                         design: .rounded
                     ))
-                    .foregroundColor(Color(hex: "999999"))
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
             }
             
             HStack {
@@ -214,13 +214,13 @@ struct JournalView: View {
                     size: ResponsiveLayout.fontSize(15),
                     design: .rounded
                 ))
-                .foregroundColor(Color(hex: "555555"))
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
                 .lineLimit(3)
                 .padding(.top, ResponsiveLayout.padding(2))
         }
         .padding(.horizontal, ResponsiveLayout.padding(16))
         .padding(.vertical, ResponsiveLayout.padding(12))
-        .background(Color.white)
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(10)
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
         .padding(.horizontal, ResponsiveLayout.padding(20))
@@ -286,6 +286,7 @@ struct NewJournalEntryView: View {
             Form {
                 Section(header: Text("Entry Details")) {
                     TextField("Title", text: $entryTitle)
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                     
                     ZStack(alignment: .topLeading) {
                         if entryContent.isEmpty {
@@ -297,6 +298,7 @@ struct NewJournalEntryView: View {
                         
                         TextEditor(text: $entryContent)
                             .frame(minHeight: 150)
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
                     }
                 }
                 

@@ -46,7 +46,7 @@ class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
                 locationManager.startUpdatingLocation()
                 
                 // If we already have a location stored, use it immediately
-                if let existingLocation = currentLocation {
+                if currentLocation != nil {
                     print("Using existing location while waiting for update")
                     NotificationCenter.default.post(name: NSNotification.Name("LocationDidUpdate"), object: nil)
                 }

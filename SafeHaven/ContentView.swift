@@ -97,7 +97,7 @@ struct ContentView: View {
                 }
                 .padding(ResponsiveLayout.padding())
             }
-            .background(AppTheme.background.ignoresSafeArea())
+            .background(AppTheme.adaptiveBackground.ignoresSafeArea())
             .navigationTitle("SafeHaven")
             .navigationBarTitleDisplayMode(.large)
         }
@@ -118,7 +118,7 @@ struct ContentView: View {
                 
                 Text(getTimeBasedGreeting())
                     .font(.system(size: ResponsiveLayout.fontSize(24), weight: .bold))
-                    .foregroundColor(AppTheme.textPrimary)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
             }
             
             Spacer()
@@ -133,21 +133,21 @@ struct ContentView: View {
                         Image(systemName: getWeatherIcon(for: weatherService.currentCondition))
                             .font(.system(size: ResponsiveLayout.fontSize(20)))
                     }
-                    .foregroundColor(AppTheme.textPrimary)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                     
                     Text(weatherService.currentCondition)
                         .font(.system(size: ResponsiveLayout.fontSize(14)))
-                        .foregroundColor(AppTheme.textSecondary)
+                        .foregroundColor(AppTheme.adaptiveTextSecondary)
                     
                     // Apple Weather attribution
                     HStack(spacing: 2) {
                         Image(systemName: "apple.logo")
                             .font(.system(size: ResponsiveLayout.fontSize(8)))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                         
                         Text("Weather")
                             .font(.system(size: ResponsiveLayout.fontSize(8)))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                         
                         Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
                             .font(.system(size: ResponsiveLayout.fontSize(8)))
@@ -159,7 +159,7 @@ struct ContentView: View {
             }
         }
         .padding(ResponsiveLayout.padding())
-        .background(Color.white)
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
@@ -183,13 +183,13 @@ struct ContentView: View {
                 Image(systemName: "quote.bubble.fill")
                     .foregroundColor(AppTheme.primary)
                 Text("Daily Motivation")
-                    .foregroundColor(AppTheme.textPrimary)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
             }
             .padding()
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         }
@@ -213,17 +213,17 @@ struct ContentView: View {
                     
                     Text(getWeatherSafetyTip(for: weatherService.currentCondition))
                         .font(.system(size: ResponsiveLayout.fontSize(12)))
-                        .foregroundColor(AppTheme.textSecondary)
+                        .foregroundColor(AppTheme.adaptiveTextSecondary)
                     
                     // Add Apple Weather attribution
                     HStack(spacing: 4) {
                         Image(systemName: "apple.logo")
                             .font(.system(size: ResponsiveLayout.fontSize(10)))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                         
                         Text("Weather")
                             .font(.system(size: ResponsiveLayout.fontSize(10)))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                         
                         Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
                             .font(.system(size: ResponsiveLayout.fontSize(10)))
@@ -232,7 +232,7 @@ struct ContentView: View {
                     .padding(.top, 4)
                 }
                 .padding()
-                .background(Color.white)
+                .background(AppTheme.adaptiveCardBackground)
                 .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             } else {
@@ -246,6 +246,7 @@ struct ContentView: View {
             Text("5-Day Forecast")
                 .font(.system(size: ResponsiveLayout.fontSize(16), weight: .semibold))
                 .padding(.horizontal, ResponsiveLayout.padding())
+                .foregroundColor(AppTheme.adaptiveTextPrimary)
             
             if weatherService.isLoading && weatherService.forecastDates.isEmpty {
                 HStack {
@@ -263,6 +264,7 @@ struct ContentView: View {
                                 // Use our improved date format function
                                 Text(formatDate(weatherService.forecastDates[index]))
                                     .font(.system(size: ResponsiveLayout.fontSize(14), weight: .medium))
+                                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                                 
                                 Image(systemName: getWeatherIcon(for: weatherService.forecastConditions[index]))
                                     .font(.system(size: ResponsiveLayout.fontSize(22)))
@@ -270,13 +272,14 @@ struct ContentView: View {
                                 
                                 Text(weatherService.temperatureString(weatherService.forecastHighs[index]))
                                     .font(.system(size: ResponsiveLayout.fontSize(14), weight: .semibold))
+                                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                                 
                                 Text(weatherService.temperatureString(weatherService.forecastLows[index]))
                                     .font(.system(size: ResponsiveLayout.fontSize(12)))
-                                    .foregroundColor(AppTheme.textSecondary)
+                                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                             }
                             .padding(ResponsiveLayout.padding())
-                            .background(Color.white)
+                            .background(AppTheme.adaptiveCardBackground)
                             .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
                             .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
                             .frame(minWidth: 110) // Slightly wider to fit new date format
@@ -290,11 +293,11 @@ struct ContentView: View {
             HStack(spacing: 4) {
                 Image(systemName: "apple.logo")
                     .font(.system(size: ResponsiveLayout.fontSize(10)))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                 
                 Text("Weather")
                     .font(.system(size: ResponsiveLayout.fontSize(10)))
-                    .foregroundColor(AppTheme.textSecondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                 
                 Link("Legal", destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!)
                     .font(.system(size: ResponsiveLayout.fontSize(10)))
@@ -309,11 +312,11 @@ struct ContentView: View {
                     Spacer()
                     Text("Updating weather data...")
                         .font(.system(size: ResponsiveLayout.fontSize(12)))
-                        .foregroundColor(AppTheme.textSecondary)
+                        .foregroundColor(AppTheme.adaptiveTextSecondary)
                         .padding(.horizontal)
                     Spacer()
                 }
-            } else if let error = weatherService.error {
+            } else if weatherService.error != nil {
                 HStack {
                     Spacer()
                     Text("Tap to retry weather update")
@@ -388,12 +391,12 @@ struct ContentView: View {
                 
                 Text(title)
                     .font(.system(size: ResponsiveLayout.fontSize(14)))
-                    .foregroundColor(AppTheme.textPrimary)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
             .padding(ResponsiveLayout.padding())
-            .background(Color.white)
+            .background(AppTheme.adaptiveCardBackground)
             .cornerRadius(12)
             .shadow(color: Color.black.opacity(0.03), radius: 5, x: 0, y: 2)
         }

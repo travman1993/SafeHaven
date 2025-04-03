@@ -1,16 +1,12 @@
 //
 //  SafeHavenApp.swift
 //  SafeHaven
-
-
 import SwiftUI
-import WeatherKit
 import CoreLocation
 
 @main
 struct SafeHavenApp: App {
     @StateObject private var locationService = LocationService()
-    @StateObject private var weatherService = WeatherService.shared
     
     // First launch detection for onboarding
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
@@ -61,18 +57,9 @@ struct SafeHavenApp: App {
             } else {
                 ContentView()
                     .environmentObject(locationService)
-                    .environmentObject(weatherService)
                     .onAppear {
                         // Request location immediately when app appears
                         locationService.requestLocation()
-                    }
-                    .onReceive(locationService.$currentLocation) { location in
-                        if let location = location {
-                            print("Location updated, fetching weather: \(location.coordinate.latitude), \(location.coordinate.longitude)")
-                            weatherService.fetchWeather(for: location)
-                        } else {
-                            print("Location unavailable, cannot fetch weather")
-                        }
                     }
                     // Apply preferred color scheme based on settings
                     .preferredColorScheme(colorScheme)

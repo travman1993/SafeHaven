@@ -8,19 +8,19 @@ import SwiftUI
 
 // MARK: - Digital ID Storage Card
 struct DigitalIDStorageCard: View {
-    @State private var showingIDGallery = false
+    @State private var showingDocumentGallery = false
     
     var body: some View {
         Button(action: {
-            showingIDGallery = true
+            showingDocumentGallery = true
         }) {
             VStack(alignment: .leading, spacing: ResponsiveLayout.padding(12)) {
                 HStack {
-                    Image(systemName: "creditcard.fill")
+                    Image(systemName: "doc.text.fill")
                         .font(.system(size: ResponsiveLayout.fontSize(24)))
                         .foregroundColor(AppTheme.primary)
                     
-                    Text("Digital ID Storage")
+                    Text("Document Storage")
                         .font(.system(size: ResponsiveLayout.fontSize(18), weight: .semibold))
                         .foregroundColor(AppTheme.adaptiveTextPrimary)
                     
@@ -38,7 +38,7 @@ struct DigitalIDStorageCard: View {
                 HStack(spacing: ResponsiveLayout.padding(12)) {
                     Feature(icon: "camera.fill", text: "Take a photo")
                     Feature(icon: "lock.fill", text: "Store on-device only")
-                    Feature(icon: "person.text.rectangle", text: "Label & organize")
+                    Feature(icon: "doc.text.magnifyingglass", text: "Organize & search")
                 }
                 .padding(.top, 8)
             }
@@ -47,7 +47,7 @@ struct DigitalIDStorageCard: View {
             .cornerRadius(ResponsiveLayout.isIPad ? 20 : 16)
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         }
-        .sheet(isPresented: $showingIDGallery) {
+        .sheet(isPresented: $showingDocumentGallery) {
             DigitalIDGalleryView()
         }
     }

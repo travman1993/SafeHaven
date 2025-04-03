@@ -11,7 +11,7 @@ extension UIApplication {
     }
 }
 
-// Utility to handle SMS functionality
+// Utility to handle emergency services and SMS functionality
 class EmergencyServices {
     static func callEmergency() {
         // Use dispatch async to ensure UI operations happen on main thread
@@ -22,12 +22,13 @@ class EmergencyServices {
         }
     }
     
+    // Centralized method for getting current location string
     static func getCurrentLocationString() -> String {
         let locationService = LocationService()
         if let location = locationService.currentLocation {
             return "Latitude: \(location.coordinate.latitude), Longitude: \(location.coordinate.longitude)"
         }
-        return "unknown location"
+        return "Location not available"
     }
     
     static func sendEmergencyTexts(to contacts: [EmergencyContact], withMessage message: String) {

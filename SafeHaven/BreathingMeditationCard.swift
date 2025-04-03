@@ -38,7 +38,6 @@ struct BreathingMeditationCard: View {
                 HStack(spacing: ResponsiveLayout.padding(12)) {
                     Feature(icon: "wind", text: "Breathing Exercises")
                     Feature(icon: "brain.head.profile", text: "Guided Meditations")
-                    Feature(icon: "note.text", text: "Mood Journal")
                 }
                 .padding(.top, 8)
             }
@@ -77,6 +76,7 @@ struct BreathingExerciseView: View {
     @State private var isBreathingActive = false
     @State private var breathPhase: BreathPhase = .inhale
     @State private var progress: CGFloat = 0
+    @State private var phaseCountdown: Int = 0
     
     enum BreathPhase {
         case inhale, hold, exhale, rest
@@ -116,7 +116,10 @@ struct BreathingExerciseView: View {
                     // Exercise selection
                     VStack(spacing: ResponsiveLayout.padding(40)) {
                         Text("Breathing Exercises")
-                            .font(.system(size: ResponsiveLayout.fontSize(28), weight: .bold))
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(28),
+                                weight: .bold
+                            ))
                             .foregroundColor(.white)
                         
                         VStack(spacing: ResponsiveLayout.padding(16)) {
@@ -126,7 +129,10 @@ struct BreathingExerciseView: View {
                                 }) {
                                     HStack {
                                         Text(exercise)
-                                            .font(.system(size: ResponsiveLayout.fontSize(18), weight: .medium))
+                                            .font(.system(
+                                                size: ResponsiveLayout.fontSize(18),
+                                                weight: .medium
+                                            ))
                                             .foregroundColor(.white)
                                         
                                         Spacer()
@@ -152,7 +158,10 @@ struct BreathingExerciseView: View {
                             }
                         }) {
                             Text("Begin")
-                                .font(.system(size: ResponsiveLayout.fontSize(18), weight: .bold))
+                                .font(.system(
+                                    size: ResponsiveLayout.fontSize(18),
+                                    weight: .bold
+                                ))
                                 .foregroundColor(Color(hex: "43AA8B"))
                                 .padding(.vertical, ResponsiveLayout.padding(16))
                                 .padding(.horizontal, ResponsiveLayout.padding(40))
@@ -168,11 +177,17 @@ struct BreathingExerciseView: View {
                     // Active breathing exercise
                     VStack(spacing: ResponsiveLayout.padding(30)) {
                         Text(selectedExercise)
-                            .font(.system(size: ResponsiveLayout.fontSize(24), weight: .bold))
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(24),
+                                weight: .bold
+                            ))
                             .foregroundColor(.white)
                         
                         Text(breathPhaseInstruction)
-                            .font(.system(size: ResponsiveLayout.fontSize(20), weight: .medium))
+                            .font(.system(
+                                size: ResponsiveLayout.fontSize(20),
+                                weight: .medium
+                            ))
                             .foregroundColor(.white)
                             .animation(.easeInOut, value: breathPhase)
                         
@@ -180,16 +195,19 @@ struct BreathingExerciseView: View {
                         ZStack {
                             Circle()
                                 .stroke(Color.white.opacity(0.2), lineWidth: 2)
-                                .frame(width: 200, height: 200)
+                                .frame(width: 300, height: 300)
                             
                             Circle()
                                 .scale(breathingScale)
                                 .fill(Color.white.opacity(0.3))
-                                .frame(width: 200, height: 200)
+                                .frame(width: 300, height: 300)
                                 .animation(.easeInOut(duration: breathPhaseDuration), value: breathPhase)
                             
-                            Text(breathPhaseCountdown)
-                                .font(.system(size: ResponsiveLayout.fontSize(40), weight: .bold))
+                            Text("\(phaseCountdown)")
+                                .font(.system(
+                                    size: ResponsiveLayout.fontSize(60),
+                                    weight: .bold
+                                ))
                                 .foregroundColor(.white)
                         }
                         
@@ -199,7 +217,10 @@ struct BreathingExerciseView: View {
                             }
                         }) {
                             Text("End Session")
-                                .font(.system(size: ResponsiveLayout.fontSize(16), weight: .medium))
+                                .font(.system(
+                                    size: ResponsiveLayout.fontSize(16),
+                                    weight: .medium
+                                ))
                                 .foregroundColor(.white)
                                 .padding(.vertical, 12)
                                 .padding(.horizontal, 24)
@@ -224,10 +245,6 @@ struct BreathingExerciseView: View {
         }
     }
     
-    private var breathPhaseCountdown: String {
-        return "\(Int(ceil(breathPhaseDuration * (1 - progress))))"
-    }
-    
     private var breathPhaseDuration: Double {
         switch breathPhase {
         case .inhale: return 4.0
@@ -249,18 +266,24 @@ struct BreathingExerciseView: View {
     private func startBreathingExercise() {
         progress = 0
         breathPhase = .inhale
+        phaseCountdown = Int(breathPhaseDuration)
         animateBreathPhase()
     }
     
     private func animateBreathPhase() {
-        withAnimation(.linear(duration: breathPhaseDuration)) {
-            progress = 1.0
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + breathPhaseDuration) {
-            if isBreathingActive {
-                progress = 0
+        // Countdown timer
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+            guard isBreathingActive else {
+                timer.invalidate()
+                return
+            }
+            
+            phaseCountdown -= 1
+            
+            if phaseCountdown <= 0 {
+                timer.invalidate()
                 
+                // Progress to next phase
                 switch breathPhase {
                 case .inhale: breathPhase = .hold
                 case .hold: breathPhase = .exhale
@@ -268,6 +291,10 @@ struct BreathingExerciseView: View {
                 case .rest: breathPhase = .inhale
                 }
                 
+                // Reset countdown for new phase
+                phaseCountdown = Int(breathPhaseDuration)
+                
+                // Continue the breathing cycle
                 animateBreathPhase()
             }
         }

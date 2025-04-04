@@ -22,6 +22,104 @@ class NotificationManager {
     
     private init() {}
     
+    func scheduleMeditationNotifications(firstTime: Date, count: Int, enabled: Bool = true) {
+        // Remove existing meditation notifications first
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers:
+            (0..<6).map { "meditation\($0)" })
+        
+        guard enabled && count > 0 else { return }
+        
+        // Extract hour and minute from first time
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.hour, .minute], from: firstTime)
+        let firstHour = components.hour ?? 9
+        let firstMinute = components.minute ?? 0
+        
+        // Calculate meditation times throughout the day
+        let wakeHour = firstHour
+        let sleepHour = 22 // Assume 10PM as default end time
+        let activeHours = sleepHour - wakeHour
+        
+        // Ensure at least 1 hour between notifications
+        let interval = max(1, min(activeHours / count, activeHours))
+        
+        for i in 0..<count {
+            // Create notification for each meditation time
+            let meditationTime = calendar.date(bySettingHour: firstHour + (i * interval),
+                                              minute: firstMinute,
+                                              second: 0,
+                                              of: firstTime) ?? firstTime
+            
+            scheduleSingleMeditationNotification(at: meditationTime, index: i)
+        }
+        
+        print("Scheduled \(count) meditation notifications starting at \(firstTime)")
+    }
+
+    private func scheduleSingleMeditationNotification(at time: Date, index: Int) {
+        let content = UNMutableNotificationContent()
+        content.title = "Mindfulness Reminder"
+        
+        // Vary the message based on time of day
+        if index == 0 {
+            content.body = "Start your day with a moment of calm breathing."
+        } else if index == 1 {
+            content.body = "Take a break for a quick breathing exercise."
+        } else if index >= 2 {
+            let messages = [
+                "Pause and breathe. You deserve this moment of peace.",
+                "It's time to center yourself with some mindful breathing.",
+                "Remember to breathe and reconnect with yourself.",
+                "Take a mindful moment to breathe and reset."
+            ]
+            content.body = messages[index % messages.count]
+        }
+        
+        content.sound = .default
+        content.badge = 1
+        
+        // Create a daily trigger
+        var dateComponents = Calendar.current.dateComponents([.hour, .minute], from: time)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        
+        // Create the request
+        let request = UNNotificationRequest(
+            identifier: "meditation\(index)",
+            content: content,
+            trigger: trigger
+        )
+        
+        // Add the request
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error scheduling meditation notification: \(error)")
+            }
+        }
+    }
+
+    func cancelMeditationNotifications() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: (0..<6).map { "meditation\($0)" }
+        )
+        print("Cancelled all meditation notifications")
+    }
+
+    func scheduleMeditationTestNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Mindfulness Reminder"
+        content.body = "This is a test reminder for your breathing exercise."
+        content.sound = .default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        let request = UNNotificationRequest(identifier: "meditationTest", content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error scheduling test meditation notification: \(error)")
+            }
+        }
+    }
+    
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             DispatchQueue.main.async {

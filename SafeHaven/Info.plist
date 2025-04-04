@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleVersion&lt;</key>
+	<string>1</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SafeHaven needs access to your photo library to import and store your important documents.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>SafeHaven needs camera access to take photos of your important documents for secure offline storage</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>SafeHaven needs your location to provide weather and resource information.</string>
 	<key>com.apple.developer.icloud-container-identifiers</key>

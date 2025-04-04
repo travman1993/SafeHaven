@@ -14,10 +14,14 @@ struct NotificationSettingsView: View {
     @AppStorage("resourceUpdateNotificationsEnabled") private var resourceUpdateNotificationsEnabled = false
     @AppStorage("weatherWarningsEnabled") private var weatherWarningsEnabled = false
     @AppStorage("locationBasedAlertsEnabled") private var locationBasedAlertsEnabled = false
+    @AppStorage("meditationNotificationsEnabled") private var meditationNotificationsEnabled = false
+    @AppStorage("dailyMeditationCount") private var dailyMeditationCount = 3
+    @AppStorage("firstMeditationTime") private var firstMeditationTimeStamp = Date().timeIntervalSince1970
     
     @State private var selectedDate = Date()
     @State private var showingAuthAlert = false
     @Environment(\.dismiss) var dismiss
+    
     
     var body: some View {
         Form {
@@ -90,6 +94,41 @@ struct NotificationSettingsView: View {
                     .font(.subheadline)
                     .foregroundColor(AppTheme.adaptiveTextSecondary)
             }
+            Section(
+                header: Text("Breathing & Meditation")
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
+            ) {
+                Toggle("Enable Meditation Reminders", isOn: $meditationNotificationsEnabled)
+                    .onChange(of: meditationNotificationsEnabled) { oldValue, newValue in
+                        if newValue {
+                            requestNotificationPermission()
+                        } else {
+                            cancelMeditationNotifications()
+                        }
+                    }
+                    .toggleStyle(SwitchToggleStyle(tint: AppTheme.primary))
+
+                if meditationNotificationsEnabled {
+                    Stepper(value: $dailyMeditationCount, in: 1...6) {
+                        Text("Daily reminders: \(dailyMeditationCount)")
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
+                    }
+                    
+                    DatePicker("First reminder", selection: $firstMeditationTime, displayedComponents: .hourAndMinute)
+                        .onChange(of: firstMeditationTime) { oldValue, newValue in
+                            updateMeditationNotifications()
+                        }
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
+                    
+                    Button(action: {
+                        scheduleMeditationTestNotification()
+                    }) {
+                        Text("Send Test Reminder")
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
+                    }
+                }
+            }
+
         }
         .navigationTitle("Notification Settings")
         .navigationBarTitleDisplayMode(.inline)
@@ -103,6 +142,33 @@ struct NotificationSettingsView: View {
         } message: {
             Text("Please enable notifications for SafeHaven in your device settings to receive daily motivation and important safety alerts.")
         }
+    }
+    
+    private var firstMeditationTime: Date {
+        get {
+            return Date(timeIntervalSince1970: firstMeditationTimeStamp)
+        }
+        set {
+            firstMeditationTimeStamp = newValue.timeIntervalSince1970
+        }
+    }
+    
+    private func updateMeditationNotifications() {
+        guard meditationNotificationsEnabled else { return }
+        
+        NotificationManager.shared.scheduleMeditationNotifications(
+            firstTime: firstMeditationTime,
+            count: dailyMeditationCount,
+            enabled: true
+        )
+    }
+
+    private func cancelMeditationNotifications() {
+        NotificationManager.shared.cancelMeditationNotifications()
+    }
+
+    private func scheduleMeditationTestNotification() {
+        NotificationManager.shared.scheduleMeditationTestNotification()
     }
     
     private func requestNotificationPermission() {

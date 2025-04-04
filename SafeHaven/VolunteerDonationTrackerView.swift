@@ -21,6 +21,28 @@ struct DonationActivity: Identifiable, Codable {
     let items: String
     let date: Date
     var verified: Bool = false
+    var category: DonationType
+    var value: Double  // Dollar amount or equivalent point value
+}
+
+// Donation Type Enum
+enum DonationType: String, CaseIterable, Codable {
+    case money = "Financial Donation"
+    case food = "Food Donation"
+    case clothing = "Clothing Donation"
+    case supplies = "Supplies Donation"
+    case other = "Other Donation"
+    
+    // Points multiplier for each type
+    var pointsMultiplier: Double {
+        switch self {
+        case .money: return 1.0    // 1 point per dollar
+        case .food: return 5.0     // 5 points per food donation
+        case .clothing: return 3.0  // 3 points per clothing donation
+        case .supplies: return 4.0  // 4 points per supplies donation
+        case .other: return 2.0     // 2 points per other donation
+        }
+    }
 }
 
 // Contributor Level Enum
@@ -104,12 +126,13 @@ enum ContributorLevel: String, CaseIterable, Codable {
     }
 }
 
-// Activity Tracker View Model
+// Activity Tracker View Model - UPDATED
 class ActivityTrackerViewModel: ObservableObject {
     @Published var volunteerActivities: [VolunteerActivity] = []
     @Published var donationActivities: [DonationActivity] = []
     @Published var totalVolunteerHours: Int = 0
-    @Published var totalDonations: Int = 0
+    @Published var totalDonationPoints: Double = 0
+    @Published var totalCombinedPoints: Int = 0
     @Published var currentLevel: ContributorLevel = .tin
     @Published var progressToNextLevel: CGFloat = 0.0
     
@@ -126,42 +149,59 @@ class ActivityTrackerViewModel: ObservableObject {
         )
         volunteerActivities.insert(newActivity, at: 0)
         totalVolunteerHours += hours
+        updateTotalPoints()
         calculateCurrentLevel()
         saveActivities()
     }
     
-    func addDonationActivity(organization: String, items: String) {
+    func addDonationActivity(organization: String, items: String, category: DonationType, value: Double) {
         let newActivity = DonationActivity(
             id: UUID(),
             organization: organization,
             items: items,
-            date: Date()
+            date: Date(),
+            verified: false,
+            category: category,
+            value: value
         )
         donationActivities.insert(newActivity, at: 0)
-        totalDonations += 1
+        updateTotalPoints()
         calculateCurrentLevel()
         saveActivities()
     }
     
+    private func updateTotalPoints() {
+        // Each volunteer hour counts as one point
+        let volunteerPoints = totalVolunteerHours
+        
+        // Calculate donation points based on category and value
+        totalDonationPoints = donationActivities.reduce(0.0) { total, donation in
+            total + (donation.value * donation.category.pointsMultiplier)
+        }
+        
+        // Combined total (rounded to int)
+        totalCombinedPoints = volunteerPoints + Int(totalDonationPoints)
+    }
+    
     private func calculateCurrentLevel() {
-        let sortedLevels = ContributorLevel.allCases.sorted { $0.minimumHours < $1.minimumHours }
+        let sortedLevels = ContributorLevel.allCases.sorted { $0.minimumPoints < $1.minimumPoints }
         
         for (index, level) in sortedLevels.enumerated() {
-            if totalVolunteerHours < level.minimumHours {
+            if totalCombinedPoints < level.minimumPoints {
                 currentLevel = index > 0 ? sortedLevels[index - 1] : .tin
                 
                 // Calculate progress to next level
-                let currentLevelHours = currentLevel.minimumHours
-                let nextLevelHours = level.minimumHours
+                let currentLevelPoints = currentLevel.minimumPoints
+                let nextLevelPoints = level.minimumPoints
                 
-                progressToNextLevel = CGFloat(totalVolunteerHours - currentLevelHours) /
-                                       CGFloat(nextLevelHours - currentLevelHours)
+                progressToNextLevel = CGFloat(totalCombinedPoints - currentLevelPoints) /
+                                       CGFloat(nextLevelPoints - currentLevelPoints)
                 
                 return
             }
         }
         
-        // If hours exceed all defined levels
+        // If points exceed all defined levels
         currentLevel = .legendaryAlloy
         progressToNextLevel = 1.0
     }
@@ -184,10 +224,11 @@ class ActivityTrackerViewModel: ObservableObject {
             volunteerActivities = (try? decoder.decode([VolunteerActivity].self, from: volunteerData)) ?? []
             donationActivities = (try? decoder.decode([DonationActivity].self, from: donationData)) ?? []
             
-            // Recalculate total hours and donations
+            // Recalculate total hours
             totalVolunteerHours = volunteerActivities.reduce(0) { $0 + $1.hours }
-            totalDonations = donationActivities.count
             
+            // Update points and level
+            updateTotalPoints()
             calculateCurrentLevel()
         }
     }
@@ -215,9 +256,13 @@ struct VolunteerDonationTrackerView: View {
             .navigationTitle("Activity Tracker")
             .navigationBarItems(
                 trailing: HStack {
+                    Button(action: { showingDonationSheet = true }) {
+                        Label("Log Donation", systemImage: "gift")
+                    }
+                    .padding(.trailing, 8)
+                    
                     Button(action: { showingVolunteerSheet = true }) {
-                        Image(systemName: "plus")
-                        Text("Log Hours")
+                        Label("Log Hours", systemImage: "clock")
                     }
                 }
             )
@@ -231,27 +276,37 @@ struct VolunteerDonationTrackerView: View {
     }
     
     private var levelProgressCard: some View {
-            VStack(alignment: .leading, spacing: 15) {
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text(viewModel.currentLevel.rawValue)
-                            .font(.headline)
-                        Text("Total Hours: \(viewModel.totalVolunteerHours)")
+        VStack(alignment: .leading, spacing: 15) {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(viewModel.currentLevel.rawValue)
+                        .font(.headline)
+                    
+                    HStack {
+                        Text("Total Points: \(viewModel.totalCombinedPoints)")
                             .font(.subheadline)
-                    }
-                    
-                    Spacer()
-                    
-                    // Level badge with symbolic representation
-                    ZStack {
-                        Circle()
-                            .fill(viewModel.currentLevel.color)
-                            .frame(width: 60, height: 60)
                         
-                        Text(viewModel.currentLevel.symbol)
-                            .font(.system(size: 30))
+                        Spacer()
+                        
+                        Text("Volunteer: \(viewModel.totalVolunteerHours) • Donations: \(Int(viewModel.totalDonationPoints))")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
+                
+                Spacer()
+                
+                // Level badge with symbolic representation
+                ZStack {
+                    Circle()
+                        .fill(viewModel.currentLevel.color)
+                        .frame(width: 60, height: 60)
+                    
+                    Text(viewModel.currentLevel.symbol)
+                        .font(.system(size: 30))
+                }
+            }
+            
             // Progress bar
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
@@ -277,7 +332,7 @@ struct VolunteerDonationTrackerView: View {
                 
                 Spacer()
                 
-                Text("Hours needed: \(nextLevel.minimumHours - viewModel.totalVolunteerHours)")
+                Text("Points needed: \(nextLevel.minimumPoints - viewModel.totalCombinedPoints)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -304,12 +359,27 @@ struct VolunteerDonationTrackerView: View {
             if viewModel.volunteerActivities.isEmpty {
                 Text("No volunteer hours logged")
                     .foregroundColor(.secondary)
+                    .padding()
             } else {
-                ForEach(viewModel.volunteerActivities) { activity in
+                ForEach(viewModel.volunteerActivities.prefix(3)) { activity in
                     volunteerActivityRow(activity)
+                }
+                
+                if viewModel.volunteerActivities.count > 3 {
+                    Button("View All \(viewModel.volunteerActivities.count) Activities") {
+                        // Navigate to full list view
+                    }
+                    .font(.caption)
+                    .padding(.top, 5)
                 }
             }
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white)
+                .shadow(color: .gray.opacity(0.1), radius: 3, x: 0, y: 1)
+        )
     }
     
     private var donationActivitySection: some View {
@@ -326,21 +396,37 @@ struct VolunteerDonationTrackerView: View {
             if viewModel.donationActivities.isEmpty {
                 Text("No donations logged")
                     .foregroundColor(.secondary)
+                    .padding()
             } else {
-                ForEach(viewModel.donationActivities) { activity in
+                ForEach(viewModel.donationActivities.prefix(3)) { activity in
                     donationActivityRow(activity)
+                }
+                
+                if viewModel.donationActivities.count > 3 {
+                    Button("View All \(viewModel.donationActivities.count) Donations") {
+                        // Navigate to full list view
+                    }
+                    .font(.caption)
+                    .padding(.top, 5)
                 }
             }
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white)
+                .shadow(color: .gray.opacity(0.1), radius: 3, x: 0, y: 1)
+        )
     }
     
     private func volunteerActivityRow(_ activity: VolunteerActivity) -> some View {
         HStack {
             VStack(alignment: .leading) {
                 Text(activity.organization)
-                    .font(.headline)
-                Text("\(activity.hours) hours")
                     .font(.subheadline)
+                    .fontWeight(.medium)
+                Text("\(activity.hours) hours")
+                    .font(.caption)
             }
             
             Spacer()
@@ -355,7 +441,7 @@ struct VolunteerDonationTrackerView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
+        .background(Color.gray.opacity(0.05))
         .cornerRadius(8)
     }
     
@@ -363,9 +449,26 @@ struct VolunteerDonationTrackerView: View {
         HStack {
             VStack(alignment: .leading) {
                 Text(activity.organization)
-                    .font(.headline)
-                Text(activity.items)
                     .font(.subheadline)
+                    .fontWeight(.medium)
+                
+                HStack {
+                    Text(activity.category.rawValue)
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(4)
+                    
+                    if activity.category == .money {
+                        Text("$\(String(format: "%.2f", activity.value))")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    } else {
+                        Text(activity.items)
+                            .font(.caption)
+                    }
+                }
             }
             
             Spacer()
@@ -380,15 +483,15 @@ struct VolunteerDonationTrackerView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
+        .background(Color.gray.opacity(0.05))
         .cornerRadius(8)
     }
     
     private func nextLevelForCurrentProgress() -> ContributorLevel {
-        let sortedLevels = ContributorLevel.allCases.sorted { $0.minimumHours < $1.minimumHours }
+        let sortedLevels = ContributorLevel.allCases.sorted { $0.minimumPoints < $1.minimumPoints }
         
         for level in sortedLevels {
-            if viewModel.totalVolunteerHours < level.minimumHours {
+            if viewModel.totalCombinedPoints < level.minimumPoints {
                 return level
             }
         }
@@ -408,47 +511,89 @@ struct AddVolunteerActivityView: View {
     var body: some View {
         NavigationView {
             Form {
-                TextField("Organization", text: $organization)
-                TextField("Hours", text: $hours)
-                    .keyboardType(.numberPad)
+                Section(header: Text("Activity Details")) {
+                    TextField("Organization", text: $organization)
+                    TextField("Hours", text: $hours)
+                        .keyboardType(.numberPad)
+                }
+                
+                Section(footer: Text("Every volunteer hour counts as 1 contribution point toward your contributor level.")) {
+                    Button("Log Hours") {
+                        if let hoursInt = Int(hours), !organization.isEmpty {
+                            viewModel.addVolunteerActivity(organization: organization, hours: hoursInt)
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }
+                    .disabled(organization.isEmpty || hours.isEmpty)
+                }
             }
             .navigationTitle("Log Volunteer Hours")
             .navigationBarItems(
-                leading: Button("Cancel") { presentationMode.wrappedValue.dismiss() },
-                trailing: Button("Save") {
-                    if let hoursInt = Int(hours), !organization.isEmpty {
-                        viewModel.addVolunteerActivity(organization: organization, hours: hoursInt)
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                }
+                leading: Button("Cancel") { presentationMode.wrappedValue.dismiss() }
             )
         }
     }
 }
 
-// Add Donation Activity Sheet
+// Add Donation Activity Sheet - UPDATED
 struct AddDonationActivityView: View {
     @ObservedObject var viewModel: ActivityTrackerViewModel
     @Environment(\.presentationMode) var presentationMode
     
     @State private var organization = ""
     @State private var items = ""
+    @State private var donationType: DonationType = .other
+    @State private var value = ""
     
     var body: some View {
         NavigationView {
             Form {
-                TextField("Organization", text: $organization)
-                TextField("Donated Items", text: $items)
+                Section(header: Text("Donation Details")) {
+                    TextField("Organization", text: $organization)
+                    
+                    Picker("Donation Type", selection: $donationType) {
+                        ForEach(DonationType.allCases, id: \.self) { type in
+                            Text(type.rawValue).tag(type)
+                        }
+                    }
+                    
+                    if donationType == .money {
+                        TextField("Amount ($)", text: $value)
+                            .keyboardType(.decimalPad)
+                    } else {
+                        TextField("Items Description", text: $items)
+                        TextField("Estimated Value ($)", text: $value)
+                            .keyboardType(.decimalPad)
+                    }
+                }
+                
+                Section(footer: Text("Donation points are calculated based on type and value. Financial donations earn 1 point per dollar. Other donations earn points based on type and value.")) {
+                    Button("Log Donation") {
+                        if let valueDouble = Double(value), !organization.isEmpty {
+                            if donationType == .money {
+                                viewModel.addDonationActivity(
+                                    organization: organization,
+                                    items: "Financial contribution",
+                                    category: donationType,
+                                    value: valueDouble
+                                )
+                            } else if !items.isEmpty {
+                                viewModel.addDonationActivity(
+                                    organization: organization,
+                                    items: items,
+                                    category: donationType,
+                                    value: valueDouble
+                                )
+                            }
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }
+                    .disabled(organization.isEmpty || value.isEmpty || (donationType != .money && items.isEmpty))
+                }
             }
             .navigationTitle("Log Donation")
             .navigationBarItems(
-                leading: Button("Cancel") { presentationMode.wrappedValue.dismiss() },
-                trailing: Button("Save") {
-                    if !organization.isEmpty && !items.isEmpty {
-                        viewModel.addDonationActivity(organization: organization, items: items)
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                }
+                leading: Button("Cancel") { presentationMode.wrappedValue.dismiss() }
             )
         }
     }

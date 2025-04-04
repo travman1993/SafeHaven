@@ -84,7 +84,7 @@ enum ContributorLevel: String, CaseIterable, Codable {
     }
     
     // Minimum hours to reach each level
-    var minimumHours: Int {
+    var minimumPoints: Int {
         switch self {
         case .tin: return 0
         case .copper: return 10
@@ -138,6 +138,33 @@ class ActivityTrackerViewModel: ObservableObject {
     
     init() {
         loadActivities()
+    }
+    
+    func deleteVolunteerActivity(at indexSet: IndexSet) {
+        // First, subtract the hours from the total
+        for index in indexSet {
+            if index < volunteerActivities.count {
+                totalVolunteerHours -= volunteerActivities[index].hours
+            }
+        }
+        
+        // Then remove the activities
+        volunteerActivities.remove(atOffsets: indexSet)
+        
+        // Update total points and level
+        updateTotalPoints()
+        calculateCurrentLevel()
+        saveActivities()
+    }
+
+    func deleteDonationActivity(at indexSet: IndexSet) {
+        // Remove the activities (the points will be recalculated in updateTotalPoints)
+        donationActivities.remove(atOffsets: indexSet)
+        
+        // Update total points and level
+        updateTotalPoints()
+        calculateCurrentLevel()
+        saveActivities()
     }
     
     func addVolunteerActivity(organization: String, hours: Int) {
@@ -255,6 +282,7 @@ struct VolunteerDonationTrackerView: View {
             }
             .navigationTitle("Activity Tracker")
             .navigationBarItems(
+                leading: EditButton(), // Add edit button
                 trailing: HStack {
                     Button(action: { showingDonationSheet = true }) {
                         Label("Log Donation", systemImage: "gift")
@@ -361,17 +389,16 @@ struct VolunteerDonationTrackerView: View {
                     .foregroundColor(.secondary)
                     .padding()
             } else {
-                ForEach(viewModel.volunteerActivities.prefix(3)) { activity in
-                    volunteerActivityRow(activity)
-                }
-                
-                if viewModel.volunteerActivities.count > 3 {
-                    Button("View All \(viewModel.volunteerActivities.count) Activities") {
-                        // Navigate to full list view
+                List {
+                    ForEach(viewModel.volunteerActivities) { activity in
+                        volunteerActivityRow(activity)
                     }
-                    .font(.caption)
-                    .padding(.top, 5)
+                    .onDelete { indexSet in
+                        viewModel.deleteVolunteerActivity(at: indexSet)
+                    }
                 }
+                .frame(height: min(CGFloat(viewModel.volunteerActivities.count) * 70, 210))
+                .listStyle(PlainListStyle())
             }
         }
         .padding()
@@ -381,7 +408,8 @@ struct VolunteerDonationTrackerView: View {
                 .shadow(color: .gray.opacity(0.1), radius: 3, x: 0, y: 1)
         )
     }
-    
+
+    // Replace the donationActivitySection with:
     private var donationActivitySection: some View {
         VStack(alignment: .leading) {
             HStack {
@@ -398,17 +426,16 @@ struct VolunteerDonationTrackerView: View {
                     .foregroundColor(.secondary)
                     .padding()
             } else {
-                ForEach(viewModel.donationActivities.prefix(3)) { activity in
-                    donationActivityRow(activity)
-                }
-                
-                if viewModel.donationActivities.count > 3 {
-                    Button("View All \(viewModel.donationActivities.count) Donations") {
-                        // Navigate to full list view
+                List {
+                    ForEach(viewModel.donationActivities) { activity in
+                        donationActivityRow(activity)
                     }
-                    .font(.caption)
-                    .padding(.top, 5)
+                    .onDelete { indexSet in
+                        viewModel.deleteDonationActivity(at: indexSet)
+                    }
                 }
+                .frame(height: min(CGFloat(viewModel.donationActivities.count) * 70, 210))
+                .listStyle(PlainListStyle())
             }
         }
         .padding()

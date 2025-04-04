@@ -20,6 +20,7 @@ struct NotificationSettingsView: View {
     
     @State private var selectedDate = Date()
     @State private var showingAuthAlert = false
+    @State private var firstMeditationTime = Date()
     @Environment(\.dismiss) var dismiss
     
     
@@ -141,15 +142,6 @@ struct NotificationSettingsView: View {
             }
         } message: {
             Text("Please enable notifications for SafeHaven in your device settings to receive daily motivation and important safety alerts.")
-        }
-    }
-    
-    private var firstMeditationTime: Date {
-        get {
-            return Date(timeIntervalSince1970: firstMeditationTimeStamp)
-        }
-        set {
-            firstMeditationTimeStamp = newValue.timeIntervalSince1970
         }
     }
     

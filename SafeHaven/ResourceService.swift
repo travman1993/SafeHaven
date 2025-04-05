@@ -3,6 +3,17 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
+// Add DefaultLocation struct if not already defined elsewhere
+struct DefaultLocation: Identifiable, Equatable {
+    let id = UUID()
+    let name: String
+    let location: CLLocation
+    
+    static func == (lhs: DefaultLocation, rhs: DefaultLocation) -> Bool {
+        return lhs.name == rhs.name
+    }
+}
+
 class ResourceService: ObservableObject {
     @Published var resources: [ResourceLocation] = []
     @Published var isLoading = false
@@ -12,6 +23,23 @@ class ResourceService: ObservableObject {
     private var resourceCache: [ResourceCategory: [ResourceLocation]] = [:]
     private var lastCacheUpdateTime: [ResourceCategory: Date] = [:]
     private let cacheExpirationTime: TimeInterval = 1800 // 30 minutes
+    
+    // Default cities for when location services are disabled
+    let defaultCities: [DefaultLocation] = [
+        DefaultLocation(name: "New York", location: CLLocation(latitude: 40.7128, longitude: -74.0060)),
+        DefaultLocation(name: "Los Angeles", location: CLLocation(latitude: 34.0522, longitude: -118.2437)),
+        DefaultLocation(name: "Chicago", location: CLLocation(latitude: 41.8781, longitude: -87.6298)),
+        DefaultLocation(name: "Houston", location: CLLocation(latitude: 29.7604, longitude: -95.3698)),
+        DefaultLocation(name: "Phoenix", location: CLLocation(latitude: 33.4484, longitude: -112.0740)),
+        DefaultLocation(name: "Philadelphia", location: CLLocation(latitude: 39.9526, longitude: -75.1652)),
+        DefaultLocation(name: "San Antonio", location: CLLocation(latitude: 29.4241, longitude: -98.4936)),
+        DefaultLocation(name: "San Diego", location: CLLocation(latitude: 32.7157, longitude: -117.1611)),
+        DefaultLocation(name: "Dallas", location: CLLocation(latitude: 32.7767, longitude: -96.7970)),
+        DefaultLocation(name: "San Francisco", location: CLLocation(latitude: 37.7749, longitude: -122.4194))
+    ]
+
+    // User's selected default city
+    @Published var selectedCity: DefaultLocation? = nil
     
     // Enhanced and broadened category queries for better results
     private let categoryQueries: [ResourceCategory: String] = [
@@ -46,12 +74,19 @@ class ResourceService: ObservableObject {
             self.resources = []
         }
         
-        // Check if we have a valid location
-        guard let location = location else {
-            self.isLoading = false
-            self.errorMessage = "Location not available"
-            completion?()
-            return
+        // Determine which location to use
+        let locationToUse: CLLocation
+        if let location = location {
+            // Use the provided location if available
+            locationToUse = location
+        } else if let selected = selectedCity {
+            // Fall back to the selected city if no location provided
+            locationToUse = selected.location
+            print("Using selected city location: \(selected.name)")
+        } else {
+            // Default to San Francisco if nothing else is available
+            locationToUse = defaultCities[9].location // San Francisco
+            print("Using default location (San Francisco)")
         }
         
         // Check if we have a cached result that's still valid
@@ -69,7 +104,7 @@ class ResourceService: ObservableObject {
             return
         }
         
-        print("Fetching resources for category: \(category.rawValue) near \(location.coordinate.latitude), \(location.coordinate.longitude)")
+        print("Fetching resources for category: \(category.rawValue) near \(locationToUse.coordinate.latitude), \(locationToUse.coordinate.longitude)")
         
         // If "all" category is selected, fetch multiple categories in sequence
         if category == .all {
@@ -89,7 +124,7 @@ class ResourceService: ObservableObject {
             print("Will fetch these categories: \(categoriesToFetch.map { $0.rawValue }.joined(separator: ", "))")
             
             // Use increased radius for "all" to get more results
-            fetchNextCategory(categories: categoriesToFetch, location: location, radius: radius * 1.2) {
+            fetchNextCategory(categories: categoriesToFetch, location: locationToUse, radius: radius * 1.2) {
                 print("All categories fetched, found \(self.resources.count) total resources")
                 
                 // Cache the comprehensive results
@@ -104,13 +139,13 @@ class ResourceService: ObservableObject {
             }
         } else {
             // Add a supplementary query if it's a regular category
-            fetchSingleCategory(category: category, location: location, radius: radius) {
+            fetchSingleCategory(category: category, location: locationToUse, radius: radius) {
                 print("Category \(category.rawValue) fetched, found \(self.resources.count) resources")
                 
                 // If few results, try a broader search automatically
                 if self.resources.count < 5 {
                     print("Found only \(self.resources.count) results for \(category.rawValue), trying broader search")
-                    self.broadenCategorySearch(category: category, location: location, radius: radius * 1.5) {
+                    self.broadenCategorySearch(category: category, location: locationToUse, radius: radius * 1.5) {
                         self.resourceCache[category] = self.resources
                         self.lastCacheUpdateTime[category] = Date()
                         completion?()
@@ -195,8 +230,8 @@ class ResourceService: ObservableObject {
         }
     }
     
-    // Enhanced search function with caching and broader results
-    func searchAnyPlace(query: String, near location: CLLocation, radius: Double = 25000, completion: (() -> Void)? = nil) {
+    // Modified searchAnyPlace to use default location when location is nil
+    func searchAnyPlace(query: String, near location: CLLocation? = nil, radius: Double = 25000, completion: (() -> Void)? = nil) {
         isLoading = true
         
         // Clear previous results
@@ -204,12 +239,27 @@ class ResourceService: ObservableObject {
             self.resources = []
         }
         
+        // Determine which location to use
+        let locationToUse: CLLocation
+        if let location = location {
+            // Use the provided location if available
+            locationToUse = location
+        } else if let selected = selectedCity {
+            // Fall back to the selected city if no location provided
+            locationToUse = selected.location
+            print("Using selected city location for search: \(selected.name)")
+        } else {
+            // Default to San Francisco if nothing else is available
+            locationToUse = defaultCities[9].location // San Francisco
+            print("Using default location for search (San Francisco)")
+        }
+        
         // Generate search cache key (simplified query + region)
         let simplifiedQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        let cacheKey = "search-\(simplifiedQuery)-\(Int(location.coordinate.latitude*100))-\(Int(location.coordinate.longitude*100))"
+        let cacheKey = "search-\(simplifiedQuery)-\(Int(locationToUse.coordinate.latitude*100))-\(Int(locationToUse.coordinate.longitude*100))"
         
         // Check search cache using a custom key
-        if let cachedResults = getCachedSearchResults(for: simplifiedQuery, near: location),
+        if let cachedResults = getCachedSearchResults(for: simplifiedQuery, near: locationToUse),
            !cachedResults.isEmpty {
             
             print("Using cached search results for '\(query)' (\(cachedResults.count) results)")
@@ -224,12 +274,12 @@ class ResourceService: ObservableObject {
         // Enhance search query for better results
         let enhancedQuery = query + " assistance services support resources help community center"
             
-        print("Searching for: \"\(enhancedQuery)\" near \(location.coordinate.latitude), \(location.coordinate.longitude)")
+        print("Searching for: \"\(enhancedQuery)\" near \(locationToUse.coordinate.latitude), \(locationToUse.coordinate.longitude)")
             
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = enhancedQuery
         request.region = MKCoordinateRegion(
-            center: location.coordinate,
+            center: locationToUse.coordinate,
             latitudinalMeters: radius,
             longitudinalMeters: radius
         )
@@ -254,7 +304,7 @@ class ResourceService: ObservableObject {
                 guard let response = response, !response.mapItems.isEmpty else {
                     // If no results found with the enhanced query, try a broader search
                     print("No results found for query: \(enhancedQuery). Trying broader search...")
-                    self.tryBroaderSearch(originalQuery: query, location: location, radius: radius * 1.8, completion: completion)
+                    self.tryBroaderSearch(originalQuery: query, location: locationToUse, radius: radius * 1.8, completion: completion)
                     return
                 }
                     

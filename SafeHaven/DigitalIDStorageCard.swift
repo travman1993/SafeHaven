@@ -1,10 +1,61 @@
 //
-//  Untitled.swift
+//  DigitalIDStorageCard.swift
 //  SafeHaven
 //
 //  Created by Travis Rodriguez on 4/3/25.
 //
 import SwiftUI
+import UIKit
+
+// Image picker coordinator to handle camera interactions
+class ImagePickerCoordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+    @Binding var isPresented: Bool
+    @Binding var selectedImage: UIImage?
+    @Binding var showLabelingSheet: Bool
+    
+    init(isPresented: Binding<Bool>, selectedImage: Binding<UIImage?>, showLabelingSheet: Binding<Bool>) {
+        self._isPresented = isPresented
+        self._selectedImage = selectedImage
+        self._showLabelingSheet = showLabelingSheet
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        if let image = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
+            selectedImage = image
+            
+            // After getting the image, transition to the labeling sheet
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.showLabelingSheet = true
+            }
+        }
+        isPresented = false
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        isPresented = false
+    }
+}
+
+// SwiftUI wrapper for UIImagePickerController
+struct ImagePicker: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    @Binding var selectedImage: UIImage?
+    @Binding var showLabelingSheet: Bool
+    var sourceType: UIImagePickerController.SourceType
+    
+    func makeCoordinator() -> ImagePickerCoordinator {
+        return ImagePickerCoordinator(isPresented: $isPresented, selectedImage: $selectedImage, showLabelingSheet: $showLabelingSheet)
+    }
+    
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = sourceType
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+}
 
 // MARK: - Digital ID Storage Card
 struct DigitalIDStorageCard: View {
@@ -74,6 +125,7 @@ struct DigitalIDStorageCard: View {
 struct DigitalIDGalleryView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingCamera = false
+    @State private var showingImagePicker = false
     @State private var documents: [StoredDocument] = []
     @State private var newImage: UIImage?
     @State private var showingLabelSheet = false
@@ -109,10 +161,18 @@ struct DigitalIDGalleryView: View {
                     }
                     
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
-                            showingCamera = true
-                        }) {
-                            Image(systemName: "plus")
+                        HStack {
+                            Button(action: {
+                                showingImagePicker = true
+                            }) {
+                                Image(systemName: "photo.on.rectangle")
+                            }
+                            
+                            Button(action: {
+                                showingCamera = true
+                            }) {
+                                Image(systemName: "plus")
+                            }
                         }
                     }
                 }
@@ -128,14 +188,26 @@ struct DigitalIDGalleryView: View {
             }
         }
         .sheet(isPresented: $showingCamera) {
-            Text("Camera View Placeholder")
-                .font(.title)
-                .padding()
-            // In a real implementation, this would be a camera view or image picker
+            ImagePicker(
+                isPresented: $showingCamera,
+                selectedImage: $newImage,
+                showLabelingSheet: $showingLabelSheet,
+                sourceType: .camera
+            )
+            .edgesIgnoringSafeArea(.all)
+        }
+        .sheet(isPresented: $showingImagePicker) {
+            ImagePicker(
+                isPresented: $showingImagePicker,
+                selectedImage: $newImage,
+                showLabelingSheet: $showingLabelSheet,
+                sourceType: .photoLibrary
+            )
+            .edgesIgnoringSafeArea(.all)
         }
         .sheet(isPresented: $showingLabelSheet) {
-            if newImage != nil {
-                DocumentLabelingView(image: newImage!, onSave: { name, type in
+            if let image = newImage {
+                DocumentLabelingView(image: image, onSave: { name, type in
                     let newDoc = StoredDocument(name: name, type: type, image: newImage, date: Date())
                     documents.append(newDoc)
                     newImage = nil
@@ -161,17 +233,32 @@ struct DigitalIDGalleryView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, ResponsiveLayout.padding(20))
             
-            Button(action: {
-                showingCamera = true
-            }) {
-                HStack {
-                    Image(systemName: "camera.fill")
-                    Text("Add Document")
+            HStack(spacing: 20) {
+                Button(action: {
+                    showingImagePicker = true
+                }) {
+                    HStack {
+                        Image(systemName: "photo.fill")
+                        Text("Choose Photo")
+                    }
+                    .padding()
+                    .background(AppTheme.secondary)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
                 }
-                .padding()
-                .background(AppTheme.primary)
-                .foregroundColor(.white)
-                .cornerRadius(12)
+                
+                Button(action: {
+                    showingCamera = true
+                }) {
+                    HStack {
+                        Image(systemName: "camera.fill")
+                        Text("Take Photo")
+                    }
+                    .padding()
+                    .background(AppTheme.primary)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
             }
             .padding(.top, ResponsiveLayout.padding(20))
         }
@@ -187,8 +274,16 @@ struct DigitalIDGalleryView: View {
                             .fill(AppTheme.primary.opacity(0.1))
                             .frame(width: 50, height: 50)
                         
-                        Image(systemName: "doc.text.fill")
-                            .foregroundColor(AppTheme.primary)
+                        if let docImage = document.image {
+                            Image(uiImage: docImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 46, height: 46)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                        } else {
+                            Image(systemName: "doc.text.fill")
+                                .foregroundColor(AppTheme.primary)
+                        }
                     }
                     
                     VStack(alignment: .leading) {

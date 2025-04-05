@@ -27,7 +27,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>SafeHaven</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>2.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -57,7 +57,7 @@
 		</dict>
 	</dict>
 	<key>NSWeatherUsageDescription</key>
-	<string>SafeHaven uses weather information to provide local safety alerts and relevant weather-based safety recommendations.</string>
+	<string>SafeHaven can use your location to provide nearby resources. Location is completely optional - you can manually select a city if you prefer.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

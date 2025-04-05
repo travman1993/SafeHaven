@@ -31,7 +31,7 @@ struct OnboardingView: View {
             title: "Location Services",
             subtitle: "Privacy & safety under your control",
             image: "location.fill",
-            description: "We'll only access your location when you use the emergency feature or when looking for nearby resources. Your location data is never stored or shared without your permission."
+            description: "When enabled, we'll only access your location when looking for nearby resources. Location services are optional, and you can select cities manually. Your location data is never stored or shared without your permission."
         ),
         OnboardingPage(
             title: "Ready to Get Started?",
@@ -74,78 +74,66 @@ struct OnboardingView: View {
                     }
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                     
-                    // Navigation buttons (Only show if we're not on the location page or if location is already authorized)
-                    if currentPage != 3 || locationEnabled {
-                        HStack {
-                            // Back button
-                            if currentPage > 0 {
-                                Button(action: {
-                                    withAnimation {
-                                        currentPage -= 1
-                                    }
-                                }) {
-                                    HStack(spacing: ResponsiveLayout.padding(4)) {
-                                        Image(systemName: "chevron.left")
-                                        Text("Back")
-                                    }
-                                    .foregroundColor(AppTheme.primary)
-                                    .padding()
+                    // Navigation buttons (Always show to enable skipping location permission)
+                    HStack {
+                        // Back button
+                        if currentPage > 0 {
+                            Button(action: {
+                                withAnimation {
+                                    currentPage -= 1
                                 }
-                            } else {
-                                Spacer()
-                                    .frame(width: ResponsiveLayout.isIPad ? 120 : 80)
+                            }) {
+                                HStack(spacing: ResponsiveLayout.padding(4)) {
+                                    Image(systemName: "chevron.left")
+                                    Text("Back")
+                                }
+                                .foregroundColor(AppTheme.primary)
+                                .padding()
                             }
-                            
+                        } else {
                             Spacer()
-                            
-                            // Next/Get Started button
-                            if currentPage < pages.count - 1 {
-                                Button(action: {
-                                    withAnimation {
-                                        currentPage += 1
-                                    }
-                                }) {
-                                    HStack(spacing: ResponsiveLayout.padding(4)) {
-                                        Text("Next")
-                                        Image(systemName: "chevron.right")
-                                    }
-                                    .foregroundColor(AppTheme.primary)
-                                    .padding()
+                                .frame(width: ResponsiveLayout.isIPad ? 120 : 80)
+                        }
+                        
+                        Spacer()
+                        
+                        // Next/Get Started button
+                        if currentPage < pages.count - 1 {
+                            Button(action: {
+                                withAnimation {
+                                    currentPage += 1
                                 }
-                            } else {
-                                Button(action: {
-                                    // Complete onboarding
-                                    UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-                                    hasCompletedOnboarding = true
-                                    onComplete()  // Call the completion handler
-                                }) {
-                                    Text("Get Started")
-                                        .font(.system(
-                                            size: ResponsiveLayout.fontSize(18),
-                                            weight: .semibold
-                                        ))
-                                        .foregroundColor(.white)
-                                        .padding(.vertical, ResponsiveLayout.isIPad ? 20 : 16)
-                                        .padding(.horizontal, ResponsiveLayout.isIPad ? 40 : 32)
-                                        .background(AppTheme.secondary)
-                                        .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
-                                        .shadow(color: AppTheme.secondary.opacity(0.3), radius: 5, x: 0, y: 3)
+                            }) {
+                                HStack(spacing: ResponsiveLayout.padding(4)) {
+                                    Text("Next")
+                                    Image(systemName: "chevron.right")
                                 }
+                                .foregroundColor(AppTheme.primary)
+                                .padding()
+                            }
+                        } else {
+                            Button(action: {
+                                // Complete onboarding
+                                UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+                                hasCompletedOnboarding = true
+                                onComplete()  // Call the completion handler
+                            }) {
+                                Text("Get Started")
+                                    .font(.system(
+                                        size: ResponsiveLayout.fontSize(18),
+                                        weight: .semibold
+                                    ))
+                                    .foregroundColor(.white)
+                                    .padding(.vertical, ResponsiveLayout.isIPad ? 20 : 16)
+                                    .padding(.horizontal, ResponsiveLayout.isIPad ? 40 : 32)
+                                    .background(AppTheme.secondary)
+                                    .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
+                                    .shadow(color: AppTheme.secondary.opacity(0.3), radius: 5, x: 0, y: 3)
                             }
                         }
-                        .padding(.horizontal, ResponsiveLayout.padding(20))
-                        .padding(.bottom, ResponsiveLayout.isIPad ? 60 : 40)
                     }
-                }
-            }
-        }
-        .onChange(of: locationEnabled) { oldValue, newValue in
-            // When location permission state changes and is granted, allow moving to next page
-            if newValue && currentPage == 3 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    withAnimation {
-                        currentPage += 1
-                    }
+                    .padding(.horizontal, ResponsiveLayout.padding(20))
+                    .padding(.bottom, ResponsiveLayout.isIPad ? 60 : 40)
                 }
             }
         }
@@ -206,16 +194,15 @@ struct OnboardingView: View {
                 .padding(.horizontal, ResponsiveLayout.isIPad ? 80 : 40)
                 .padding(.top, ResponsiveLayout.padding(8))
             
-            // Location permission request button on the location page
+            // Location permission options on the location page
             if index == 3 {
-                // Only show the Continue button if permission hasn't been granted yet
-                if !locationEnabled {
+                VStack(spacing: ResponsiveLayout.padding(10)) {
                     Button(action: {
                         requestLocationPermission()
                     }) {
                         HStack {
                             Image(systemName: "location.fill")
-                            Text("Continue")
+                            Text("Enable Location")
                         }
                         .font(.system(
                             size: ResponsiveLayout.fontSize(16),
@@ -228,30 +215,32 @@ struct OnboardingView: View {
                         .cornerRadius(ResponsiveLayout.isIPad ? 16 : 12)
                         .shadow(color: AppTheme.primary.opacity(0.3), radius: 5, x: 0, y: 3)
                     }
-                    .padding(.vertical, ResponsiveLayout.padding(16))
+                    .padding(.vertical, ResponsiveLayout.padding(8))
                     
-                    // Show a message indicating this step is required
-                    Text("Location permission is required to find nearby resources and provide emergency assistance")
-                        .font(.system(size: ResponsiveLayout.fontSize(14)))
-                        .foregroundColor(AppTheme.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, ResponsiveLayout.isIPad ? 60 : 40)
-                } else {
-                    // Show success message when permission is granted
-                    VStack(spacing: ResponsiveLayout.padding(10)) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: ResponsiveLayout.fontSize(36)))
-                            .foregroundColor(Color.green)
-                        
-                        Text("Location services enabled!")
+                    Button(action: {
+                        // Skip location permission and continue
+                        withAnimation {
+                            currentPage += 1
+                        }
+                    }) {
+                        Text("Choose Location Later")
                             .font(.system(
                                 size: ResponsiveLayout.fontSize(16),
                                 weight: .medium
                             ))
-                            .foregroundColor(AppTheme.textSecondary)
+                            .foregroundColor(AppTheme.primary)
+                            .padding(.vertical, ResponsiveLayout.padding(8))
                     }
-                    .padding(.vertical, ResponsiveLayout.padding(20))
+                    
+                    // Show a message indicating this step is optional
+                    Text("Location permission enhances your experience but is optional. You can manually select a city if you prefer.")
+                        .font(.system(size: ResponsiveLayout.fontSize(14)))
+                        .foregroundColor(AppTheme.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, ResponsiveLayout.isIPad ? 60 : 40)
+                        .padding(.top, ResponsiveLayout.padding(12))
                 }
+                .padding(.vertical, ResponsiveLayout.padding(16))
             }
             
             Spacer()
@@ -272,6 +261,12 @@ struct OnboardingView: View {
         // Check permission after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             checkLocationPermission()
+            // Automatically advance to next screen after a moment regardless of the choice
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation {
+                    currentPage += 1
+                }
+            }
         }
     }
 }
@@ -282,11 +277,4 @@ struct OnboardingPage {
     let subtitle: String
     let image: String
     let description: String
-}
-
-// Preview
-struct OnboardingView_Previews: PreviewProvider {
-    static var previews: some View {
-        OnboardingView(hasCompletedOnboarding: .constant(false), onComplete: {})
-    }
 }

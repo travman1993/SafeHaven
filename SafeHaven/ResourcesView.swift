@@ -11,6 +11,9 @@ struct ResourcesView: View {
     @State private var viewMode: ViewMode = .list
     @State private var selectedResource: ResourceLocation?
     @State private var isLoading = false
+    @State private var showingLocationSelector = false
+    @State private var locationEnabled = false
+    @State private var showingLocationPermissionAlert = false
     
     // Prevent too many resource reloads
     @State private var lastLoadTime = Date()
@@ -93,11 +96,22 @@ struct ResourcesView: View {
                         userLocation: locationService.currentLocation?.coordinate,
                         selectedResource: $selectedResource
                     )
+                    
+                    // Show location permission message when location is disabled
+                    if !locationEnabled && resourceService.resources.isEmpty {
+                        LocationPermissionView(showingLocationSelector: $showingLocationSelector)
+                    }
+                    
                 case .list:
                     ResourceListContentView(
                         resources: filteredResources,
                         selectedResource: $selectedResource
                     )
+                    
+                    // Show location permission message when location is disabled
+                    if !locationEnabled && resourceService.resources.isEmpty {
+                        LocationPermissionView(showingLocationSelector: $showingLocationSelector)
+                    }
                 }
                 
                 // Loading Indicator
@@ -112,19 +126,54 @@ struct ResourcesView: View {
         .background(AppTheme.adaptiveBackground)
         .navigationTitle("Resources")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    if locationEnabled {
+                        // Request location update if permission is granted
+                        locationService.requestLocation()
+                    } else {
+                        // Show location selector if permission is denied
+                        showingLocationSelector = true
+                    }
+                }) {
+                    Image(systemName: locationEnabled ? "location.fill" : "mappin.and.ellipse")
+                }
+            }
+        }
+        .sheet(isPresented: $showingLocationSelector) {
+            LocationSelectorView(
+                selectedCity: $resourceService.selectedCity,
+                defaultCities: resourceService.defaultCities
+            )
+        }
+        .alert(isPresented: $showingLocationPermissionAlert) {
+            Alert(
+                title: Text("Location Services Disabled"),
+                message: Text("You can still use SafeHaven without location services. Select a city to find resources."),
+                primaryButton: .default(Text("Select City"), action: {
+                    showingLocationSelector = true
+                }),
+                secondaryButton: .cancel()
+            )
+        }
         .sheet(item: $selectedResource) { resource in
             ResourceDetailView(resource: resource)
         }
         .onAppear {
-            // Only request permissions and load resources if we don't already have them
-            if locationService.authorizationStatus == .notDetermined {
-                locationService.requestLocation()
-            }
+            // Check if location is enabled
+            checkLocationStatus()
             
+            // Only load resources if we don't already have them
             if resourceService.resources.isEmpty {
                 loadResources()
             }
         }
+    }
+    
+    private func checkLocationStatus() {
+        let status = locationService.authorizationStatus
+        locationEnabled = (status == .authorizedWhenInUse || status == .authorizedAlways)
     }
     
     private func performSearch() {
@@ -139,7 +188,7 @@ struct ResourcesView: View {
         
         print("Searching for: \(searchText)")
         
-        if let location = locationService.currentLocation {
+        if let location = locationService.currentLocation, locationEnabled {
             print("Using current location for search")
             // Use a broader search with multiple terms and categories
             resourceService.searchAnyPlace(query: searchText, near: location, radius: 25000) {
@@ -148,10 +197,9 @@ struct ResourcesView: View {
                 print("Search completed, found \(self.resourceService.resources.count) results")
             }
         } else {
-            print("Using default location for search")
-            // Use default location if user location isn't available
-            let defaultLocation = CLLocation(latitude: 37.7749, longitude: -122.4194)
-            resourceService.searchAnyPlace(query: searchText, near: defaultLocation, radius: 25000) {
+            print("Using selected city or default location for search")
+            // Use selected city or default location
+            resourceService.searchAnyPlace(query: searchText, near: nil, radius: 25000) {
                 self.isLoading = false
                 print("Search completed, found \(self.resourceService.resources.count) results")
             }
@@ -163,39 +211,19 @@ struct ResourcesView: View {
         
         isLoading = true
         
-        if let location = locationService.currentLocation {
-            // Add a small delay to ensure UI updates properly
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                resourceService.fetchResources(category: selectedCategory, near: location) {
-                    isLoading = false
-                }
+        if let location = locationService.currentLocation, locationEnabled {
+            // Use current location if available and authorized
+            resourceService.fetchResources(category: selectedCategory, near: location) {
+                isLoading = false
             }
         } else {
-            // If location not available, try to use a default location or ask for permission
-            if locationService.authorizationStatus == .authorizedWhenInUse ||
-               locationService.authorizationStatus == .authorizedAlways {
-                // Location permission granted but no location yet - try to get location
-                locationService.requestLocation()
+            // If location not available or not authorized, use selected city or default
+            resourceService.fetchResources(category: selectedCategory, near: nil) {
+                isLoading = false
                 
-                // Wait briefly then check again
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    if let location = locationService.currentLocation {
-                        resourceService.fetchResources(category: selectedCategory, near: location) {
-                            isLoading = false
-                        }
-                    } else {
-                        // Use a default location if we still don't have one
-                        let defaultLocation = CLLocation(latitude: 37.7749, longitude: -122.4194) // San Francisco
-                        resourceService.fetchResources(category: selectedCategory, near: defaultLocation) {
-                            isLoading = false
-                        }
-                    }
-                }
-            } else {
-                // No authorization yet - use default location
-                let defaultLocation = CLLocation(latitude: 37.7749, longitude: -122.4194) // San Francisco
-                resourceService.fetchResources(category: selectedCategory, near: defaultLocation) {
-                    isLoading = false
+                // If no city is selected and location is disabled, prompt to select a city
+                if !locationEnabled && resourceService.selectedCity == nil {
+                    self.showingLocationSelector = true
                 }
             }
         }

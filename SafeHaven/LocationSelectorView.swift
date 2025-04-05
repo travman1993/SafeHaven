@@ -7,17 +7,6 @@
 import SwiftUI
 import CoreLocation
 
-// Model for default locations
-struct DefaultLocation: Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let location: CLLocation
-    
-    static func == (lhs: DefaultLocation, rhs: DefaultLocation) -> Bool {
-        return lhs.name == rhs.name
-    }
-}
-
 // City selector view for when location permissions are denied
 struct LocationSelectorView: View {
     @Environment(\.dismiss) var dismiss

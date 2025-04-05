@@ -3,17 +3,6 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
-// Add DefaultLocation struct if not already defined elsewhere
-struct DefaultLocation: Identifiable, Equatable {
-    let id = UUID()
-    let name: String
-    let location: CLLocation
-    
-    static func == (lhs: DefaultLocation, rhs: DefaultLocation) -> Bool {
-        return lhs.name == rhs.name
-    }
-}
-
 class ResourceService: ObservableObject {
     @Published var resources: [ResourceLocation] = []
     @Published var isLoading = false
@@ -41,6 +30,7 @@ class ResourceService: ObservableObject {
     // User's selected default city
     @Published var selectedCity: DefaultLocation? = nil
     
+    // Rest of the ResourceService code follows...
     // Enhanced and broadened category queries for better results
     private let categoryQueries: [ResourceCategory: String] = [
         .all: "help assistance services community resources support aid outreach social services center",

@@ -7,7 +7,6 @@ struct ResourcesView: View {
     @StateObject private var resourceService = ResourceService()
     
     @State private var selectedCategory: ResourceCategory = .all
-    @State private var searchText = ""
     @State private var viewMode: ViewMode = .list
     @State private var selectedResource: ResourceLocation?
     @State private var isLoading = false
@@ -23,36 +22,27 @@ struct ResourcesView: View {
     }
     
     var filteredResources: [ResourceLocation] {
-        // When doing a search, don't filter by category
-        if !searchText.isEmpty {
-            let searchFiltered = resourceService.resources.filter { resource in
-                resource.name.localizedCaseInsensitiveContains(searchText) ||
-                resource.category.rawValue.localizedCaseInsensitiveContains(searchText) ||
-                resource.address.localizedCaseInsensitiveContains(searchText) ||
-                resource.description.localizedCaseInsensitiveContains(searchText)
-            }
-            print("Search filter: \(searchText), Found \(searchFiltered.count) resources out of \(resourceService.resources.count)")
-            return searchFiltered
+        // For "All" category, show all resources without filtering
+        if selectedCategory == .all {
+            return resourceService.resources
         }
         
-        // When not searching, filter by selected category
-        let categoryFiltered = selectedCategory == .all ?
-            resourceService.resources :
-            resourceService.resources.filter { $0.category == selectedCategory }
-            
-        print("Category filter: \(selectedCategory.rawValue), Found \(categoryFiltered.count) resources out of \(resourceService.resources.count)")
-        return categoryFiltered
+        // Otherwise filter by selected category
+        return resourceService.resources.filter { $0.category == selectedCategory }
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Search and Filter Section
+            // Category Scrolling Tabs
             VStack(spacing: ResponsiveLayout.padding(12)) {
-                // Search Bar
-                SearchBar(text: $searchText, placeholder: "Search resources...", onSubmit: {
-                    performSearch()
-                })
+                // View Mode Toggle
+                Picker("View Mode", selection: $viewMode) {
+                    Image(systemName: "list.bullet").tag(ViewMode.list)
+                    Image(systemName: "map").tag(ViewMode.map)
+                }
+                .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal, ResponsiveLayout.padding())
+                .padding(.top, ResponsiveLayout.padding(8))
                 
                 // Category Scroll View
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -74,23 +64,16 @@ struct ResourcesView: View {
                     }
                     .padding(.horizontal, ResponsiveLayout.padding())
                 }
-                
-                // View Mode Toggle
-                Picker("View Mode", selection: $viewMode) {
-                    Image(systemName: "list.bullet").tag(ViewMode.list)
-                    Image(systemName: "map").tag(ViewMode.map)
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding(.horizontal, ResponsiveLayout.padding())
+                .padding(.bottom, ResponsiveLayout.padding(8))
             }
             .padding(.vertical, ResponsiveLayout.padding())
             .background(AppTheme.adaptiveBackground)
             
-            // Content View
+            // Content View - Map or List
             ZStack {
                 switch viewMode {
                 case .map:
-                    // Use the new map component with anti-flickering measures
+                    // Map view with resources
                     SafeHavenResourceMapContainer(
                         resources: filteredResources,
                         userLocation: locationService.currentLocation?.coordinate,
@@ -164,46 +147,14 @@ struct ResourcesView: View {
             // Check if location is enabled
             checkLocationStatus()
             
-            // Only load resources if we don't already have them
-            if resourceService.resources.isEmpty {
-                loadResources()
-            }
+            // Always load resources when view appears to ensure fresh data
+            loadResources()
         }
     }
     
     private func checkLocationStatus() {
         let status = locationService.authorizationStatus
         locationEnabled = (status == .authorizedWhenInUse || status == .authorizedAlways)
-    }
-    
-    private func performSearch() {
-        guard !searchText.isEmpty else { return }
-        isLoading = true
-        
-        // Explicitly update UI to show loading state
-        withAnimation {
-            // This will force UI update
-            resourceService.resources = []
-        }
-        
-        print("Searching for: \(searchText)")
-        
-        if let location = locationService.currentLocation, locationEnabled {
-            print("Using current location for search")
-            // Use a broader search with multiple terms and categories
-            resourceService.searchAnyPlace(query: searchText, near: location, radius: 25000) {
-                // Search completed
-                self.isLoading = false
-                print("Search completed, found \(self.resourceService.resources.count) results")
-            }
-        } else {
-            print("Using selected city or default location for search")
-            // Use selected city or default location
-            resourceService.searchAnyPlace(query: searchText, near: nil, radius: 25000) {
-                self.isLoading = false
-                print("Search completed, found \(self.resourceService.resources.count) results")
-            }
-        }
     }
     
     private func loadResources() {
@@ -230,57 +181,6 @@ struct ResourcesView: View {
     }
 }
 
-struct SearchBar: View {
-    @Binding var text: String
-    var placeholder: String
-    var onSubmit: (() -> Void)? = nil
-    @FocusState private var isInputFocused: Bool
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(text.isEmpty ? AppTheme.adaptiveTextSecondary : AppTheme.primary)
-            
-            TextField(placeholder, text: $text)
-                .font(.system(size: 16))
-                .foregroundColor(AppTheme.adaptiveTextPrimary)
-                .focused($isInputFocused)
-                .submitLabel(.search)
-                .onSubmit {
-                    print("Search submitted: \(text)")
-                    isInputFocused = false
-                    onSubmit?() // This is where the search function is called
-                }
-            
-            // Add a dedicated search button for clarity
-            if !text.isEmpty {
-                Button(action: {
-                    isInputFocused = false
-                    onSubmit?() // Explicitly call search function
-                }) {
-                    Text("Search")
-                        .foregroundColor(AppTheme.primary)
-                        .padding(.horizontal, 10)
-                }
-            }
-            
-            // Clear button
-            if !text.isEmpty {
-                Button(action: {
-                    text = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(AppTheme.adaptiveTextSecondary)
-                }
-            }
-        }
-        .padding(12)
-        .background(AppTheme.adaptiveCardBackground)
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
-    }
-}
-
 struct ResourceListContentView: View {
     let resources: [ResourceLocation]
     @Binding var selectedResource: ResourceLocation?
@@ -288,6 +188,27 @@ struct ResourceListContentView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
+                if resources.isEmpty {
+                    VStack(spacing: 20) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 40))
+                            .foregroundColor(AppTheme.primary.opacity(0.5))
+                            .padding(.top, 40)
+                        
+                        Text("No resources found")
+                            .font(.headline)
+                            .foregroundColor(AppTheme.adaptiveTextPrimary)
+                        
+                        Text("Try selecting a different category or location")
+                            .font(.subheadline)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .padding(.top, 60)
+                    .frame(maxWidth: .infinity)
+                }
+                
                 ForEach(resources) { resource in
                     Button(action: {
                         selectedResource = resource

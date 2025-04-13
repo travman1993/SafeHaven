@@ -1,13 +1,8 @@
-//
-//  NotificationManager.swift
-//  SafeHaven
-//
-//  Created by Travis Rodriguez on 2/27/25.
-//
 import Foundation
 import UserNotifications
+import UIKit
 
-class NotificationManager {
+class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
     
     // Sample motivational quotes for notifications
@@ -20,8 +15,36 @@ class NotificationManager {
         (text: "Success is not final, failure is not fatal: It is the courage to continue that counts.", author: "Winston Churchill")
     ]
     
-    private init() {}
+    override private init() {
+        super.init()
+        // Configure notification center delegate
+        UNUserNotificationCenter.current().delegate = self
+    }
     
+    // MARK: - UNUserNotificationCenterDelegate Methods
+    func userNotificationCenter(_ center: UNUserNotificationCenter, 
+                                willPresent notification: UNNotification, 
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // Customize how notifications are handled when the app is in the foreground
+        completionHandler([.banner, .sound, .badge])
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, 
+                                didReceive response: UNNotificationResponse, 
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        // Clear the badge when a notification is tapped
+        center.removeAllDeliveredNotifications()
+        
+        // Set badge count to 0
+        center.setBadgeCount(0) { error in
+            if let error = error {
+                print("Error setting badge count: \(error)")
+            }
+            completionHandler()
+        }
+    }
+    
+    // MARK: - Meditation Notifications
     func scheduleMeditationNotifications(firstTime: Date, count: Int, enabled: Bool = true) {
         // Remove existing meditation notifications first
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers:
@@ -97,6 +120,7 @@ class NotificationManager {
         }
     }
 
+    // MARK: - Notification Management
     func cancelMeditationNotifications() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(
             withIdentifiers: (0..<6).map { "meditation\($0)" }
@@ -109,6 +133,7 @@ class NotificationManager {
         content.title = "Mindfulness Reminder"
         content.body = "This is a test reminder for your breathing exercise."
         content.sound = .default
+        content.badge = 1
         
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
         let request = UNNotificationRequest(identifier: "meditationTest", content: content, trigger: trigger)
@@ -120,6 +145,7 @@ class NotificationManager {
         }
     }
     
+    // MARK: - Authorization
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             DispatchQueue.main.async {
@@ -132,6 +158,7 @@ class NotificationManager {
         }
     }
     
+    // MARK: - Motivation Notifications
     func scheduleMotivationNotification(at time: Date, enabled: Bool = true) {
         // Remove existing notifications first
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["dailyMotivation"])
@@ -143,6 +170,7 @@ class NotificationManager {
         content.title = "Daily Motivation"
         content.body = "Time for your daily dose of inspiration!"
         content.sound = .default
+        content.badge = 1
         
         // Extract hour and minute components from the date
         let calendar = Calendar.current
@@ -167,6 +195,7 @@ class NotificationManager {
         }
     }
     
+    // MARK: - Random Quote Notifications
     func scheduleRandomQuoteNotification() {
         let content = UNMutableNotificationContent()
         
@@ -176,6 +205,7 @@ class NotificationManager {
         content.title = "Inspiration for Today"
         content.body = "\"\(randomQuote.text)\" — \(randomQuote.author)"
         content.sound = .default
+        content.badge = 1
         
         // Create a trigger for a random time today
         let currentDate = Date()

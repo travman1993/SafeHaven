@@ -33,6 +33,17 @@ enum DonationType: String, CaseIterable, Codable {
     case supplies = "Supplies Donation"
     case other = "Other Donation"
     
+    var color: Color {
+            switch self {
+            case .money: return Color.green
+            case .food: return Color.orange
+            case .clothing: return Color.blue
+            case .supplies: return Color.purple
+            case .other: return Color.gray
+            }
+        }
+
+    
     // Points multiplier for each type
     var pointsMultiplier: Double {
         switch self {
@@ -309,16 +320,18 @@ struct VolunteerDonationTrackerView: View {
                 VStack(alignment: .leading) {
                     Text(viewModel.currentLevel.rawValue)
                         .font(.headline)
+                        .foregroundColor(AppTheme.adaptiveTextPrimary)
                     
                     HStack {
                         Text("Total Points: \(viewModel.totalCombinedPoints)")
                             .font(.subheadline)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                         
                         Spacer()
                         
                         Text("Volunteer: \(viewModel.totalVolunteerHours) • Donations: \(Int(viewModel.totalDonationPoints))")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                     }
                 }
                 
@@ -335,7 +348,7 @@ struct VolunteerDonationTrackerView: View {
                 }
             }
             
-            // Progress bar
+            // Progress bar remains the same
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Rectangle()
@@ -352,29 +365,26 @@ struct VolunteerDonationTrackerView: View {
             .frame(height: 10)
             
             // Next level information
-            let nextLevel = nextLevelForCurrentProgress()
             HStack {
-                Text("Next Level: \(nextLevel.rawValue)")
+                Text("Next Level: \(nextLevelForCurrentProgress().rawValue)")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
                 
                 Spacer()
                 
-                Text("Points needed: \(nextLevel.minimumPoints - viewModel.totalCombinedPoints)")
+                Text("Points needed: \(nextLevelForCurrentProgress().minimumPoints - viewModel.totalCombinedPoints)")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white)
-                .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
-        )
+        .background(AppTheme.adaptiveCardBackground)
+        .cornerRadius(12)
+        .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
     }
     
     private var volunteerActivitySection: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Volunteer Hours")
                     .font(.headline)
@@ -383,35 +393,38 @@ struct VolunteerDonationTrackerView: View {
                     showingVolunteerSheet = true
                 }
             }
-            
+
             if viewModel.volunteerActivities.isEmpty {
                 Text("No volunteer hours logged")
                     .foregroundColor(.secondary)
                     .padding()
             } else {
-                List {
+                VStack(spacing: 10) {
                     ForEach(viewModel.volunteerActivities) { activity in
                         volunteerActivityRow(activity)
-                    }
-                    .onDelete { indexSet in
-                        viewModel.deleteVolunteerActivity(at: indexSet)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(UIColor.systemGray6))
+                            )
                     }
                 }
-                .frame(height: min(CGFloat(viewModel.volunteerActivities.count) * 70, 210))
-                .listStyle(PlainListStyle())
             }
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 20)
                 .fill(Color.white)
-                .shadow(color: .gray.opacity(0.1), radius: 3, x: 0, y: 1)
+                .shadow(color: .gray.opacity(0.1), radius: 5, x: 0, y: 2)
         )
+        .padding(.horizontal)
     }
+
 
     // Replace the donationActivitySection with:
     private var donationActivitySection: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Donations")
                     .font(.headline)
@@ -420,31 +433,34 @@ struct VolunteerDonationTrackerView: View {
                     showingDonationSheet = true
                 }
             }
-            
+
             if viewModel.donationActivities.isEmpty {
                 Text("No donations logged")
                     .foregroundColor(.secondary)
                     .padding()
             } else {
-                List {
+                VStack(spacing: 10) {
                     ForEach(viewModel.donationActivities) { activity in
                         donationActivityRow(activity)
-                    }
-                    .onDelete { indexSet in
-                        viewModel.deleteDonationActivity(at: indexSet)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(UIColor.systemGray6))
+                            )
                     }
                 }
-                .frame(height: min(CGFloat(viewModel.donationActivities.count) * 70, 210))
-                .listStyle(PlainListStyle())
             }
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 20)
                 .fill(Color.white)
-                .shadow(color: .gray.opacity(0.1), radius: 3, x: 0, y: 1)
+                .shadow(color: .gray.opacity(0.1), radius: 5, x: 0, y: 2)
         )
+        .padding(.horizontal)
     }
+
     
     private func volunteerActivityRow(_ activity: VolunteerActivity) -> some View {
         HStack {
@@ -452,15 +468,18 @@ struct VolunteerDonationTrackerView: View {
                 Text(activity.organization)
                     .font(.subheadline)
                     .fontWeight(.medium)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
+                
                 Text("\(activity.hours) hours")
                     .font(.caption)
+                    .foregroundColor(AppTheme.adaptiveTextSecondary)
             }
             
             Spacer()
             
             Text(activity.date, style: .date)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
             
             if activity.verified {
                 Image(systemName: "checkmark.seal.fill")
@@ -468,7 +487,7 @@ struct VolunteerDonationTrackerView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.05))
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(8)
     }
     
@@ -478,22 +497,25 @@ struct VolunteerDonationTrackerView: View {
                 Text(activity.organization)
                     .font(.subheadline)
                     .fontWeight(.medium)
+                    .foregroundColor(AppTheme.adaptiveTextPrimary)
                 
                 HStack {
                     Text(activity.category.rawValue)
                         .font(.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.1))
+                        .background(activity.category.color.opacity(0.2))
                         .cornerRadius(4)
+                        .foregroundColor(activity.category.color)
                     
                     if activity.category == .money {
                         Text("$\(String(format: "%.2f", activity.value))")
                             .font(.caption)
-                            .foregroundColor(.green)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                     } else {
                         Text(activity.items)
                             .font(.caption)
+                            .foregroundColor(AppTheme.adaptiveTextSecondary)
                     }
                 }
             }
@@ -502,7 +524,7 @@ struct VolunteerDonationTrackerView: View {
             
             Text(activity.date, style: .date)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppTheme.adaptiveTextSecondary)
             
             if activity.verified {
                 Image(systemName: "checkmark.seal.fill")
@@ -510,7 +532,7 @@ struct VolunteerDonationTrackerView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.05))
+        .background(AppTheme.adaptiveCardBackground)
         .cornerRadius(8)
     }
     
